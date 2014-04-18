@@ -5,6 +5,9 @@
 	<artifactId>reta</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>Requirement Engineering Traceability Analysis</name>
+	<properties>
+		<project.build.sourceEncoding>cp1252</project.build.sourceEncoding>
+	</properties>
 	<dependencies>
 		<dependency>
 			<groupId>com.google.guava</groupId>
