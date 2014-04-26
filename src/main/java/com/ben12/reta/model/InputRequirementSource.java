@@ -32,109 +32,196 @@ import java.util.TreeSet;
  */
 public class InputRequirementSource
 {
-	private final String						name;
+	/**
+	 * Source document name.
+	 */
+	private final String								name;
 
-	private String								source				= "";
+	/**
+	 * Source document path.
+	 */
+	private final String								sourcePath;
 
-	private String								filter				= ".*";
+	/**
+	 * Regular expression filtering files if {@link #sourcePath} is a folder.
+	 */
+	private final String								filter;
 
-	private TreeSet<Requirement>				requirements		= new TreeSet<>();
+	/**
+	 * Regular expression for find the start of requirement.
+	 */
+	private String										reqStart			= "";
 
-	private String								reqStart			= "";
+	/**
+	 * Regular expression for find the end of requirement.
+	 */
+	private String										reqEnd				= "";
 
-	private String								reqEnd				= "";
+	/**
+	 * Regular expression for find the requirement references.
+	 */
+	private String										reqRef				= "";
 
-	private String								reqRef				= "";
+	/**
+	 * Requirement attribute indexes in regular expression {@link #reqStart} captions.
+	 */
+	private final Map<String, Integer>					attributesGroup		= new HashMap<>();
 
-	private List<InputRequirementSource>		covers				= new ArrayList<>();
+	/**
+	 * Reference attribute indexes in regular expression {@link #reqRef} captions.
+	 */
+	private final Map<String, Integer>					refAttributesGroup	= new HashMap<>();
 
-	private Map<InputRequirementSource, Double>	coversBy			= new HashMap<>();
+	/**
+	 * List of covered document sources by this document source.
+	 */
+	private final List<InputRequirementSource>			covers				= new ArrayList<>();
 
-	private Map<String, Integer>				attributesGroup		= new HashMap<>();
+	/**
+	 * Set of requirement found in the document.
+	 */
+	private final TreeSet<Requirement>					requirements		= new TreeSet<>();
 
-	private Map<String, Integer>				refAttributesGroup	= null;
+	/**
+	 * Coverage rate of this document by the other documents.
+	 */
+	private final Map<InputRequirementSource, Double>	coversBy			= new HashMap<>();
 
-	public InputRequirementSource(String name, String source, String filter)
+	/**
+	 * @param name
+	 *            document source name
+	 * @param sourcePath
+	 *            document source path
+	 * @param filter
+	 *            regular expression filtering files if {@link #sourcePath} is a folder
+	 */
+	public InputRequirementSource(String name, String sourcePath, String filter)
 	{
 		this.name = name;
-		this.source = Objects.requireNonNull(source);
+		this.sourcePath = Objects.requireNonNull(sourcePath);
 		this.filter = ((filter == null || filter.isEmpty()) ? null : filter);
 	}
 
+	/**
+	 * @return the document source name
+	 */
 	public String getName()
 	{
 		return name;
 	}
 
-	public String getSource()
+	/**
+	 * @return the document source path
+	 */
+	public String getSourcePath()
 	{
-		return source;
+		return sourcePath;
 	}
 
+	/**
+	 * @return regular expression filtering files if {@link #sourcePath} is a folder
+	 */
 	public String getFilter()
 	{
 		return filter;
 	}
 
+	/**
+	 * @return regular expression of requirement start
+	 */
 	public String getReqStart()
 	{
 		return reqStart;
 	}
 
+	/**
+	 * @param reqStart
+	 *            regular expression of requirement start
+	 */
 	public void setReqStart(String reqStart)
 	{
 		this.reqStart = reqStart;
 	}
 
+	/**
+	 * @return regular expression of requirement end
+	 */
 	public String getReqEnd()
 	{
 		return reqEnd;
 	}
 
+	/**
+	 * @param reqEnd
+	 *            regular expression of requirement end
+	 */
 	public void setReqEnd(String reqEnd)
 	{
 		this.reqEnd = reqEnd;
 	}
 
+	/**
+	 * @return regular expression of requirement references
+	 */
 	public String getReqRef()
 	{
 		return reqRef;
 	}
 
+	/**
+	 * @param reqRef
+	 *            regular expression of requirement references
+	 */
 	public void setReqRef(String reqRef)
 	{
 		this.reqRef = reqRef;
 	}
 
+	/**
+	 * @return the set of requirement found in the document
+	 */
 	public TreeSet<Requirement> getRequirements()
 	{
 		return requirements;
 	}
 
+	/**
+	 * @return attribute indexes in regular expression {@link #reqStart} captions
+	 */
 	public Map<String, Integer> getAttributesGroup()
 	{
 		return attributesGroup;
 	}
 
+	/**
+	 * @return attribute indexes in regular expression {@link #reqRef} captions
+	 */
 	public Map<String, Integer> getRefAttributesGroup()
 	{
-		if (refAttributesGroup == null)
-		{
-			refAttributesGroup = new HashMap<>();
-		}
 		return refAttributesGroup;
 	}
 
+	/**
+	 * @return list of covered document sources by this document source
+	 */
 	public List<InputRequirementSource> getCovers()
 	{
 		return covers;
 	}
 
+	/**
+	 * @return coverage rate of this document by the other documents
+	 */
 	public Map<InputRequirementSource, Double> getCoversBy()
 	{
 		return coversBy;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
 	@Override
 	public String toString()
 	{
@@ -142,7 +229,7 @@ public class InputRequirementSource
 		builder.append("Input ");
 		builder.append(name);
 		builder.append(" (");
-		builder.append(source);
+		builder.append(sourcePath);
 		builder.append("):\n");
 		for (Requirement req : requirements)
 		{

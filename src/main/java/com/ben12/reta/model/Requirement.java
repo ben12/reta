@@ -27,83 +27,145 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
+import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
+
 /**
  * @author Benoît Moreau (ben.12)
  */
 public class Requirement implements Comparable<Requirement>
 {
-	public static final String		ATTRIBUTE_TEXT		= "Text";
+	/** Name of requirement attribute "Text". */
+	public static final String				ATTRIBUTE_TEXT		= "Text";
 
-	public static final String		ATTRIBUTE_ID		= "Id";
+	/** Name of requirement attribute "Id". */
+	public static final String				ATTRIBUTE_ID		= "Id";
 
-	public static final String		ATTRIBUTE_VERSION	= "Version";
+	/** Name of requirement attribute "Version". */
+	public static final String				ATTRIBUTE_VERSION	= "Version";
 
-	private InputRequirementSource	source				= null;
+	/** Requirement document source. */
+	private final InputRequirementSource	source;
 
-	private String					id;
+	/** Requirement identifying. */
+	private String							id;
 
-	private String					version				= "";
+	/** Requirement version. */
+	private String							version				= "";
 
-	private String					text				= "";
+	/** Requirement human text. */
+	private String							text				= "";
 
-	private String					content				= "";
+	/** Requirement content description. */
+	private String							content				= "";
 
-	private Map<String, String>		attributes			= null;
+	/** Requirement extra attributes name and value. */
+	private Map<String, String>				attributes			= null;
 
-	private Set<Requirement>		references			= null;
+	/** Set of requirements cover by this requirement. */
+	private Set<Requirement>				references			= null;
 
-	private Set<Requirement>		referredBy			= null;
+	/** Set of requirements covering this requirement. */
+	private Set<Requirement>				referredBy			= null;
 
+	/**
+	 * Build an undefined source requirement. (ex: requirement reference unknown)
+	 */
+	public Requirement()
+	{
+		this.source = null;
+	}
+
+	/**
+	 * @param source
+	 *            requirement document source
+	 */
+	public Requirement(InputRequirementSource source)
+	{
+		this.source = source;
+	}
+
+	/**
+	 * @return requirement document source or null if unknown
+	 */
 	public InputRequirementSource getSource()
 	{
 		return source;
 	}
 
-	public void setSource(InputRequirementSource source)
-	{
-		this.source = source;
-	}
-
+	/**
+	 * @return requirement identifying
+	 */
 	public String getId()
 	{
 		return id;
 	}
 
+	/**
+	 * @param id
+	 *            requirement identifying
+	 */
 	public void setId(String id)
 	{
 		this.id = id;
 	}
 
+	/**
+	 * @return requirement version, may be null
+	 */
 	public String getVersion()
 	{
 		return version;
 	}
 
+	/**
+	 * @param version
+	 *            requirement version
+	 */
 	public void setVersion(String version)
 	{
 		this.version = version;
 	}
 
+	/**
+	 * @return requirement human text
+	 */
 	public String getText()
 	{
 		return text;
 	}
 
+	/**
+	 * @param text
+	 *            requirement human text
+	 */
 	public void setText(String text)
 	{
 		this.text = text;
 	}
 
+	/**
+	 * @return requirement content description
+	 */
 	public String getContent()
 	{
 		return content;
 	}
 
+	/**
+	 * @param content
+	 *            requirement content description
+	 */
 	public void setContent(String content)
 	{
 		this.content = content;
 	}
 
+	/**
+	 * @param name
+	 *            attribute name
+	 * @return attribute value
+	 */
 	public String getAttribut(String name)
 	{
 		String att = null;
@@ -128,6 +190,12 @@ public class Requirement implements Comparable<Requirement>
 		return att;
 	}
 
+	/**
+	 * @param name
+	 *            attribute name
+	 * @param value
+	 *            attribute value
+	 */
 	public void putAttribut(String name, String value)
 	{
 		switch (name)
@@ -154,6 +222,10 @@ public class Requirement implements Comparable<Requirement>
 		}
 	}
 
+	/**
+	 * @param reference
+	 *            requirement reference
+	 */
 	public void addReference(Requirement reference)
 	{
 		if (references == null)
@@ -165,16 +237,26 @@ public class Requirement implements Comparable<Requirement>
 		references.add(reference);
 	}
 
+	/**
+	 * @return reference count
+	 */
 	public int getReferenceCount()
 	{
 		return (references == null ? 0 : references.size());
 	}
 
+	/**
+	 * @return requirement reference iterable
+	 */
 	public Iterable<Requirement> getReferenceIterable()
 	{
 		return (references == null ? new ArrayList<Requirement>(0) : references);
 	}
 
+	/**
+	 * @param reference
+	 *            requirement referencing this requirement
+	 */
 	public void addReferredBy(Requirement reference)
 	{
 		if (referredBy == null)
@@ -186,16 +268,27 @@ public class Requirement implements Comparable<Requirement>
 		referredBy.add(reference);
 	}
 
+	/**
+	 * @return requirement referencing this requirement count
+	 */
 	public int getReferredByCount()
 	{
 		return (referredBy == null ? 0 : referredBy.size());
 	}
 
+	/**
+	 * @return requirement referencing this requirement iterable
+	 */
 	public Iterable<Requirement> getReferredByIterable()
 	{
 		return (referredBy == null ? new ArrayList<Requirement>(0) : referredBy);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Comparable#compareTo(java.lang.Object)
+	 */
 	@Override
 	public int compareTo(Requirement other)
 	{
@@ -206,26 +299,19 @@ public class Requirement implements Comparable<Requirement>
 		}
 		else
 		{
-			comp = id.compareTo(other.id);
-			if (comp == 0 && (version != null || other.version != null))
-			{
-				if (version == null && other.version != null)
-				{
-					comp = -1;
-				}
-				else if (version != null && other.version == null)
-				{
-					comp = 1;
-				}
-				else
-				{
-					comp = version.compareTo(other.version);
-				}
-			}
+			comp = ComparisonChain.start()
+					.compare(id, other.id)
+					.compare(version, other.version, Ordering.natural().nullsFirst())
+					.result();
 		}
 		return comp;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
 	@Override
 	public boolean equals(Object obj)
 	{
@@ -243,12 +329,22 @@ public class Requirement implements Comparable<Requirement>
 		return equals;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#hashCode()
+	 */
 	@Override
 	public int hashCode()
 	{
 		return Objects.hash(id, version);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
 	@Override
 	public String toString()
 	{

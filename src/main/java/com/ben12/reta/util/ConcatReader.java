@@ -22,36 +22,83 @@ package com.ben12.reta.util;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.util.Collections;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.apache.tika.Tika;
 
 /**
  * @author Benoît Moreau (ben.12)
  */
 public class ConcatReader extends Reader
 {
-	private final List<Reader> readers;
+	/** Class logger. */
+	private static final Logger	logger	= Logger.getLogger(ConcatReader.class.getName());
 
-	private int index = 0;
+	/** Tika facade instance. */
+	private final static Tika	TIKA	= new Tika();
 
-	private Reader reader = null;
+	/** File paths to read. */
+	private final List<Path>	paths	= new ArrayList<>();
 
-	public ConcatReader(List<Reader> readers)
+	/** Current file index read. */
+	private int					index	= -1;
+
+	/** Current opened reader. */
+	private Reader				reader	= null;
+
+	/**
+	 * @param path
+	 *            path of file to read
+	 */
+	public void add(Path path)
 	{
-		this.readers = Collections.unmodifiableList(readers);
+		Objects.requireNonNull(path);
+		paths.add(path);
 	}
 
-	private void next()
+	/**
+	 * Opens the next file reader and closes the previous
+	 * 
+	 * @throws IOException
+	 *             I/O exception
+	 */
+	private void next() throws IOException
 	{
-		if (index < readers.size())
+		if (reader != null)
 		{
-			reader = readers.get(index);
+			reader.close();
+		}
+		if (index + 1 < paths.size())
+		{
 			index++;
+			reader = createReader(paths.get(index));
 		}
 		else
 		{
 			reader = null;
 		}
+	}
+
+	/**
+	 * @return current path of file read
+	 */
+	public Path getCurrentPath()
+	{
+		Path path = null;
+		if (reader != null && index < paths.size())
+		{
+			path = paths.get(index);
+		}
+		else if (index == -1 && !paths.isEmpty())
+		{
+			path = paths.get(0);
+		}
+		return path;
 	}
 
 	/*
@@ -70,11 +117,13 @@ public class ConcatReader extends Reader
 		if (reader != null)
 		{
 			r = reader.read(cbuf, off, len);
-			if (r == -1)
+			while (r == -1 && reader != null)
 			{
-				reader.close();
 				next();
-				r = read(cbuf, off, len);
+				if (reader != null)
+				{
+					r = reader.read(cbuf, off, len);
+				}
 			}
 		}
 		return r;
@@ -91,7 +140,23 @@ public class ConcatReader extends Reader
 		if (reader != null)
 		{
 			reader.close();
+			reader = null;
 		}
 	}
 
+	/**
+	 * @param path
+	 *            file path
+	 * @return the reader
+	 * @throws IOException
+	 *             I/O exception
+	 */
+	public Reader createReader(Path path) throws IOException
+	{
+		if (logger.isLoggable(Level.FINE))
+		{
+			logger.fine("Open " + path + " : " + TIKA.detect(path.toFile()));
+		}
+		return TIKA.parse(path.toFile());
+	}
 }

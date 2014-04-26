@@ -26,7 +26,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.Reader;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
@@ -78,6 +77,7 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
 
+// TODO : think of a better implementation
 /**
  * @author Benoît Moreau (ben.12)
  */
@@ -181,8 +181,11 @@ public final class RETAAnalysis
 
 							if (Strings.isNullOrEmpty(startRegex))
 							{
-								logger.severe("requirement.start.regex is mandatory for section " + doc);
-								continue;
+								if (!Strings.isNullOrEmpty(endRegex))
+								{
+									logger.severe("requirement.start.regex is mandatory for section " + doc);
+									continue;
+								}
 							}
 							else if (Strings.isNullOrEmpty(endRegex))
 							{
@@ -356,17 +359,86 @@ public final class RETAAnalysis
 
 		requirementSource.getRequirements().clear();
 
-		Pattern patternStart = Pattern.compile(requirementSource.getReqStart(), Pattern.MULTILINE);
-		Pattern patternEnd = Pattern.compile(requirementSource.getReqEnd(), Pattern.MULTILINE);
+		Pattern patternStart = null;
+		Pattern patternEnd = null;
 		Pattern patternRef = null;
 		if (!Strings.isNullOrEmpty(requirementSource.getReqRef()))
 		{
 			patternRef = Pattern.compile(requirementSource.getReqRef(), Pattern.MULTILINE);
 		}
+		if (!Strings.isNullOrEmpty(requirementSource.getReqStart())
+				&& !Strings.isNullOrEmpty(requirementSource.getReqEnd()))
+		{
+			patternStart = Pattern.compile(requirementSource.getReqStart(), Pattern.MULTILINE);
+			patternEnd = Pattern.compile(requirementSource.getReqEnd(), Pattern.MULTILINE);
 
+			parseMultiRequirementByFile(requirementSource, patternStart, patternEnd, patternRef);
+		}
+		else
+		{
+			parseReferencesInFiles(requirementSource, patternRef);
+		}
+
+		logger.info("End parsing " + requirementSource.getName());
+	}
+
+	/**
+	 * @param newRequirementSource
+	 * @param newPatternRef
+	 * @throws IOException
+	 */
+	private void parseReferencesInFiles(InputRequirementSource requirementSource, Pattern patternRef)
+			throws IOException
+	{
+		final ConcatReader reader = getReader(requirementSource);
+		Path root = Paths.get(requirementSource.getSourcePath());
+		final CharBuffer buffer = CharBuffer.allocate(BUFFER_SIZE);
+		StringBuilder builder = new StringBuilder(3 * BUFFER_SIZE);
+		int r = reader.read(buffer);
+		while (r >= 0)
+		{
+			buffer.flip();
+			builder.append(buffer, 0, r);
+			buffer.clear();
+
+			Path prevPath = reader.getCurrentPath();
+			r = reader.read(buffer);
+			Path currentPath = reader.getCurrentPath();
+
+			// If all file content read
+			if (!prevPath.equals(currentPath))
+			{
+				String relPath = root.relativize(prevPath).toString();
+				Requirement requirement = new Requirement(requirementSource);
+				requirement.setId(relPath);
+				requirement.setText(relPath);
+
+				Matcher matcherRef = patternRef.matcher(builder);
+				parseReferences(requirementSource, requirement, matcherRef);
+
+				if (requirement.getReferenceCount() > 0)
+				{
+					requirementSource.getRequirements().add(requirement);
+				}
+
+				builder.setLength(0);
+			}
+		}
+	}
+
+	/**
+	 * @param requirementSource
+	 * @param patternStart
+	 * @param patternEnd
+	 * @param patternRef
+	 * @throws IOException
+	 */
+	private void parseMultiRequirementByFile(InputRequirementSource requirementSource, Pattern patternStart,
+			Pattern patternEnd, Pattern patternRef) throws IOException
+	{
 		boolean requirementStarted = false;
 		Requirement requirement = null;
-		final Reader reader = getReader(requirementSource);
+		final ConcatReader reader = getReader(requirementSource);
 		final CharBuffer buffer = CharBuffer.allocate(BUFFER_SIZE);
 		StringBuilder builder = new StringBuilder(3 * BUFFER_SIZE);
 		int r = reader.read(buffer);
@@ -388,19 +460,27 @@ public final class RETAAnalysis
 				{
 					int pos = matcherStart.start();
 					int endPos = matcherEnd.start();
+					// search for last requirement start before the requirement end.
+					String req = matcherStart.group();
 					boolean hasNextStart = matcherStart.find(matcherStart.end());
-					while (endMatch && hasNextStart && matcherStart.start() < endPos)
+					while (hasNextStart && matcherStart.start() < endPos)
 					{
+						logger.info("Ignore matching requirement without end :" + req);
 						pos = matcherStart.start();
 						hasNextStart = matcherStart.find(matcherStart.end());
+						if (hasNextStart)
+						{
+							req = matcherStart.group();
+						}
 					}
 					matcherStart.find(pos);
 				}
 
 				if (requirement != null && patternRef != null)
 				{
-					String betweenReq = builder.substring(0, matcherStart.start());
-					Matcher matcherRef = patternRef.matcher(betweenReq);
+					// search for references between last requirement end and new requirement start
+					Matcher matcherRef = patternRef.matcher(builder);
+					matcherRef.region(0, matcherStart.start());
 					parseReferences(requirementSource, requirement, matcherRef);
 					builder.replace(0, matcherStart.start(), "");
 					matcherStart.find(0);
@@ -410,8 +490,7 @@ public final class RETAAnalysis
 				{
 					String reqContent = builder.substring(matcherStart.end(), matcherEnd.start());
 
-					requirement = new Requirement();
-					requirement.setSource(requirementSource);
+					requirement = new Requirement(requirementSource);
 					requirement.setContent(reqContent);
 
 					for (Map.Entry<String, Integer> attEntry : requirementSource.getAttributesGroup().entrySet())
@@ -447,14 +526,11 @@ public final class RETAAnalysis
 
 			r = reader.read(buffer);
 		}
-
-		logger.info("End parsing " + requirementSource.getName());
 	}
 
 	private void parseReferences(InputRequirementSource requirementSource, Requirement requirement, Matcher matcherRef)
 	{
-		int prevRef = 0;
-		while (matcherRef.find(prevRef))
+		while (matcherRef.find())
 		{
 			String refText = Strings.nullToEmpty(matcherRef.group(0));
 
@@ -469,34 +545,33 @@ public final class RETAAnalysis
 			}
 
 			requirement.addReference(reference);
-
-			prevRef = matcherRef.end();
 		}
 	}
 
-	private Reader getReader(InputRequirementSource requirementSource) throws IOException
+	private ConcatReader getReader(InputRequirementSource requirementSource) throws IOException
 	{
-		List<Reader> readers = new ArrayList<>();
+		ConcatReader concatReader = new ConcatReader();
 		Tika tika = new Tika();
-		Path srcPath = Paths.get(requirementSource.getSource());
+		Path srcPath = Paths.get(requirementSource.getSourcePath());
 		if (srcPath.toFile().isFile())
 		{
-			readers.add(tika.parse(srcPath.toFile()));
+			concatReader.add(srcPath);
 		}
 		else
 		{
-			fillReaders(readers, srcPath, requirementSource.getFilter(), tika);
+			Pattern patternfilter = null;
+			String filter = requirementSource.getFilter();
+			if (filter != null && !filter.isEmpty())
+			{
+				patternfilter = Pattern.compile(filter);
+			}
+			fillReaders(concatReader, srcPath, patternfilter);
 		}
-		return new ConcatReader(readers);
+		return concatReader;
 	}
 
-	private void fillReaders(List<Reader> readers, Path root, String filter, Tika tika) throws IOException
+	private void fillReaders(ConcatReader concatReader, Path root, Pattern filter) throws IOException
 	{
-		Pattern patternfilter = null;
-		if (filter != null && !filter.isEmpty())
-		{
-			patternfilter = Pattern.compile(filter);
-		}
 		DirectoryStream<Path> stream = java.nio.file.Files.newDirectoryStream(root);
 		Iterator<Path> iterator = stream.iterator();
 		while (iterator.hasNext())
@@ -504,14 +579,14 @@ public final class RETAAnalysis
 			Path path = iterator.next();
 			if (path.toFile().isFile())
 			{
-				if (patternfilter == null || patternfilter.matcher(path.getFileName().toString()).find())
+				if (filter == null || filter.matcher(path.toString()).find())
 				{
-					readers.add(tika.parse(path.toFile()));
+					concatReader.add(path);
 				}
 			}
 			else if (path.startsWith(root) && !path.equals(root))
 			{
-				fillReaders(readers, path, filter, tika);
+				fillReaders(concatReader, path, filter);
 			}
 		}
 	}
@@ -610,7 +685,7 @@ public final class RETAAnalysis
 				rowFile.createCell(i).setCellStyle(styles.get("file"));
 			}
 			Cell cellFile = rowFile.createCell(0);
-			cellFile.setCellValue(requirementSource.getSource());
+			cellFile.setCellValue(requirementSource.getSourcePath());
 			cellFile.setCellStyle(styles.get("file"));
 			sheet.addMergedRegion(new CellRangeAddress(rowFile.getRowNum(), rowFile.getRowNum(), 0, columnCount));
 
@@ -743,16 +818,16 @@ public final class RETAAnalysis
 			cellReqCount.setCellStyle(styles.get("unknownRefCount"));
 			cellReqCount.setCellFormula("ROWS(B" + (rowReqCount.getRowNum() + 4) + ":B"
 					+ (rowReqCount.getRowNum() + count + 3) + ")");
-			sheet.addMergedRegion(new CellRangeAddress(rowReqCount.getRowNum(), rowReqCount.getRowNum(), 1, attributes
-					.size() + 3));
+			sheet.addMergedRegion(new CellRangeAddress(rowReqCount.getRowNum(), rowReqCount.getRowNum(), 1,
+					attributes.size() + 3));
 
 			int column = 1;
 			Row rowHeader = sheet.createRow(row++);
 			Cell cellHeader = rowHeader.createCell(column++);
 			cellHeader.setCellValue(requirementSource.getName());
 			cellHeader.setCellStyle(styles.get("header"));
-			sheet.addMergedRegion(new CellRangeAddress(rowHeader.getRowNum(), rowHeader.getRowNum() + 1, cellHeader
-					.getColumnIndex(), cellHeader.getColumnIndex()));
+			sheet.addMergedRegion(new CellRangeAddress(rowHeader.getRowNum(), rowHeader.getRowNum() + 1,
+					cellHeader.getColumnIndex(), cellHeader.getColumnIndex()));
 
 			cellHeader = rowHeader.createCell(column);
 			for (int i = cellHeader.getColumnIndex(); i <= cellHeader.getColumnIndex() + attributes.size() + 1; i++)
@@ -761,8 +836,8 @@ public final class RETAAnalysis
 			}
 			cellHeader.setCellValue("Reference unknown");
 			cellHeader.setCellStyle(styles.get("header"));
-			sheet.addMergedRegion(new CellRangeAddress(rowHeader.getRowNum(), rowHeader.getRowNum(), cellHeader
-					.getColumnIndex(), cellHeader.getColumnIndex() + attributes.size() + 1));
+			sheet.addMergedRegion(new CellRangeAddress(rowHeader.getRowNum(), rowHeader.getRowNum(),
+					cellHeader.getColumnIndex(), cellHeader.getColumnIndex() + attributes.size() + 1));
 
 			rowHeader = sheet.createRow(row++);
 
@@ -848,8 +923,8 @@ public final class RETAAnalysis
 		cellReqCount.setCellFormula("ROWS(B" + (rowReqCount.getRowNum() + 3) + ":B"
 				+ (rowReqCount.getRowNum() + reqCount + 2) + ")");
 		cellReqCount.setCellStyle(styles.get("reqCount"));
-		sheet.addMergedRegion(new CellRangeAddress(rowReqCount.getRowNum(), rowReqCount.getRowNum(), 1, attributes
-				.size() + 3));
+		sheet.addMergedRegion(new CellRangeAddress(rowReqCount.getRowNum(), rowReqCount.getRowNum(), 1,
+				attributes.size() + 3));
 
 		int column = 1;
 		Row rowHeader = sheet.createRow(row++);
