@@ -52,6 +52,7 @@ import com.ben12.reta.util.RETAAnalysis;
 import com.ben12.reta.view.buffering.BufferingManager;
 import com.ben12.reta.view.buffering.ObservableListBuffering;
 import com.google.common.base.Strings;
+import com.google.common.io.Files;
 
 /**
  * @author Benoît Moreau (ben.12)
@@ -290,13 +291,39 @@ public class MainConfigurationController implements Initializable
 	@FXML
 	protected void save(ActionEvent event)
 	{
-		bufferingManager.commit();
-		panes = new ArrayList<>(sourceConfigurations.getPanes());
+		RETAAnalysis retaAnalysis = RETAAnalysis.getInstance();
 
-		RETAAnalysis.getInstance().getRequirementSources().clear();
-		for (InputRequirementSource requirementSource : bufferedSources)
+		FileChooser fileChooser = new FileChooser();
+		fileChooser.getExtensionFilters().add(new ExtensionFilter("RETA analysis description", "*.reta"));
+		fileChooser.setTitle("RETA analysis");
+		if (retaAnalysis.getConfig() != null)
 		{
-			RETAAnalysis.getInstance().getRequirementSources().put(requirementSource.getName(), requirementSource);
+			fileChooser.setInitialDirectory(retaAnalysis.getConfig().getParentFile());
+			fileChooser.setInitialFileName(retaAnalysis.getConfig().getName());
+		}
+
+		File file = fileChooser.showSaveDialog(root.getScene().getWindow());
+
+		if (file != null && file.isFile())
+		{
+			bufferingManager.commit();
+			panes = new ArrayList<>(sourceConfigurations.getPanes());
+
+			retaAnalysis.getRequirementSources().clear();
+			for (InputRequirementSource requirementSource : bufferedSources)
+			{
+				retaAnalysis.getRequirementSources().put(requirementSource.getName(), requirementSource);
+			}
+
+			try
+			{
+				Files.copy(retaAnalysis.getConfig(), new File(retaAnalysis.getConfig().getPath() + ".bak"));
+				retaAnalysis.saveConfig();
+			}
+			catch (IOException e)
+			{
+				Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", e);
+			}
 		}
 	}
 

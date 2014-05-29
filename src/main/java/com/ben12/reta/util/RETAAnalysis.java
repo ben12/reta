@@ -32,11 +32,13 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
@@ -46,6 +48,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -91,6 +94,8 @@ public final class RETAAnalysis
 
 	private final Map<String, InputRequirementSource>	requirementSources	= new LinkedHashMap<>();
 
+	private File										config				= null;
+
 	private File										output				= null;
 
 	// TODO maybe useful to see unknown references and mismatch versions
@@ -118,6 +123,14 @@ public final class RETAAnalysis
 	}
 
 	/**
+	 * @return the config
+	 */
+	public File getConfig()
+	{
+		return config;
+	}
+
+	/**
 	 * @return the output
 	 */
 	public File getOutput()
@@ -136,6 +149,8 @@ public final class RETAAnalysis
 
 	public void configure(File iniFile)
 	{
+		config = iniFile;
+
 		try
 		{
 			requirementSources.clear();
@@ -164,7 +179,7 @@ public final class RETAAnalysis
 				attributes = Splitter.on(',').trimResults().omitEmptyStrings().split(attributesStr);
 			}
 
-			String refAttributesStr = ini.get("GENERAL", "requirement.attributes");
+			String refAttributesStr = ini.get("GENERAL", "references.attributes");
 			Iterable<String> refAttributes = null;
 			if (!Strings.isNullOrEmpty(refAttributesStr))
 			{
@@ -194,9 +209,12 @@ public final class RETAAnalysis
 						{
 							String startRegex = section.get("requirement.start.regex", "");
 							String endRegex = section.get("requirement.end.regex", "");
-							Integer textIndex = section.get("requirement.start.text.index", Integer.class, 0);
-							Integer idIndex = section.get("requirement.start.id.index", Integer.class, null);
-							Integer versionIndex = section.get("requirement.start.version.index", Integer.class, null);
+							Integer textIndex = section.get("requirement.start." + Requirement.ATTRIBUTE_TEXT
+									+ ".index", Integer.class, 0);
+							Integer idIndex = section.get("requirement.start." + Requirement.ATTRIBUTE_ID + ".index",
+									Integer.class, null);
+							Integer versionIndex = section.get("requirement.start." + Requirement.ATTRIBUTE_VERSION
+									+ ".index", Integer.class, null);
 
 							if (startRegex.isEmpty())
 							{
@@ -213,7 +231,7 @@ public final class RETAAnalysis
 							}
 							else if (idIndex == null)
 							{
-								logger.severe("requirement.start.id.index is mandatory for section " + doc);
+								logger.severe("requirement.start.Id.index is mandatory for section " + doc);
 								continue;
 							}
 
@@ -246,9 +264,10 @@ public final class RETAAnalysis
 							String refRegex = section.get("requirement.ref.regex");
 							if (!Strings.isNullOrEmpty(refRegex))
 							{
-								Integer refIdIndex = section.get("requirement.ref.id.index", Integer.class, null);
-								Integer refVersionIndex = section.get("requirement.ref.version.index", Integer.class,
-										null);
+								Integer refIdIndex = section.get("requirement.ref." + Requirement.ATTRIBUTE_ID
+										+ ".index", Integer.class, null);
+								Integer refVersionIndex = section.get("requirement.ref."
+										+ Requirement.ATTRIBUTE_VERSION + ".index", Integer.class, null);
 
 								if (Strings.isNullOrEmpty(refRegex))
 								{
@@ -257,7 +276,7 @@ public final class RETAAnalysis
 								}
 								else if (refIdIndex == null)
 								{
-									logger.severe("requirement.ref.id.index is mandatory for section " + doc);
+									logger.severe("requirement.ref.Id.index is mandatory for section " + doc);
 									continue;
 								}
 
@@ -322,6 +341,102 @@ public final class RETAAnalysis
 		catch (IOException e)
 		{
 			logger.log(Level.SEVERE, "Invalid config file " + iniFile, e);
+			// TODO show error as dialog or dimmer panel
+		}
+	}
+
+	public void saveConfig()
+	{
+		saveConfig(config);
+	}
+
+	public void saveConfig(File iniFile)
+	{
+		Wini ini = new Wini();
+		ini.getConfig().setFileEncoding(Charset.forName("CP1252"));
+
+		try
+		{
+			Section generalSection = ini.add("GENERAL");
+
+			generalSection.add("output", output.getPath());
+
+			List<String> inputs = new ArrayList<>();
+			Set<String> reqAttributes = new HashSet<>();
+			Set<String> refAttributes = new HashSet<>();
+
+			for (InputRequirementSource requirementSource : requirementSources.values())
+			{
+				String name = requirementSource.getName();
+				inputs.add(name);
+
+				Section sourceSection = ini.add(name);
+
+				sourceSection.put("path", requirementSource.getSourcePath());
+				sourceSection.put("filter", requirementSource.getFilter());
+
+				String reqStart = requirementSource.getReqStart();
+				if (!Strings.isNullOrEmpty(reqStart))
+				{
+					Map<String, Integer> reqAttributesGroup = requirementSource.getAttributesGroup();
+					reqAttributes.addAll(reqAttributesGroup.keySet());
+
+					sourceSection.put("requirement.start.regex", reqStart);
+
+					for (Entry<String, Integer> reqAttributeGroup : reqAttributesGroup.entrySet())
+					{
+						if (reqAttributeGroup.getValue() != null)
+						{
+							sourceSection.put("requirement.start." + reqAttributeGroup.getKey() + ".index",
+									reqAttributeGroup.getValue());
+						}
+					}
+					sourceSection.put("requirement.end.regex", requirementSource.getReqEnd());
+				}
+
+				String reqRef = requirementSource.getReqRef();
+				if (!Strings.isNullOrEmpty(reqRef))
+				{
+					Map<String, Integer> refAttributesGroup = requirementSource.getRefAttributesGroup();
+					refAttributes.addAll(refAttributesGroup.keySet());
+
+					sourceSection.put("requirement.ref.regex", reqRef);
+
+					for (Entry<String, Integer> refAttributeGroup : refAttributesGroup.entrySet())
+					{
+						if (refAttributeGroup.getValue() != null)
+						{
+							sourceSection.put("requirement.ref." + refAttributeGroup.getKey() + ".index",
+									refAttributeGroup.getValue());
+						}
+					}
+
+					sourceSection.put(
+							"covers",
+							requirementSource.getCovers()
+									.stream()
+									.map(InputRequirementSource::getName)
+									.collect(Collectors.joining(",")));
+				}
+			}
+
+			generalSection.put("inputs", inputs.stream().collect(Collectors.joining(",")));
+
+			List<String> excludes = Arrays.asList(Requirement.ATTRIBUTE_ID, Requirement.ATTRIBUTE_TEXT,
+					Requirement.ATTRIBUTE_VERSION);
+			generalSection.put("requirement.attributes", reqAttributes.stream()
+					.filter(a -> !excludes.contains(a))
+					.collect(Collectors.joining(",")));
+			generalSection.put("references.attributes", refAttributes.stream()
+					.filter(a -> !excludes.contains(a))
+					.collect(Collectors.joining(",")));
+
+			ini.store(iniFile);
+		}
+		catch (IOException e)
+		{
+			logger.log(Level.SEVERE, "Invalid config file " + iniFile, e);
+			// TODO show error as dialog or dimmer panel
 		}
 	}
 
