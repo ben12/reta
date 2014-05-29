@@ -205,7 +205,7 @@ public class ObservableListBuffering<E> extends SimpleListProperty<E> implements
 
 		AtomicInteger index = new AtomicInteger();
 		stream().forEachOrdered(b -> {
-			int i = index.incrementAndGet();
+			int i = index.getAndIncrement();
 			if (i < subject.size())
 			{
 				E e = subject.get(i);
