@@ -20,8 +20,6 @@
 
 package com.ben12.reta.util;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -33,7 +31,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -52,6 +49,7 @@ import java.util.regex.Pattern;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.WindowConstants;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
@@ -65,7 +63,6 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.WorkbookUtil;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.apache.tika.Tika;
 import org.ini4j.Profile.Section;
 import org.ini4j.Wini;
 
@@ -84,25 +81,20 @@ import com.google.common.io.Files;
 public final class RETAAnalysis
 {
 	/** Buffer size (2 Mo), this is also the maximum requirement text length. */
-	private static final int					BUFFER_SIZE			= 2 * 1024 * 1024;
+	private static final int							BUFFER_SIZE			= 2 * 1024 * 1024;
 
-	private static RETAAnalysis					instance			= null;
+	public static final String							REQUIREMENT_SOURCES	= "requirementSources";
 
-	private final Logger						logger				= Logger.getLogger(RETAAnalysis.class.getName());
+	private static RETAAnalysis							instance			= null;
 
-	private Map<String, InputRequirementSource>	requirementSources	= new LinkedHashMap<>();
+	private final Logger								logger				= Logger.getLogger(RETAAnalysis.class.getName());
 
-	private File								output				= null;
+	private final Map<String, InputRequirementSource>	requirementSources	= new LinkedHashMap<>();
 
-	private Comparator<Requirement>				reqCompId			= new Comparator<Requirement>()
-																	{
-																		@Override
-																		public int compare(Requirement req1,
-																				Requirement req2)
-																		{
-																			return req1.getId().compareTo(req2.getId());
-																		}
-																	};
+	private File										output				= null;
+
+	// TODO maybe useful to see unknown references and mismatch versions
+	// private final Comparator<Requirement> reqCompId = (req1, req2) -> req1.getId().compareTo(req2.getId());
 
 	private RETAAnalysis()
 	{
@@ -117,10 +109,37 @@ public final class RETAAnalysis
 		return instance;
 	}
 
+	/**
+	 * @return the requirementSources
+	 */
+	public Map<String, InputRequirementSource> getRequirementSources()
+	{
+		return requirementSources;
+	}
+
+	/**
+	 * @return the output
+	 */
+	public File getOutput()
+	{
+		return output;
+	}
+
+	/**
+	 * @param output
+	 *            the output to set
+	 */
+	public void setOutput(File output)
+	{
+		this.output = output;
+	}
+
 	public void configure(File iniFile)
 	{
 		try
 		{
+			requirementSources.clear();
+
 			Wini ini = new Wini();
 			ini.getConfig().setFileEncoding(Charset.forName("CP1252"));
 			ini.load(iniFile);
@@ -136,26 +155,26 @@ public final class RETAAnalysis
 						+ ".xls");
 			}
 
-			Map<InputRequirementSource, Iterable<String>> coversMap = new HashMap<>();
+			Map<InputRequirementSource, List<String>> coversMap = new LinkedHashMap<>();
 
 			String attributesStr = ini.get("GENERAL", "requirement.attributes");
 			Iterable<String> attributes = null;
 			if (!Strings.isNullOrEmpty(attributesStr))
 			{
-				attributes = Splitter.on(',').trimResults().split(attributesStr);
+				attributes = Splitter.on(',').trimResults().omitEmptyStrings().split(attributesStr);
 			}
 
 			String refAttributesStr = ini.get("GENERAL", "requirement.attributes");
 			Iterable<String> refAttributes = null;
 			if (!Strings.isNullOrEmpty(refAttributesStr))
 			{
-				refAttributes = Splitter.on(',').trimResults().split(refAttributesStr);
+				refAttributes = Splitter.on(',').trimResults().omitEmptyStrings().split(refAttributesStr);
 			}
 
 			String documentsStr = ini.get("GENERAL", "inputs");
 			if (!Strings.isNullOrEmpty(documentsStr))
 			{
-				Iterable<String> documents = Splitter.on(',').trimResults().split(documentsStr);
+				Iterable<String> documents = Splitter.on(',').trimResults().omitEmptyStrings().split(documentsStr);
 
 				for (String doc : documents)
 				{
@@ -165,29 +184,29 @@ public final class RETAAnalysis
 						logger.warning("No section defined for input " + doc);
 						continue;
 					}
-					String source = section.get("path");
-					String filter = section.get("filter");
-					if (!Strings.isNullOrEmpty(source))
+					String source = section.get("path", "");
+					String filter = section.get("filter", "");
+					if (!source.isEmpty())
 					{
 						InputRequirementSource requirementSource = new InputRequirementSource(doc, source, filter);
 
 						try
 						{
-							String startRegex = section.get("requirement.start.regex");
-							String endRegex = section.get("requirement.end.regex");
+							String startRegex = section.get("requirement.start.regex", "");
+							String endRegex = section.get("requirement.end.regex", "");
 							Integer textIndex = section.get("requirement.start.text.index", Integer.class, 0);
 							Integer idIndex = section.get("requirement.start.id.index", Integer.class, null);
 							Integer versionIndex = section.get("requirement.start.version.index", Integer.class, null);
 
-							if (Strings.isNullOrEmpty(startRegex))
+							if (startRegex.isEmpty())
 							{
-								if (!Strings.isNullOrEmpty(endRegex))
+								if (!endRegex.isEmpty())
 								{
 									logger.severe("requirement.start.regex is mandatory for section " + doc);
 									continue;
 								}
 							}
-							else if (Strings.isNullOrEmpty(endRegex))
+							else if (endRegex.isEmpty())
 							{
 								logger.severe("requirement.end.regex is mandatory for section " + doc);
 								continue;
@@ -217,13 +236,12 @@ public final class RETAAnalysis
 								}
 							}
 
-							String coversStr = section.get("covers");
-							Iterable<String> covers = null;
-							if (!Strings.isNullOrEmpty(coversStr))
-							{
-								covers = Splitter.on(',').trimResults().split(coversStr);
-								coversMap.put(requirementSource, covers);
-							}
+							String coversStr = section.get("covers", "");
+							List<String> covers = Splitter.on(',')
+									.trimResults()
+									.omitEmptyStrings()
+									.splitToList(coversStr);
+							coversMap.put(requirementSource, covers);
 
 							String refRegex = section.get("requirement.ref.regex");
 							if (!Strings.isNullOrEmpty(refRegex))
@@ -280,11 +298,9 @@ public final class RETAAnalysis
 					}
 				}
 
-				for (Map.Entry<InputRequirementSource, Iterable<String>> entry : coversMap.entrySet())
-				{
+				coversMap.entrySet().stream().forEach(entry -> {
 					InputRequirementSource requirementSource = entry.getKey();
-					for (String cover : entry.getValue())
-					{
+					entry.getValue().stream().forEach(cover -> {
 						InputRequirementSource coverRequirementSource = requirementSources.get(cover);
 						if (coverRequirementSource != null)
 						{
@@ -295,8 +311,8 @@ public final class RETAAnalysis
 						{
 							logger.warning(requirementSource.getName() + " covers an unknown input " + cover);
 						}
-					}
-				}
+					});
+				});
 			}
 			else
 			{
@@ -313,25 +329,19 @@ public final class RETAAnalysis
 	{
 		int processors = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(processors);
-		final IOException[] ex =
-		{ null };
+		final IOException[] ex = { null };
 
 		for (final InputRequirementSource requirementSource : requirementSources.values())
 		{
-			executor.execute(new Runnable()
-			{
-				@Override
-				public void run()
+			executor.execute(() -> {
+				try
 				{
-					try
-					{
-						parse(requirementSource);
-					}
-					catch (IOException e)
-					{
-						ex[0] = e;
-						logger.log(Level.SEVERE, "Parsing source " + requirementSource.getName(), e);
-					}
+					parse(requirementSource);
+				}
+				catch (IOException e)
+				{
+					ex[0] = e;
+					logger.log(Level.SEVERE, "Parsing source " + requirementSource.getName(), e);
 				}
 			});
 		}
@@ -551,7 +561,6 @@ public final class RETAAnalysis
 	private ConcatReader getReader(InputRequirementSource requirementSource) throws IOException
 	{
 		ConcatReader concatReader = new ConcatReader();
-		Tika tika = new Tika();
 		Path srcPath = Paths.get(requirementSource.getSourcePath());
 		if (srcPath.toFile().isFile())
 		{
@@ -561,7 +570,7 @@ public final class RETAAnalysis
 		{
 			Pattern patternfilter = null;
 			String filter = requirementSource.getFilter();
-			if (filter != null && !filter.isEmpty())
+			if (!Strings.isNullOrEmpty(filter))
 			{
 				patternfilter = Pattern.compile(filter);
 			}
@@ -728,16 +737,9 @@ public final class RETAAnalysis
 			final JFrame frame = new JFrame();
 			JOptionPane optionPane = new JOptionPane("Excel output file must be closed.", JOptionPane.QUESTION_MESSAGE,
 					JOptionPane.OK_CANCEL_OPTION);
-			optionPane.addPropertyChangeListener(JOptionPane.VALUE_PROPERTY, new PropertyChangeListener()
-			{
-				@Override
-				public void propertyChange(PropertyChangeEvent p)
-				{
-					frame.dispose();
-				}
-			});
+			optionPane.addPropertyChangeListener(JOptionPane.VALUE_PROPERTY, p -> frame.dispose());
 			frame.getContentPane().add(optionPane);
-			frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+			frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 			frame.pack();
 			frame.setLocationRelativeTo(null);
 			frame.setVisible(true);

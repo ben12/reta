@@ -27,39 +27,75 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeSet;
 
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+
+import org.hibernate.validator.constraints.NotEmpty;
+
+import com.ben12.reta.constraints.NotNullElement;
+import com.ben12.reta.constraints.Path;
+import com.ben12.reta.constraints.Regex;
+import com.google.common.base.Strings;
+
 /**
  * @author Benoît Moreau (ben.12)
  */
 public class InputRequirementSource
 {
+	public static final String							NAME				= "name";
+
+	public static final String							SOURCE_PATH			= "sourcePath";
+
+	public static final String							FILTER				= "filter";
+
+	public static final String							REQ_START			= "reqStart";
+
+	public static final String							REQ_END				= "reqEnd";
+
+	public static final String							REQ_REF				= "reqRef";
+
+	public static final String							COVERS				= "covers";
+
 	/**
 	 * Source document name.
 	 */
-	private final String								name;
+	@NotEmpty
+	@Pattern(regexp = "[^,]*")
+	private String										name;
 
 	/**
 	 * Source document path.
 	 */
-	private final String								sourcePath;
+	@NotEmpty
+	@Path
+	private String										sourcePath;
 
 	/**
 	 * Regular expression filtering files if {@link #sourcePath} is a folder.
 	 */
-	private final String								filter;
+	@NotNull
+	@Regex
+	private String										filter				= "";
 
 	/**
 	 * Regular expression for find the start of requirement.
 	 */
+	@NotNull
+	@Regex
 	private String										reqStart			= "";
 
 	/**
 	 * Regular expression for find the end of requirement.
 	 */
+	@NotNull
+	@Regex
 	private String										reqEnd				= "";
 
 	/**
 	 * Regular expression for find the requirement references.
 	 */
+	@NotNull
+	@Regex
 	private String										reqRef				= "";
 
 	/**
@@ -75,6 +111,7 @@ public class InputRequirementSource
 	/**
 	 * List of covered document sources by this document source.
 	 */
+	@NotNullElement
 	private final List<InputRequirementSource>			covers				= new ArrayList<>();
 
 	/**
@@ -99,7 +136,9 @@ public class InputRequirementSource
 	{
 		this.name = name;
 		this.sourcePath = Objects.requireNonNull(sourcePath);
-		this.filter = ((filter == null || filter.isEmpty()) ? null : filter);
+		this.filter = Strings.nullToEmpty(filter);
+
+		attributesGroup.put(Requirement.ATTRIBUTE_ID, null);
 	}
 
 	/**
@@ -111,6 +150,15 @@ public class InputRequirementSource
 	}
 
 	/**
+	 * @param newName
+	 *            the name to set
+	 */
+	public void setName(String newName)
+	{
+		name = newName;
+	}
+
+	/**
 	 * @return the document source path
 	 */
 	public String getSourcePath()
@@ -119,11 +167,29 @@ public class InputRequirementSource
 	}
 
 	/**
+	 * @param newSourcePath
+	 *            the sourcePath to set
+	 */
+	public void setSourcePath(String newSourcePath)
+	{
+		sourcePath = newSourcePath;
+	}
+
+	/**
 	 * @return regular expression filtering files if {@link #sourcePath} is a folder
 	 */
 	public String getFilter()
 	{
 		return filter;
+	}
+
+	/**
+	 * @param newFilter
+	 *            the filter to set
+	 */
+	public void setFilter(String newFilter)
+	{
+		filter = newFilter;
 	}
 
 	/**

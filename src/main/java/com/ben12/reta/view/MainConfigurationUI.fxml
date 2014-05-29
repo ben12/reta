@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Button?>
+<VBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.ben12.reta.view.MainConfigurationController" prefWidth="600"
+	prefHeight="700">
+	<children>
+		<MenuBar>
+			<menus>
+				<Menu text="_File" mnemonicParsing="true">
+					<items>
+						<MenuItem text="_Open" accelerator="Ctrl+O" mnemonicParsing="true" onAction="#open" />
+					</items>
+				</Menu>
+			</menus>
+		</MenuBar>
+		<GridPane fx:id="root" VBox.vgrow="ALWAYS" hgap="2" vgap="2">
+			<padding>
+				<Insets bottom="2" left="2" right="2" top="2" />
+			</padding>
+			<columnConstraints>
+				<ColumnConstraints hgrow="ALWAYS" />
+			</columnConstraints>
+			<rowConstraints>
+				<RowConstraints vgrow="ALWAYS" />
+				<RowConstraints vgrow="NEVER" />
+			</rowConstraints>
+			<children>
+				<GridPane GridPane.columnIndex="0" GridPane.rowIndex="0" hgap="2" vgap="5">
+					<padding>
+						<Insets bottom="0" left="0" right="0" top="2" />
+					</padding>
+					<columnConstraints>
+						<ColumnConstraints hgrow="NEVER" />
+						<ColumnConstraints hgrow="ALWAYS" />
+					</columnConstraints>
+					<rowConstraints>
+						<RowConstraints vgrow="NEVER" />
+						<RowConstraints vgrow="ALWAYS" />
+					</rowConstraints>
+					<children>
+						<VBox GridPane.columnIndex="0" GridPane.rowIndex="0" GridPane.rowSpan="2" spacing="5">
+							<children>
+								<Button text="New" minWidth="50" maxWidth="10000" onAction="#newSource">
+									<tooltip>
+										<Tooltip text="Add a new source" />
+									</tooltip>
+								</Button>
+								<Button fx:id="delete" text="Delete" minWidth="50" maxWidth="10000" onAction="#deleteSource">
+									<tooltip>
+										<Tooltip text="Delete selected source" />
+									</tooltip>
+								</Button>
+								<Button fx:id="upSource" text="Up" minWidth="50" maxWidth="10000" onAction="#upSource">
+									<tooltip>
+										<Tooltip text="Up selected source" />
+									</tooltip>
+								</Button>
+								<Button fx:id="downSource" text="Down" minWidth="50" maxWidth="10000" onAction="#downSource">
+									<tooltip>
+										<Tooltip text="Down selected source" />
+									</tooltip>
+								</Button>
+							</children>
+						</VBox>
+						<HBox GridPane.columnIndex="1" GridPane.rowIndex="0" alignment="CENTER" spacing="5">
+							<children>
+								<Label text="Output excel file:" />
+								<TextField fx:id="outputFile" promptText="Output excel file path" HBox.hgrow="ALWAYS" />
+								<Button text="Select output file" onAction="#selectOutputFile" />
+							</children>
+						</HBox>
+						<Accordion fx:id="sourceConfigurations" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+					</children>
+				</GridPane>
+				<GridPane GridPane.columnIndex="0" GridPane.rowIndex="1" hgap="5">
+					<columnConstraints>
+						<ColumnConstraints hgrow="NEVER" />
+						<ColumnConstraints hgrow="NEVER" />
+						<ColumnConstraints hgrow="ALWAYS" halignment="RIGHT" />
+					</columnConstraints>
+					<rowConstraints>
+						<RowConstraints vgrow="NEVER" />
+					</rowConstraints>
+					<children>
+						<Button fx:id="save" text="Save" GridPane.columnIndex="0" GridPane.rowIndex="0" onAction="#save" />
+						<Button fx:id="cancel" text="Cancel" GridPane.columnIndex="1" GridPane.rowIndex="0" onAction="#cancel" />
+						<Button fx:id="run" text="Run" GridPane.columnIndex="2" GridPane.rowIndex="0" onAction="#run" />
+					</children>
+				</GridPane>
+			</children>
+		</GridPane>
+	</children>
+</VBox>

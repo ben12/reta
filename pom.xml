@@ -40,6 +40,16 @@
 			<artifactId>poi-scratchpad</artifactId>
 			<version>3.10-FINAL</version>
 		</dependency>
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-validator</artifactId>
+			<version>5.1.0.Final</version>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.web</groupId>
+			<artifactId>el-impl</artifactId>
+			<version>2.2</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<pluginManagement>
@@ -52,8 +62,8 @@
 							<id>default-testCompile</id>
 							<phase>test-compile</phase>
 							<configuration>
-								<source>1.7</source>
-								<target>1.7</target>
+								<source>1.8</source>
+								<target>1.8</target>
 							</configuration>
 							<goals>
 								<goal>testCompile</goal>
@@ -63,8 +73,8 @@
 							<id>default-compile</id>
 							<phase>compile</phase>
 							<configuration>
-								<source>1.7</source>
-								<target>1.7</target>
+								<source>1.8</source>
+								<target>1.8</target>
 							</configuration>
 							<goals>
 								<goal>compile</goal>

@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.control.cell.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.geometry.*?>
+<?import com.ben12.reta.view.control.*?>
+<?import com.ben12.reta.view.validation.ValidationUtils?>
+
+<TitledPane xmlns:fx="http://javafx.com/fxml" fx:controller="com.ben12.reta.view.SourceConfigurationController"
+	fx:id="titledPane" prefWidth="400" prefHeight="500">
+	<content>
+		<ScrollPane fitToHeight="true" fitToWidth="true">
+			<content>
+				<GridPane hgap="5" vgap="5">
+					<columnConstraints>
+						<ColumnConstraints minWidth="50" />
+						<ColumnConstraints minWidth="100" hgrow="ALWAYS" />
+						<ColumnConstraints minWidth="50" />
+						<ColumnConstraints minWidth="50" />
+					</columnConstraints>
+					<rowConstraints>
+						<RowConstraints vgrow="NEVER" />
+						<RowConstraints vgrow="NEVER" />
+						<RowConstraints vgrow="NEVER" />
+						<RowConstraints vgrow="NEVER" />
+						<RowConstraints vgrow="NEVER" />
+						<RowConstraints vgrow="NEVER" />
+						<RowConstraints vgrow="ALWAYS" />
+						<RowConstraints vgrow="ALWAYS" />
+					</rowConstraints>
+					<children>
+						<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="0" text="Rename:" />
+						<TextField fx:id="name" promptText="Unique and not empty name" GridPane.columnIndex="1"
+							GridPane.rowIndex="0" GridPane.columnSpan="3">
+							<tooltip>
+								<RETATooltip text="${name.text}" />
+							</tooltip>
+						</TextField>
+						<ImageView fx:id="nameValidity" GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.halignment="LEFT"
+							GridPane.valignment="BOTTOM">
+							<GridPane.margin>
+								<Insets left="-2" bottom="-2" />
+							</GridPane.margin>
+							<image>
+								<ValidationUtils fx:constant="ERROR_IMAGE" />
+							</image>
+						</ImageView>
+
+						<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="1" text="Path:" />
+						<TextField fx:id="sourcePath" promptText="Path of file or directory" GridPane.columnIndex="1"
+							GridPane.rowIndex="1">
+							<tooltip>
+								<RETATooltip text="${sourcePath.text}" />
+							</tooltip>
+						</TextField>
+						<ImageView fx:id="sourcePathValidity" GridPane.columnIndex="1" GridPane.rowIndex="1"
+							GridPane.halignment="LEFT" GridPane.valignment="BOTTOM">
+							<GridPane.margin>
+								<Insets left="-2" bottom="-2" />
+							</GridPane.margin>
+							<image>
+								<ValidationUtils fx:constant="ERROR_IMAGE" />
+							</image>
+						</ImageView>
+						<Button text="File" GridPane.columnIndex="2" GridPane.rowIndex="1" maxWidth="10000" onAction="#chooseSourcePathFile">
+							<tooltip>
+								<RETATooltip text="Select a file" />
+							</tooltip>
+						</Button>
+						<Button text="Folder" GridPane.columnIndex="3" GridPane.rowIndex="1" maxWidth="10000" onAction="#chooseSourcePathFolder">
+							<tooltip>
+								<RETATooltip text="Select a folder" />
+							</tooltip>
+						</Button>
+
+						<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="2" text="Filter:" />
+						<TextField fx:id="filter" promptText="File regular expression to match if path is directory"
+							GridPane.columnIndex="1" GridPane.rowIndex="2" GridPane.columnSpan="3">
+							<tooltip>
+								<RETATooltip text="${filter.text}" />
+							</tooltip>
+						</TextField>
+						<ImageView fx:id="filterValidity" GridPane.columnIndex="1" GridPane.rowIndex="2" GridPane.halignment="LEFT"
+							GridPane.valignment="BOTTOM">
+							<GridPane.margin>
+								<Insets left="-2" bottom="-2" />
+							</GridPane.margin>
+							<image>
+								<ValidationUtils fx:constant="ERROR_IMAGE" />
+							</image>
+						</ImageView>
+
+						<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="3" text="Requirement start:" />
+						<TextField fx:id="reqStart" promptText="Regular expression to match for requirement start"
+							GridPane.columnIndex="1" GridPane.rowIndex="3" GridPane.columnSpan="3">
+							<tooltip>
+								<RETATooltip text="${reqStart.text}" />
+							</tooltip>
+						</TextField>
+						<ImageView fx:id="reqStartValidity" GridPane.columnIndex="1" GridPane.rowIndex="3" GridPane.halignment="LEFT"
+							GridPane.valignment="BOTTOM">
+							<GridPane.margin>
+								<Insets left="-2" bottom="-2" />
+							</GridPane.margin>
+							<image>
+								<ValidationUtils fx:constant="ERROR_IMAGE" />
+							</image>
+						</ImageView>
+
+						<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="4" text="Requirement end:" />
+						<TextField fx:id="reqEnd" promptText="Regular expression to match for requirement end"
+							GridPane.columnIndex="1" GridPane.rowIndex="4" GridPane.columnSpan="3">
+							<tooltip>
+								<RETATooltip text="${reqEnd.text}" />
+							</tooltip>
+						</TextField>
+						<ImageView fx:id="reqEndValidity" GridPane.columnIndex="1" GridPane.rowIndex="4" GridPane.halignment="LEFT"
+							GridPane.valignment="BOTTOM">
+							<GridPane.margin>
+								<Insets left="-2" bottom="-2" />
+							</GridPane.margin>
+							<image>
+								<ValidationUtils fx:constant="ERROR_IMAGE" />
+							</image>
+						</ImageView>
+
+						<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="5" text="Requirement reference:" />
+						<TextField fx:id="reqRef" promptText="Regular expression to match for requirement reference"
+							GridPane.columnIndex="1" GridPane.rowIndex="5" GridPane.columnSpan="3">
+							<tooltip>
+								<RETATooltip text="${reqRef.text}" />
+							</tooltip>
+						</TextField>
+						<ImageView fx:id="reqRefValidity" GridPane.columnIndex="1" GridPane.rowIndex="5" GridPane.halignment="LEFT"
+							GridPane.valignment="BOTTOM">
+							<GridPane.margin>
+								<Insets left="-2" bottom="-2" />
+							</GridPane.margin>
+							<image>
+								<ValidationUtils fx:constant="ERROR_IMAGE" />
+							</image>
+						</ImageView>
+
+						<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="6" text="Covers:" />
+						<TextField fx:id="covers" promptText="Cover name list separated by ," GridPane.columnIndex="1"
+							GridPane.rowIndex="6" GridPane.columnSpan="3">
+							<tooltip>
+								<RETATooltip text="${reqRef.text}" />
+							</tooltip>
+						</TextField>
+						<ImageView fx:id="coversValidity" GridPane.columnIndex="1" GridPane.rowIndex="6" GridPane.halignment="LEFT"
+							GridPane.valignment="BOTTOM">
+							<GridPane.margin>
+								<Insets left="-2" bottom="-2" />
+							</GridPane.margin>
+							<image>
+								<ValidationUtils fx:constant="ERROR_IMAGE" />
+							</image>
+						</ImageView>
+
+						<GridPane hgap="2" GridPane.columnIndex="0" GridPane.rowIndex="7" GridPane.columnSpan="4">
+							<padding>
+								<Insets bottom="2" left="2" right="2" top="2" />
+							</padding>
+							<columnConstraints>
+								<ColumnConstraints minWidth="50" />
+								<ColumnConstraints hgrow="ALWAYS" />
+							</columnConstraints>
+							<rowConstraints>
+								<RowConstraints vgrow="ALWAYS" />
+								<RowConstraints vgrow="NEVER" />
+							</rowConstraints>
+							<children>
+								<VBox GridPane.columnIndex="0" GridPane.rowIndex="0" spacing="5">
+									<children>
+										<Button fx:id="deleteAttribute" text="Delete" maxWidth="1000" onAction="#deleteAttribute" />
+									</children>
+								</VBox>
+
+								<MapTableView fx:id="attributesTable" GridPane.columnIndex="1" GridPane.rowIndex="0" editable="true">
+									<columns>
+										<TableColumn fx:id="reqAttNameColumn" text="Attribute" />
+										<TableColumn fx:id="reqAttGroupColumn" text="Start Regex Group" sortType="ASCENDING" />
+									</columns>
+									<columnResizePolicy>
+										<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+									</columnResizePolicy>
+								</MapTableView>
+
+								<HBox GridPane.columnIndex="1" GridPane.rowIndex="1" spacing="5">
+									<children>
+										<TextField fx:id="newAttribute" promptText="Attribute Name" prefWidth="${reqAttNameColumn.width}" />
+										<Button fx:id="addNewAttribute" text="New" minWidth="50" onAction="#addNewAttribute" />
+									</children>
+								</HBox>
+							</children>
+						</GridPane>
+
+						<GridPane hgap="2" GridPane.columnIndex="0" GridPane.rowIndex="8" GridPane.columnSpan="4">
+							<padding>
+								<Insets bottom="2" left="2" right="2" top="2" />
+							</padding>
+							<columnConstraints>
+								<ColumnConstraints minWidth="50" />
+								<ColumnConstraints hgrow="ALWAYS" />
+							</columnConstraints>
+							<rowConstraints>
+								<RowConstraints vgrow="ALWAYS" />
+								<RowConstraints vgrow="NEVER" />
+							</rowConstraints>
+							<children>
+								<VBox GridPane.columnIndex="0" GridPane.rowIndex="0" spacing="5">
+									<children>
+										<Button fx:id="deleteReference" text="Delete" maxWidth="1000" onAction="#deleteReference" />
+									</children>
+								</VBox>
+
+								<MapTableView fx:id="referencesTable" GridPane.columnIndex="1" GridPane.rowIndex="0" editable="true">
+									<columns>
+										<TableColumn fx:id="refAttNameColumn" text="Attribute" />
+										<TableColumn fx:id="refAttGroupColumn" text="Reference Regex Group" sortType="ASCENDING" />
+									</columns>
+									<columnResizePolicy>
+										<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+									</columnResizePolicy>
+								</MapTableView>
+
+								<HBox GridPane.columnIndex="1" GridPane.rowIndex="1" spacing="5">
+									<children>
+										<TextField fx:id="newReference" promptText="Attribute Name" prefWidth="${reqAttNameColumn.width}" />
+										<Button fx:id="addNewReference" text="New" minWidth="50" onAction="#addNewReference" />
+									</children>
+								</HBox>
+							</children>
+						</GridPane>
+					</children>
+				</GridPane>
+			</content>
+		</ScrollPane>
+	</content>
+</TitledPane>

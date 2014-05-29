@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><templates><template autoinsert="true" context="fieldcomment_context" deleted="false" description="Comment for fields" enabled="true" id="org.eclipse.jdt.ui.text.codetemplates.fieldcomment" name="fieldcomment">/**
+ * 
+ */</template><template autoinsert="true" context="overridecomment_context" deleted="false" description="Comment for overriding methods" enabled="true" id="org.eclipse.jdt.ui.text.codetemplates.overridecomment" name="overridecomment">/* (non-Javadoc)
+ * ${see_to_overridden}
+ */</template><template autoinsert="true" context="delegatecomment_context" deleted="false" description="Comment for delegate methods" enabled="true" id="org.eclipse.jdt.ui.text.codetemplates.delegatecomment" name="delegatecomment">/**
+ * ${tags}
+ * ${see_to_target}
+ */</template><template autoinsert="true" context="methodcomment_context" deleted="false" description="Comment for non-overriding methods" enabled="true" id="org.eclipse.jdt.ui.text.codetemplates.methodcomment" name="methodcomment">/**
+ * ${tags}
+ */</template><template autoinsert="true" context="typecomment_context" deleted="false" description="Comment for created types" enabled="true" id="org.eclipse.jdt.ui.text.codetemplates.typecomment" name="typecomment">/**
+ * @author ${user}
+ *
+ * ${tags}
+ */</template><template autoinsert="true" context="settercomment_context" deleted="false" description="Comment for setter method" enabled="true" id="org.eclipse.jdt.ui.text.codetemplates.settercomment" name="settercomment">/**
+ * @param ${param} the ${bare_field_name} to set
+ */</template><template autoinsert="true" context="gettercomment_context" deleted="false" description="Comment for getter method" enabled="true" id="org.eclipse.jdt.ui.text.codetemplates.gettercomment" name="gettercomment">/**
+ * @return the ${bare_field_name}
+ */</template><template autoinsert="false" context="filecomment_context" deleted="false" description="Comment for created Java files" enabled="true" id="org.eclipse.jdt.ui.text.codetemplates.filecomment" name="filecomment">// Package : ${package_name}&#13;
+// File : ${file_name}&#13;
+// &#13;
+// Copyright (C) ${year} ${user}&#13;
+//&#13;
+// This file is part of RETA (Requirement Engineering Traceability Analysis).&#13;
+//&#13;
+// RETA is free software: you can redistribute it and/or modify&#13;
+// it under the terms of the GNU General Public License as published by&#13;
+// the Free Software Foundation, either version 3 of the License, or&#13;
+// (at your option) any later version.&#13;
+//&#13;
+// RETA is distributed in the hope that it will be useful,&#13;
+// but WITHOUT ANY WARRANTY; without even the implied warranty of&#13;
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the&#13;
+// GNU General Public License for more details.&#13;
+//&#13;
+// You should have received a copy of the GNU General Public License&#13;
+// along with RETA.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</template><template autoinsert="true" context="constructorcomment_context" deleted="false" description="Comment for created constructors" enabled="true" id="org.eclipse.jdt.ui.text.codetemplates.constructorcomment" name="constructorcomment">/**
+ * ${tags}
+ */</template></templates>

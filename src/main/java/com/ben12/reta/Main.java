@@ -20,72 +20,60 @@
 
 package com.ben12.reta;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-
-import com.ben12.reta.util.RETAAnalysis;
+import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.fxml.JavaFXBuilderFactory;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
 
 /**
  * @author Benoît Moreau (ben.12)
  */
-public class Main
+public class Main extends Application
 {
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see javafx.application.Application#start(javafx.stage.Stage)
+	 */
+	@Override
+	public void start(Stage stage) throws Exception
+	{
+		try
+		{
+			FXMLLoader loader = new FXMLLoader();
+			loader.setBuilderFactory(new JavaFXBuilderFactory());
+			loader.setLocation(Main.class.getResource("view/MainConfigurationUI.fxml"));
+			Parent root = (Parent) loader.load();
+
+			stage.setScene(new Scene(root));
+			stage.setTitle("RETA Configuration");
+			stage.sizeToScene();
+			stage.show();
+		}
+		catch (Exception e)
+		{
+			Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", e);
+			System.exit(0);
+		}
+	}
 
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args)
 	{
-		Path doc = Paths.get("data", "analysis.ini");
-
-		JOptionPane optionPane = new JOptionPane("Successful analyse.", JOptionPane.INFORMATION_MESSAGE);
-		optionPane.addPropertyChangeListener(JOptionPane.VALUE_PROPERTY, new PropertyChangeListener()
+		Logger.getLogger("com.ben12.reta").setLevel(Level.ALL);
+		for (Handler h : Logger.getLogger("").getHandlers())
 		{
-			@Override
-			public void propertyChange(PropertyChangeEvent p)
-			{
-				System.exit(0);
-			}
-		});
-		JFrame frame = new JFrame();
-		frame.getContentPane().add(optionPane);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-		try
-		{
-			RETAAnalysis.getInstance().configure(doc.toFile());
-			RETAAnalysis.getInstance().parse();
-			RETAAnalysis.getInstance().analyse();
-
-			try
-			{
-				// System.out.println(RETAAnalysis.getInstance().toString());
-
-				RETAAnalysis.getInstance().writeExcel();
-
-				optionPane.setMessage("Successful analyse.");
-			}
-			catch (Exception e)
-			{
-				e.printStackTrace();
-
-				optionPane.setMessage("Error during write excel.");
-			}
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-
-			optionPane.setMessage("Error during analyse.");
+			h.setLevel(Level.ALL);
 		}
 
-		frame.pack();
-		frame.setLocationRelativeTo(null);
-		frame.setVisible(true);
+		Application.launch(Main.class, args);
 	}
 }
