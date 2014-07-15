@@ -304,7 +304,7 @@ public class MainConfigurationController implements Initializable
 
 		File file = fileChooser.showSaveDialog(root.getScene().getWindow());
 
-		if (file != null && file.isFile())
+		if (file != null)
 		{
 			bufferingManager.commit();
 			panes = new ArrayList<>(sourceConfigurations.getPanes());
@@ -317,8 +317,11 @@ public class MainConfigurationController implements Initializable
 
 			try
 			{
-				Files.copy(retaAnalysis.getConfig(), new File(retaAnalysis.getConfig().getPath() + ".bak"));
-				retaAnalysis.saveConfig();
+				if (file.isFile())
+				{
+					Files.copy(retaAnalysis.getConfig(), new File(retaAnalysis.getConfig().getPath() + ".bak"));
+				}
+				retaAnalysis.saveConfig(file);
 			}
 			catch (IOException e)
 			{
@@ -357,11 +360,18 @@ public class MainConfigurationController implements Initializable
 	}
 
 	@FXML
-	protected void run(ActionEvent event) throws IOException
+	protected void run(ActionEvent event)
 	{
-		RETAAnalysis.getInstance().parse();
-		RETAAnalysis.getInstance().analyse();
-		RETAAnalysis.getInstance().writeExcel();
+		try
+		{
+			RETAAnalysis.getInstance().parse();
+			RETAAnalysis.getInstance().analyse();
+			RETAAnalysis.getInstance().writeExcel();
+		}
+		catch (IOException e)
+		{
+			Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", e);
+		}
 	}
 
 	@FXML

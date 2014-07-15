@@ -41,9 +41,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -432,6 +429,7 @@ public final class RETAAnalysis
 					.collect(Collectors.joining(",")));
 
 			ini.store(iniFile);
+			config = iniFile;
 		}
 		catch (IOException e)
 		{
@@ -442,35 +440,22 @@ public final class RETAAnalysis
 
 	public void parse() throws IOException
 	{
-		int processors = Runtime.getRuntime().availableProcessors();
-		ExecutorService executor = Executors.newFixedThreadPool(processors);
 		final IOException[] ex = { null };
 
-		for (final InputRequirementSource requirementSource : requirementSources.values())
-		{
-			executor.execute(() -> {
-				try
-				{
-					parse(requirementSource);
-				}
-				catch (IOException e)
-				{
-					ex[0] = e;
-					logger.log(Level.SEVERE, "Parsing source " + requirementSource.getName(), e);
-				}
-			});
-		}
-
-		executor.shutdown();
-
-		try
-		{
-			executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-		}
-		catch (InterruptedException e)
-		{
-			logger.log(Level.SEVERE, "", e);
-		}
+		requirementSources.values()
+				.parallelStream()
+				.forEach(
+						requirementSource -> {
+							try
+							{
+								parse(requirementSource);
+							}
+							catch (IOException e)
+							{
+								ex[0] = new IOException("Parsing source \"" + requirementSource.getName() + "\": "
+										+ e.getLocalizedMessage(), e);
+							}
+						});
 
 		if (ex[0] != null)
 		{
@@ -590,13 +575,10 @@ public final class RETAAnalysis
 					boolean hasNextStart = matcherStart.find(matcherStart.end());
 					while (hasNextStart && matcherStart.start() < endPos)
 					{
-						logger.info("Ignore matching requirement without end :" + req);
+						logger.info(requirementSource.getName() + ": Ignore matching requirement without end :" + req);
 						pos = matcherStart.start();
+						req = matcherStart.group();
 						hasNextStart = matcherStart.find(matcherStart.end());
-						if (hasNextStart)
-						{
-							req = matcherStart.group();
-						}
 					}
 					matcherStart.find(pos);
 				}
@@ -621,8 +603,12 @@ public final class RETAAnalysis
 					for (Map.Entry<String, Integer> attEntry : requirementSource.getAttributesGroup().entrySet())
 					{
 						String attName = attEntry.getKey();
-						String reqAtt = Strings.nullToEmpty(matcherStart.group(attEntry.getValue()));
-						requirement.putAttribut(attName, reqAtt);
+						Integer group = attEntry.getValue();
+						if (group != null && group <= matcherStart.groupCount())
+						{
+							String reqAtt = Strings.nullToEmpty(matcherStart.group(group));
+							requirement.putAttribut(attName, reqAtt);
+						}
 					}
 
 					if (patternRef != null)
@@ -665,8 +651,12 @@ public final class RETAAnalysis
 			for (Map.Entry<String, Integer> attEntry : requirementSource.getRefAttributesGroup().entrySet())
 			{
 				String attName = attEntry.getKey();
-				String reqAtt = Strings.nullToEmpty(matcherRef.group(attEntry.getValue()));
-				reference.putAttribut(attName, reqAtt);
+				Integer group = attEntry.getValue();
+				if (group != null && group <= matcherRef.groupCount())
+				{
+					String reqAtt = Strings.nullToEmpty(matcherRef.group(group));
+					reference.putAttribut(attName, reqAtt);
+				}
 			}
 
 			requirement.addReference(reference);
@@ -722,9 +712,9 @@ public final class RETAAnalysis
 			logger.info("Start analyse " + source.getName());
 
 			List<InputRequirementSource> covers = source.getCovers();
+			TreeSet<Requirement> reqSource = source.getRequirements();
 			for (InputRequirementSource coverSource : covers)
 			{
-				TreeSet<Requirement> reqSource = source.getRequirements();
 				TreeSet<Requirement> reqCover = coverSource.getRequirements();
 				TreeSet<Requirement> reqCoverred = new TreeSet<>(reqCover);
 				for (Requirement req : reqSource)
@@ -923,7 +913,7 @@ public final class RETAAnalysis
 		{
 			List<String> idAndVersion = Arrays.asList(Requirement.ATTRIBUTE_TEXT, Requirement.ATTRIBUTE_ID,
 					Requirement.ATTRIBUTE_VERSION);
-			Set<String> attributes = requirementSource.getRefAttributesGroup().keySet();
+			Set<String> attributes = new HashSet<>(requirementSource.getRefAttributesGroup().keySet());
 			attributes.removeAll(idAndVersion);
 
 			Row rowReqCount = sheet.createRow(row++);
@@ -1026,7 +1016,7 @@ public final class RETAAnalysis
 	{
 		List<String> idAndVersion = Arrays.asList(Requirement.ATTRIBUTE_TEXT, Requirement.ATTRIBUTE_ID,
 				Requirement.ATTRIBUTE_VERSION);
-		Set<String> attributes = requirementSource.getAttributesGroup().keySet();
+		Set<String> attributes = new HashSet<>(requirementSource.getAttributesGroup().keySet());
 		attributes.removeAll(idAndVersion);
 
 		int reqCount = requirementSource.getRequirements().size();

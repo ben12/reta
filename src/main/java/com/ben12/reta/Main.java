@@ -20,8 +20,9 @@
 
 package com.ben12.reta;
 
-import java.util.logging.Handler;
+import java.io.IOException;
 import java.util.logging.Level;
+import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import javafx.application.Application;
@@ -68,10 +69,14 @@ public class Main extends Application
 	 */
 	public static void main(String[] args)
 	{
-		Logger.getLogger("com.ben12.reta").setLevel(Level.ALL);
-		for (Handler h : Logger.getLogger("").getHandlers())
+		try
 		{
-			h.setLevel(Level.ALL);
+			LogManager.getLogManager().readConfiguration(
+					ClassLoader.getSystemResourceAsStream("com/ben12/reta/resources/logging/logging.properties"));
+		}
+		catch (IOException e)
+		{
+			Logger.getLogger(Main.class.getName()).log(Level.SEVERE, "", e);
 		}
 
 		Application.launch(Main.class, args);

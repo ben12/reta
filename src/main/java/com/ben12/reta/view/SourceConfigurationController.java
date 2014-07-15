@@ -26,15 +26,12 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.ObjectBinding;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
-import javafx.beans.property.adapter.JavaBeanObjectPropertyBuilder;
 import javafx.beans.property.adapter.JavaBeanStringPropertyBuilder;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -71,101 +68,101 @@ import com.google.common.base.Splitter;
  */
 public class SourceConfigurationController
 {
-	private BufferingManager								bufferingManager;
+	private BufferingManager											bufferingManager;
 
 	/** Keeps a reference on buffered properties. */
-	private final List<Buffering<?>>						bufferedProperties	= new ArrayList<>();
+	private final List<Buffering<?>>									bufferedProperties	= new ArrayList<>();
 
-	private ObservableList<InputRequirementSource>			sources				= null;
+	private ObservableList<InputRequirementSource>						sources				= null;
 
-	private ObservableList<ObjectProperty<String>>			sourcesName			= null;
-
-	@FXML
-	private TitledPane										titledPane;
+	private ObservableList<ObjectProperty<String>>						sourcesName			= null;
 
 	@FXML
-	private TextField										name;
+	private TitledPane													titledPane;
 
 	@FXML
-	private ImageView										nameValidity;
+	private TextField													name;
 
 	@FXML
-	private TextField										sourcePath;
+	private ImageView													nameValidity;
 
 	@FXML
-	private ImageView										sourcePathValidity;
+	private TextField													sourcePath;
 
 	@FXML
-	private TextField										filter;
+	private ImageView													sourcePathValidity;
 
 	@FXML
-	private ImageView										filterValidity;
+	private TextField													filter;
 
 	@FXML
-	private TextField										reqStart;
+	private ImageView													filterValidity;
 
 	@FXML
-	private ImageView										reqStartValidity;
+	private TextField													reqStart;
 
 	@FXML
-	private TextField										reqEnd;
+	private ImageView													reqStartValidity;
 
 	@FXML
-	private ImageView										reqEndValidity;
+	private TextField													reqEnd;
 
 	@FXML
-	private TextField										reqRef;
+	private ImageView													reqEndValidity;
 
 	@FXML
-	private ImageView										reqRefValidity;
+	private TextField													reqRef;
 
 	@FXML
-	private TextField										covers;
+	private ImageView													reqRefValidity;
 
 	@FXML
-	private ImageView										coversValidity;
+	private TextField													covers;
 
 	@FXML
-	private MapTableView<String, Integer>					attributesTable;
+	private ImageView													coversValidity;
 
 	@FXML
-	private TableColumn<Entry<String, Integer>, String>		reqAttNameColumn;
+	private MapTableView<String, Integer>								attributesTable;
 
 	@FXML
-	private TableColumn<Entry<String, Integer>, Integer>	reqAttGroupColumn;
+	private TableColumn<MapTableView<String, Integer>.Entry, String>	reqAttNameColumn;
 
 	@FXML
-	private TextField										newAttribute;
+	private TableColumn<MapTableView<String, Integer>.Entry, Integer>	reqAttGroupColumn;
 
 	@FXML
-	private Button											addNewAttribute;
+	private TextField													newAttribute;
 
 	@FXML
-	private Button											deleteAttribute;
-
-	private ObservableMapBuffering<String, Integer>			attributeMap;
+	private Button														addNewAttribute;
 
 	@FXML
-	private MapTableView<String, Integer>					referencesTable;
+	private Button														deleteAttribute;
+
+	private ObservableMapBuffering<String, Integer>						attributeMap;
 
 	@FXML
-	private TableColumn<Entry<String, Integer>, String>		refAttNameColumn;
+	private MapTableView<String, Integer>								referencesTable;
 
 	@FXML
-	private TableColumn<Entry<String, Integer>, Integer>	refAttGroupColumn;
+	private TableColumn<MapTableView<String, Integer>.Entry, String>	refAttNameColumn;
 
 	@FXML
-	private TextField										newReference;
+	private TableColumn<MapTableView<String, Integer>.Entry, Integer>	refAttGroupColumn;
 
 	@FXML
-	private Button											addNewReference;
+	private TextField													newReference;
 
 	@FXML
-	private Button											deleteReference;
+	private Button														addNewReference;
 
-	private ObservableMapBuffering<String, Integer>			referenceMap;
+	@FXML
+	private Button														deleteReference;
 
-	private FileChooser										fileChooser			= null;
+	private ObservableMapBuffering<String, Integer>						referenceMap;
+
+	private FileChooser													fileChooser			= null;
 
 	public void initializeLabeled(TextInputControl input, ImageView validity,
 			SimpleObjectPropertyBuffering<String> property)
@@ -265,24 +262,12 @@ public class SourceConfigurationController
 		};
 		callBacks.add(otherInputNameChanged);
 
-		final Callback<CellDataFeatures<Entry<String, Integer>, String>, ObservableValue<String>> cvpKey = (cdf) -> new ReadOnlyStringWrapper(
-				cdf.getValue().getKey());
+		final Callback<CellDataFeatures<MapTableView<String, Integer>.Entry, String>, ObservableValue<String>> cvpKey = (
+				cdf) -> new ReadOnlyStringWrapper(cdf.getValue().getKey());
 
-		final Callback<CellDataFeatures<Entry<String, Integer>, Integer>, ObservableValue<Integer>> cvpValue = (cdf) -> {
-			ObservableValue<Integer> value = null;
-			try
-			{
-				// suppress unchecked conversion (do not use create(), and call bean() and name() separately)
-				JavaBeanObjectPropertyBuilder<Integer> builder = new JavaBeanObjectPropertyBuilder<>();
-				// Use "EntryWrapper" wrapped against Method.invoke() bug https://bugs.openjdk.java.net/browse/JDK-4071957
-				builder.bean(new EntryWrapper(cdf.getValue())).name("value");
-				value = builder.build();
-			}
-			catch (NoSuchMethodException e)
-			{
-				Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", e);
-			}
-			return value;
+		final Callback<CellDataFeatures<MapTableView<String, Integer>.Entry, Integer>, ObservableValue<Integer>> cvpValue = (
+				cdf) -> {
+			return cdf.getValue().valueProperty();
 		};
 
 		attributeMap = bufferingManager.buffering(FXCollections.observableMap(requirementSource.getAttributesGroup()));
@@ -374,10 +359,10 @@ public class SourceConfigurationController
 	@FXML
 	protected void deleteAttribute(ActionEvent event)
 	{
-		int index = attributesTable.getSelectionModel().getSelectedIndex();
-		if (index >= 0)
+		MapTableView<String, Integer>.Entry entry = attributesTable.getSelectionModel().getSelectedItem();
+		if (entry != null)
 		{
-			attributesTable.getItems().remove(index);
+			attributeMap.remove(entry.getKey());
 		}
 	}
 
@@ -394,10 +379,10 @@ public class SourceConfigurationController
 	@FXML
 	protected void deleteReference(ActionEvent event)
 	{
-		int index = referencesTable.getSelectionModel().getSelectedIndex();
-		if (index >= 0)
+		MapTableView<String, Integer>.Entry entry = referencesTable.getSelectionModel().getSelectedItem();
+		if (entry != null)
 		{
-			referencesTable.getItems().remove(index);
+			referenceMap.remove(entry.getKey());
 		}
 	}
 

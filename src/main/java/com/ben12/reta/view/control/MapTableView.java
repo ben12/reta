@@ -20,7 +20,13 @@
 package com.ben12.reta.view.control;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
+import javafx.application.Platform;
+import javafx.beans.property.Property;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
@@ -30,13 +36,13 @@ import javafx.scene.control.TableView;
 /**
  * @author Benoît Moreau (ben.12)
  */
-public class MapTableView<K, V> extends TableView<Map.Entry<K, V>>
+public class MapTableView<K, V> extends TableView<MapTableView<K, V>.Entry>
 {
-	private final ObservableList<Map.Entry<K, V>>	obsList;
+	private final ObservableList<Entry>		obsList;
 
-	private final MapChangeListener<K, V>			mapChange;
+	private final MapChangeListener<K, V>	mapChange;
 
-	private ObservableMap<K, V>						map;
+	private ObservableMap<K, V>				map;
 
 	public MapTableView()
 	{
@@ -46,24 +52,29 @@ public class MapTableView<K, V> extends TableView<Map.Entry<K, V>>
 	public MapTableView(ObservableMap<K, V> theMap)
 	{
 		map = theMap;
-		obsList = FXCollections.observableArrayList(map.entrySet());
+		obsList = FXCollections.observableArrayList(map.entrySet()
+				.stream()
+				.map(me -> new Entry(me))
+				.collect(Collectors.toList()));
 		setItems(obsList);
 
 		mapChange = (MapChangeListener.Change<? extends K, ? extends V> change) -> {
-			if (change.wasAdded() ^ change.wasRemoved())
+			if (!change.wasAdded() && change.wasRemoved())
 			{
-				if (change.wasAdded())
-				{
-					obsList.add(map.entrySet()
-							.parallelStream()
-							.filter(me -> me.getKey().equals(change.getKey()))
-							.findFirst()
-							.get());
-				}
-				if (change.wasRemoved())
-				{
-					obsList.removeIf(me -> me.getKey().equals(change.getKey()));
-				}
+				obsList.removeIf(me -> me.getKey().equals(change.getKey()));
+			}
+			else if (change.wasAdded() && !change.wasRemoved())
+			{
+				AtomicInteger index = new AtomicInteger(-1);
+				Map.Entry<K, V> entry = map.entrySet().stream().filter(me -> {
+					index.getAndIncrement();
+					return me.getKey().equals(change.getKey());
+				}).findFirst().get();
+				obsList.add(index.get(), new Entry(entry));
+			}
+			else
+			{
+				Platform.runLater(() -> getParent().requestLayout());
 			}
 		};
 
@@ -83,9 +94,60 @@ public class MapTableView<K, V> extends TableView<Map.Entry<K, V>>
 			map = (newMap == null ? FXCollections.observableHashMap() : newMap);
 
 			obsList.clear();
-			obsList.addAll(map.entrySet());
+			obsList.addAll(map.entrySet().stream().map(me -> new Entry(me)).collect(Collectors.toList()));
 
 			map.addListener(mapChange);
+		}
+	}
+
+	public class Entry implements MapChangeListener<K, V>
+	{
+		private final Map.Entry<K, V>	entry;
+
+		private final Property<V>		value	= new SimpleObjectProperty<>();
+
+		private final ChangeListener<V>	changeListener;
+
+		/**
+		 * 
+		 */
+		public Entry(Map.Entry<K, V> mapEntry)
+		{
+			entry = mapEntry;
+			value.setValue(entry.getValue());
+			changeListener = (observable, oldValue, newValue) -> {
+				map.removeListener(Entry.this);
+				entry.setValue(newValue);
+				map.addListener(Entry.this);
+			};
+			value.addListener(changeListener);
+			map.addListener(this);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see javafx.collections.MapChangeListener#onChanged(javafx.collections.MapChangeListener.Change)
+		 */
+		@Override
+		public void onChanged(javafx.collections.MapChangeListener.Change<? extends K, ? extends V> change)
+		{
+			if (change.getKey().equals(entry.getKey()) && change.wasAdded())
+			{
+				value.removeListener(changeListener);
+				value.setValue(change.getValueAdded());
+				value.addListener(changeListener);
+			}
+		}
+
+		public K getKey()
+		{
+			return entry.getKey();
+		}
+
+		public Property<V> valueProperty()
+		{
+			return value;
 		}
 	}
 }
