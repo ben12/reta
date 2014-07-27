@@ -5,13 +5,14 @@
 <?import javafx.scene.image.*?>
 <?import javafx.geometry.*?>
 <?import javafx.scene.text.*?>
-<?import javafx.scene.control.MenuItem?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.control.Button?>
+<?import com.ben12.reta.view.control.*?>
+<?import com.ben12.reta.view.validation.*?>
+
 <VBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.ben12.reta.view.MainConfigurationController" prefWidth="600"
 	prefHeight="700">
+	<fx:define>
+		<Image fx:id="errorImg" url="@/com/ben12/reta/resources/images/error.png" />
+	</fx:define>
 	<children>
 		<MenuBar>
 			<menus>
@@ -74,7 +75,23 @@
 						<HBox GridPane.columnIndex="1" GridPane.rowIndex="0" alignment="CENTER" spacing="5">
 							<children>
 								<Label text="Output excel file:" />
-								<TextField fx:id="outputFile" promptText="Output excel file path" HBox.hgrow="ALWAYS" />
+								<StackPane HBox.hgrow="ALWAYS">
+									<children>
+										<TextField fx:id="outputFile" promptText="Output excel file path">
+											<tooltip>
+												<RETATooltip text="${outputFile.text}" />
+											</tooltip>
+										</TextField>
+										<ImageView fx:id="outputFileValidity" StackPane.alignment="BOTTOM_LEFT">
+											<StackPane.margin>
+												<Insets left="-2" bottom="-2" />
+											</StackPane.margin>
+											<image>
+												<fx:reference source="errorImg" />
+											</image>
+										</ImageView>
+									</children>
+								</StackPane>
 								<Button text="Select output file" onAction="#selectOutputFile" />
 							</children>
 						</HBox>

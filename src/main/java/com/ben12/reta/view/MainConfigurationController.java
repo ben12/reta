@@ -22,6 +22,8 @@ package com.ben12.reta.view;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -29,6 +31,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javafx.beans.binding.Bindings;
+import javafx.beans.binding.IntegerBinding;
 import javafx.beans.property.ObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -42,6 +45,7 @@ import javafx.scene.control.Accordion;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
+import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.util.Callback;
@@ -51,6 +55,8 @@ import com.ben12.reta.model.InputRequirementSource;
 import com.ben12.reta.util.RETAAnalysis;
 import com.ben12.reta.view.buffering.BufferingManager;
 import com.ben12.reta.view.buffering.ObservableListBuffering;
+import com.ben12.reta.view.buffering.SimpleObjectPropertyBuffering;
+import com.ben12.reta.view.validation.ValidationUtils;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
 
@@ -61,7 +67,7 @@ public class MainConfigurationController implements Initializable
 {
 	private final BufferingManager											bufferingManager	= new BufferingManager();
 
-	private final ObjectProperty<File>										bufferedOutput;
+	private final SimpleObjectPropertyBuffering<Path>						bufferedOutput;
 
 	private final ObservableList<InputRequirementSource>					sources				= FXCollections.observableArrayList();
 
@@ -73,8 +79,6 @@ public class MainConfigurationController implements Initializable
 
 	private final ObservableList<Callback<InputRequirementSource, Void>>	nameChangeCallBacks	= FXCollections.observableArrayList();
 
-	private final ObservableList<Callback<InputRequirementSource, Void>>	bufferedNameChangeCallBacks;
-
 	private final Callback<InputRequirementSource, Void>					refreshAll			= (InputRequirementSource e) -> {
 																									nameChangeCallBacks.stream()
 																											.forEach(
@@ -82,7 +86,7 @@ public class MainConfigurationController implements Initializable
 																									return null;
 																								};
 
-	private List<TitledPane>												panes;
+	private List<TitledPane>												panes				= new ArrayList<>();
 
 	@FXML
 	private Parent															root;
@@ -111,6 +115,9 @@ public class MainConfigurationController implements Initializable
 	@FXML
 	private TextField														outputFile;
 
+	@FXML
+	private ImageView														outputFileValidity;
+
 	/**
 	 * @throws NoSuchMethodException
 	 */
@@ -121,7 +128,6 @@ public class MainConfigurationController implements Initializable
 		bufferingManager.add((ObservableListBuffering<InputRequirementSource>) bufferedSources);
 
 		bufferedSourcesName = bufferingManager.buffering(sourcesName);
-		bufferedNameChangeCallBacks = bufferingManager.buffering(nameChangeCallBacks);
 		bufferedOutput = bufferingManager.bufferingObject(RETAAnalysis.getInstance(), "output");
 	}
 
@@ -135,12 +141,24 @@ public class MainConfigurationController implements Initializable
 			removeSource(0);
 		}
 
-		outputFile.setText(RETAAnalysis.getInstance().getOutput().getPath());
+		try
+		{
+			sources.addAll(RETAAnalysis.getInstance().getRequirementSources().values());
 
-		bufferingManager.commit();
-		panes = new ArrayList<>();
+			for (InputRequirementSource requirementSource : sources)
+			{
+				sourcesName.add(addSource(requirementSource));
+				bufferedSources.add(requirementSource);
+			}
 
-		initialize(null, null);
+			panes = new ArrayList<>(sourceConfigurations.getPanes());
+
+			bufferingManager.revert();
+		}
+		catch (Exception e)
+		{
+			Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", e);
+		}
 	}
 
 	/*
@@ -153,33 +171,59 @@ public class MainConfigurationController implements Initializable
 	{
 		try
 		{
-			sources.addAll(RETAAnalysis.getInstance().getRequirementSources().values());
-
-			for (InputRequirementSource requirementSource : sources)
-			{
-				sourcesName.add(addSource(requirementSource));
-			}
-
-			panes = new ArrayList<>(sourceConfigurations.getPanes());
-
-			outputFile.textProperty().bindBidirectional(bufferedOutput, new StringConverter<File>()
+			outputFile.textProperty().bindBidirectional(bufferedOutput, new StringConverter<Path>()
 			{
 				@Override
-				public File fromString(String pathname)
+				public Path fromString(String pathname)
 				{
-					return (Strings.isNullOrEmpty(pathname) ? null : new File(pathname));
+					return (Strings.isNullOrEmpty(pathname) ? null : Paths.get(pathname));
 				}
 
 				@Override
-				public String toString(File file)
+				public String toString(Path file)
 				{
-					return (file != null ? file.getPath() : null);
+					return (file != null ? file.toString() : null);
 				}
 			});
+			ValidationUtils.bindValidationLabel(outputFile, outputFileValidity, bufferedOutput);
 
-			delete.disableProperty().bind(sourceConfigurations.expandedPaneProperty().isNull());
-			upSource.disableProperty().bind(sourceConfigurations.expandedPaneProperty().isNull());
-			downSource.disableProperty().bind(sourceConfigurations.expandedPaneProperty().isNull());
+			delete.disableProperty().bind(
+					sourceConfigurations.expandedPaneProperty()
+							.isNull()
+							.or(Bindings.size(sourceConfigurations.getPanes()).lessThan(2)));
+
+			IntegerBinding indexOfExpendedPane = new IntegerBinding()
+			{
+				{
+					bind(sourceConfigurations.expandedPaneProperty());
+				}
+
+				@Override
+				public void dispose()
+				{
+					super.unbind(sourceConfigurations.expandedPaneProperty());
+				}
+
+				@Override
+				protected int computeValue()
+				{
+					return sourceConfigurations.getPanes().indexOf(sourceConfigurations.getExpandedPane());
+				}
+
+				@Override
+				public ObservableList<?> getDependencies()
+				{
+					return FXCollections.singletonObservableList(sourceConfigurations.expandedPaneProperty());
+				}
+			};
+
+			upSource.disableProperty().bind(
+					sourceConfigurations.expandedPaneProperty().isNull().or(indexOfExpendedPane.lessThan(1)));
+			downSource.disableProperty().bind(
+					sourceConfigurations.expandedPaneProperty()
+							.isNull()
+							.or(indexOfExpendedPane.greaterThan(Bindings.size(sourceConfigurations.getPanes())
+									.subtract(2))));
 
 			save.disableProperty().bind(
 					Bindings.not(bufferingManager.bufferingProperty()).or(
@@ -187,6 +231,8 @@ public class MainConfigurationController implements Initializable
 			cancel.disableProperty().bind(Bindings.not(bufferingManager.bufferingProperty()));
 			run.disableProperty().bind(
 					bufferingManager.bufferingProperty().or(Bindings.not(bufferingManager.validProperty())));
+
+			newSource(null);
 		}
 		catch (Exception e)
 		{
@@ -213,7 +259,7 @@ public class MainConfigurationController implements Initializable
 	@FXML
 	protected void newSource(ActionEvent event) throws NoSuchMethodException, IOException
 	{
-		InputRequirementSource requirementSource = new InputRequirementSource("NEW", "", "");
+		InputRequirementSource requirementSource = new InputRequirementSource("NEW", Paths.get(""), "");
 
 		bufferedSourcesName.add(addSource(requirementSource));
 
@@ -237,12 +283,11 @@ public class MainConfigurationController implements Initializable
 		TitledPane pane = sourceConfigurations.getPanes().remove(index);
 		InputRequirementSource requirementSource = bufferedSources.remove(index);
 		bufferedSourcesName.remove(index);
-		bufferedNameChangeCallBacks.remove(index);
-		if (index < bufferedSources.size())
+		if (index < sourceConfigurations.getPanes().size())
 		{
 			sourceConfigurations.setExpandedPane(sourceConfigurations.getPanes().get(index));
 		}
-		else if (index > 0 && index - 1 < bufferedSources.size())
+		else if (index > 0 && index - 1 < sourceConfigurations.getPanes().size())
 		{
 			sourceConfigurations.setExpandedPane(sourceConfigurations.getPanes().get(index - 1));
 		}
@@ -262,10 +307,8 @@ public class MainConfigurationController implements Initializable
 			sourceConfigurations.getPanes().add(index - 1, p);
 			sourceConfigurations.setExpandedPane(p);
 			ObjectProperty<String> sourceName = bufferedSourcesName.remove(index);
-			Callback<InputRequirementSource, Void> callback = bufferedNameChangeCallBacks.remove(index);
 			InputRequirementSource requirementSource = bufferedSources.remove(index);
 			bufferedSourcesName.add(index - 1, sourceName);
-			bufferedNameChangeCallBacks.add(index - 1, callback);
 			bufferedSources.add(index - 1, requirementSource);
 		}
 	}
@@ -280,10 +323,8 @@ public class MainConfigurationController implements Initializable
 			sourceConfigurations.getPanes().add(index + 1, p);
 			sourceConfigurations.setExpandedPane(p);
 			ObjectProperty<String> sourceName = bufferedSourcesName.remove(index);
-			Callback<InputRequirementSource, Void> callback = bufferedNameChangeCallBacks.remove(index);
 			InputRequirementSource requirementSource = bufferedSources.remove(index);
 			bufferedSourcesName.add(index + 1, sourceName);
-			bufferedNameChangeCallBacks.add(index + 1, callback);
 			bufferedSources.add(index + 1, requirementSource);
 		}
 	}
@@ -357,6 +398,10 @@ public class MainConfigurationController implements Initializable
 		{
 			sourceConfigurations.setExpandedPane(pane);
 		}
+		else if (!sourceConfigurations.getPanes().isEmpty())
+		{
+			sourceConfigurations.setExpandedPane(sourceConfigurations.getPanes().get(0));
+		}
 	}
 
 	@FXML
@@ -377,20 +422,20 @@ public class MainConfigurationController implements Initializable
 	@FXML
 	protected void selectOutputFile(ActionEvent e)
 	{
-		File currentFile = bufferedOutput.get();
+		Path currentFile = bufferedOutput.get();
 		FileChooser fileChooser = new FileChooser();
 		fileChooser.getExtensionFilters().add(new ExtensionFilter("Excel file", "*.xls", "*.xlsx"));
 		fileChooser.setTitle("RETA analysis output file");
 		if (currentFile != null)
 		{
-			fileChooser.setInitialDirectory(currentFile.getParentFile());
-			fileChooser.setInitialFileName(currentFile.getName());
+			fileChooser.setInitialDirectory(currentFile.toFile().getParentFile());
+			fileChooser.setInitialFileName(currentFile.getFileName().toString());
 		}
 		File file = fileChooser.showSaveDialog(root.getScene().getWindow());
 
 		if (file != null)
 		{
-			bufferedOutput.set(file);
+			bufferedOutput.set(file.toPath());
 		}
 	}
 

@@ -7,14 +7,20 @@
 <?import javafx.scene.text.*?>
 <?import javafx.geometry.*?>
 <?import com.ben12.reta.view.control.*?>
-<?import com.ben12.reta.view.validation.ValidationUtils?>
+<?import com.ben12.reta.view.validation.*?>
 
 <TitledPane xmlns:fx="http://javafx.com/fxml" fx:controller="com.ben12.reta.view.SourceConfigurationController"
 	fx:id="titledPane" prefWidth="400" prefHeight="500">
+	<fx:define>
+		<Image fx:id="errorImg" url="@/com/ben12/reta/resources/images/error.png" />
+	</fx:define>
 	<content>
 		<ScrollPane fitToHeight="true" fitToWidth="true">
 			<content>
 				<GridPane hgap="5" vgap="5">
+					<padding>
+						<Insets bottom="5" left="5" right="5" top="5" />
+					</padding>
 					<columnConstraints>
 						<ColumnConstraints minWidth="50" />
 						<ColumnConstraints minWidth="100" hgrow="ALWAYS" />
@@ -45,7 +51,7 @@
 								<Insets left="-2" bottom="-2" />
 							</GridPane.margin>
 							<image>
-								<ValidationUtils fx:constant="ERROR_IMAGE" />
+								<fx:reference source="errorImg" />
 							</image>
 						</ImageView>
 
@@ -62,7 +68,7 @@
 								<Insets left="-2" bottom="-2" />
 							</GridPane.margin>
 							<image>
-								<ValidationUtils fx:constant="ERROR_IMAGE" />
+								<fx:reference source="errorImg" />
 							</image>
 						</ImageView>
 						<Button text="File" GridPane.columnIndex="2" GridPane.rowIndex="1" maxWidth="10000" onAction="#chooseSourcePathFile">
@@ -89,7 +95,7 @@
 								<Insets left="-2" bottom="-2" />
 							</GridPane.margin>
 							<image>
-								<ValidationUtils fx:constant="ERROR_IMAGE" />
+								<fx:reference source="errorImg" />
 							</image>
 						</ImageView>
 
@@ -106,7 +112,7 @@
 								<Insets left="-2" bottom="-2" />
 							</GridPane.margin>
 							<image>
-								<ValidationUtils fx:constant="ERROR_IMAGE" />
+								<fx:reference source="errorImg" />
 							</image>
 						</ImageView>
 
@@ -123,7 +129,7 @@
 								<Insets left="-2" bottom="-2" />
 							</GridPane.margin>
 							<image>
-								<ValidationUtils fx:constant="ERROR_IMAGE" />
+								<fx:reference source="errorImg" />
 							</image>
 						</ImageView>
 
@@ -140,7 +146,7 @@
 								<Insets left="-2" bottom="-2" />
 							</GridPane.margin>
 							<image>
-								<ValidationUtils fx:constant="ERROR_IMAGE" />
+								<fx:reference source="errorImg" />
 							</image>
 						</ImageView>
 
@@ -157,7 +163,7 @@
 								<Insets left="-2" bottom="-2" />
 							</GridPane.margin>
 							<image>
-								<ValidationUtils fx:constant="ERROR_IMAGE" />
+								<fx:reference source="errorImg" />
 							</image>
 						</ImageView>
 

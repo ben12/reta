@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.WindowConstants;
+import javax.validation.constraints.NotNull;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
@@ -66,6 +67,8 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.ini4j.Profile.Section;
 import org.ini4j.Wini;
 
+import com.ben12.reta.constraints.PathExists;
+import com.ben12.reta.constraints.PathExists.KindOfPath;
 import com.ben12.reta.model.InputRequirementSource;
 import com.ben12.reta.model.Requirement;
 import com.google.common.base.Joiner;
@@ -93,7 +96,9 @@ public final class RETAAnalysis
 
 	private File										config				= null;
 
-	private File										output				= null;
+	@NotNull
+	@PathExists(kind = KindOfPath.DIRECTORY, parent = true)
+	private Path										output				= null;
 
 	// TODO maybe useful to see unknown references and mismatch versions
 	// private final Comparator<Requirement> reqCompId = (req1, req2) -> req1.getId().compareTo(req2.getId());
@@ -130,7 +135,7 @@ public final class RETAAnalysis
 	/**
 	 * @return the output
 	 */
-	public File getOutput()
+	public Path getOutput()
 	{
 		return output;
 	}
@@ -139,7 +144,7 @@ public final class RETAAnalysis
 	 * @param output
 	 *            the output to set
 	 */
-	public void setOutput(File output)
+	public void setOutput(Path output)
 	{
 		this.output = output;
 	}
@@ -159,12 +164,11 @@ public final class RETAAnalysis
 			String output = ini.get("GENERAL", "output");
 			if (output != null)
 			{
-				this.output = new File(output);
+				this.output = Paths.get(output);
 			}
 			else
 			{
-				this.output = new File(iniFile.getParentFile(), Files.getNameWithoutExtension(iniFile.getName())
-						+ ".xls");
+				this.output = Paths.get(iniFile.getParent(), Files.getNameWithoutExtension(iniFile.getName()) + ".xls");
 			}
 
 			Map<InputRequirementSource, List<String>> coversMap = new LinkedHashMap<>();
@@ -200,7 +204,8 @@ public final class RETAAnalysis
 					String filter = section.get("filter", "");
 					if (!source.isEmpty())
 					{
-						InputRequirementSource requirementSource = new InputRequirementSource(doc, source, filter);
+						InputRequirementSource requirementSource = new InputRequirementSource(doc, Paths.get(source),
+								filter);
 
 						try
 						{
@@ -356,7 +361,7 @@ public final class RETAAnalysis
 		{
 			Section generalSection = ini.add("GENERAL");
 
-			generalSection.add("output", output.getPath());
+			generalSection.add("output", output.toString());
 
 			List<String> inputs = new ArrayList<>();
 			Set<String> reqAttributes = new HashSet<>();
@@ -501,7 +506,12 @@ public final class RETAAnalysis
 			throws IOException
 	{
 		final ConcatReader reader = getReader(requirementSource);
-		Path root = Paths.get(requirementSource.getSourcePath());
+		Path root = requirementSource.getSourcePath();
+		if (!root.isAbsolute())
+		{
+			Path cfgRoot = config.getAbsoluteFile().getParentFile().toPath();
+			root = cfgRoot.resolve(root);
+		}
 		final CharBuffer buffer = CharBuffer.allocate(BUFFER_SIZE);
 		StringBuilder builder = new StringBuilder(3 * BUFFER_SIZE);
 		int r = reader.read(buffer);
@@ -666,7 +676,12 @@ public final class RETAAnalysis
 	private ConcatReader getReader(InputRequirementSource requirementSource) throws IOException
 	{
 		ConcatReader concatReader = new ConcatReader();
-		Path srcPath = Paths.get(requirementSource.getSourcePath());
+		Path srcPath = requirementSource.getSourcePath();
+		if (!srcPath.isAbsolute())
+		{
+			Path root = config.getAbsoluteFile().getParentFile().toPath();
+			srcPath = root.resolve(srcPath);
+		}
 		if (srcPath.toFile().isFile())
 		{
 			concatReader.add(srcPath);
@@ -679,12 +694,12 @@ public final class RETAAnalysis
 			{
 				patternfilter = Pattern.compile(filter);
 			}
-			fillReaders(concatReader, srcPath, patternfilter);
+			fillReaders(concatReader, srcPath, srcPath, patternfilter);
 		}
 		return concatReader;
 	}
 
-	private void fillReaders(ConcatReader concatReader, Path root, Pattern filter) throws IOException
+	private void fillReaders(ConcatReader concatReader, Path base, Path root, Pattern filter) throws IOException
 	{
 		DirectoryStream<Path> stream = java.nio.file.Files.newDirectoryStream(root);
 		Iterator<Path> iterator = stream.iterator();
@@ -693,14 +708,14 @@ public final class RETAAnalysis
 			Path path = iterator.next();
 			if (path.toFile().isFile())
 			{
-				if (filter == null || filter.matcher(path.toString()).find())
+				if (filter == null || filter.matcher(base.relativize(path).toString()).find())
 				{
 					concatReader.add(path);
 				}
 			}
 			else if (path.startsWith(root) && !path.equals(root))
 			{
-				fillReaders(concatReader, path, filter);
+				fillReaders(concatReader, base, path, filter);
 			}
 		}
 	}
@@ -748,7 +763,7 @@ public final class RETAAnalysis
 	{
 		logger.info("Start write excel output");
 
-		String extension = Files.getFileExtension(output.getName());
+		String extension = Files.getFileExtension(output.getFileName().toString());
 		final Workbook wb;
 		if (extension == "xlsx")
 		{
@@ -799,7 +814,7 @@ public final class RETAAnalysis
 				rowFile.createCell(i).setCellStyle(styles.get("file"));
 			}
 			Cell cellFile = rowFile.createCell(0);
-			cellFile.setCellValue(requirementSource.getSourcePath());
+			cellFile.setCellValue(requirementSource.getSourcePath().toString());
 			cellFile.setCellStyle(styles.get("file"));
 			sheet.addMergedRegion(new CellRangeAddress(rowFile.getRowNum(), rowFile.getRowNum(), 0, columnCount));
 
@@ -833,7 +848,14 @@ public final class RETAAnalysis
 			}
 		}
 
-		try (FileOutputStream fos = new FileOutputStream(output))
+		Path outputFile = output;
+		if (!outputFile.isAbsolute())
+		{
+			Path root = config.getAbsoluteFile().getParentFile().toPath();
+			outputFile = root.resolve(outputFile);
+		}
+
+		try (FileOutputStream fos = new FileOutputStream(outputFile.toFile()))
 		{
 			wb.write(fos);
 		}
@@ -861,7 +883,7 @@ public final class RETAAnalysis
 
 			if (Objects.equal(optionPane.getValue(), JOptionPane.YES_OPTION))
 			{
-				try (FileOutputStream fos = new FileOutputStream(output))
+				try (FileOutputStream fos = new FileOutputStream(outputFile.toFile()))
 				{
 					wb.write(fos);
 				}

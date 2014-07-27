@@ -34,8 +34,7 @@ import javafx.beans.value.WeakChangeListener;
 /**
  * @author Benoît Moreau (ben.12)
  */
-public class SimpleObjectPropertyBuffering<T> extends SimpleObjectProperty<T> implements PropertyBuffering<T>,
-		PropertyValidation
+public class SimpleObjectPropertyBuffering<T> extends SimpleObjectProperty<T> implements PropertyBufferingValidation<T>
 {
 	private final Class<?>			beanType;
 

@@ -20,6 +20,9 @@
 package com.ben12.reta.view;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -53,15 +56,18 @@ import javafx.util.StringConverter;
 import javafx.util.converter.IntegerStringConverter;
 
 import com.ben12.reta.model.InputRequirementSource;
+import com.ben12.reta.util.RETAAnalysis;
 import com.ben12.reta.view.buffering.Buffering;
 import com.ben12.reta.view.buffering.BufferingManager;
 import com.ben12.reta.view.buffering.ObservableListBuffering;
 import com.ben12.reta.view.buffering.ObservableMapBuffering;
+import com.ben12.reta.view.buffering.PropertyBufferingValidation;
 import com.ben12.reta.view.buffering.SimpleObjectPropertyBuffering;
 import com.ben12.reta.view.control.MapTableView;
 import com.ben12.reta.view.validation.ValidationUtils;
 import com.google.common.base.Objects;
 import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
 
 /**
  * @author Benoît Moreau (ben.12)
@@ -169,7 +175,23 @@ public class SourceConfigurationController
 	{
 		bufferedProperties.add(property);
 		input.textProperty().bindBidirectional(property);
-		ValidationUtils.bindValidationLabel(validity, property);
+		ValidationUtils.bindValidationLabel(input, validity, property);
+	}
+
+	public <T> void initializeLabeled(TextInputControl input, ImageView validity, ObservableListBuffering<T> property,
+			StringConverter<ObservableList<T>> converter)
+	{
+		bufferedProperties.add(property);
+		input.textProperty().bindBidirectional(property, converter);
+		ValidationUtils.bindValidationLabel(input, validity, property);
+	}
+
+	public <T> void initializeLabeled(TextInputControl input, ImageView validity,
+			PropertyBufferingValidation<T> property, StringConverter<T> converter)
+	{
+		bufferedProperties.add(property);
+		input.textProperty().bindBidirectional(property, converter);
+		ValidationUtils.bindValidationLabel(input, validity, property);
 	}
 
 	public ObjectProperty<String> bind(BufferingManager newBufferingManager, InputRequirementSource requirementSource,
@@ -224,12 +246,49 @@ public class SourceConfigurationController
 		nameProperty.addListener(e -> mainCallBack.call(requirementSource));
 
 		// Input requirement source path
-		initializeLabeled(sourcePath, sourcePathValidity,
-				bufferingManager.bufferingString(requirementSource, InputRequirementSource.SOURCE_PATH));
+		StringConverter<Path> pathStringConverter = new StringConverter<Path>()
+		{
+			@Override
+			public Path fromString(String pathname)
+			{
+				return (Strings.isNullOrEmpty(pathname) ? null : Paths.get(pathname));
+			}
+
+			@Override
+			public String toString(Path file)
+			{
+				return (file != null ? file.toString() : null);
+			}
+		};
+
+		final SimpleObjectPropertyBuffering<Path> sourcePathBuffered = bufferingManager.bufferingObject(
+				requirementSource, InputRequirementSource.SOURCE_PATH);
+		initializeLabeled(sourcePath, sourcePathValidity, sourcePathBuffered, pathStringConverter);
 
 		// Input requirement source path filter
 		initializeLabeled(filter, filterValidity,
 				bufferingManager.bufferingString(requirementSource, InputRequirementSource.FILTER));
+		filter.disableProperty().bind(Bindings.createBooleanBinding(() -> {
+			Path path = sourcePathBuffered.getValue();
+			boolean isDirectory = true;
+			if (path != null && !path.isAbsolute())
+			{
+				File config = RETAAnalysis.getInstance().getConfig();
+				if (config != null)
+				{
+					path = config.getAbsoluteFile().getParentFile().toPath().resolve(path);
+				}
+				else
+				{
+					path = null;
+				}
+			}
+			if (path != null)
+			{
+				isDirectory = !Files.exists(path) || Files.isDirectory(path);
+			}
+			return !isDirectory;
+		}, sourcePathBuffered));
 
 		// Input requirement source requirement start regex
 		initializeLabeled(reqStart, reqStartValidity,
@@ -244,13 +303,11 @@ public class SourceConfigurationController
 		initializeLabeled(reqRef, reqRefValidity,
 				bufferingManager.bufferingString(requirementSource, InputRequirementSource.REQ_REF));
 
-		final ObservableListBuffering<InputRequirementSource> bufferedCovers = bufferingManager.bufferingList(
-				requirementSource, InputRequirementSource.COVERS);
-		bufferedProperties.add(bufferedCovers);
-		covers.textProperty().bindBidirectional(bufferedCovers, new InputRequirementSourceStringConverter());
-		ValidationUtils.bindValidationLabel(coversValidity, bufferedCovers);
+		initializeLabeled(covers, coversValidity,
+				bufferingManager.bufferingList(requirementSource, InputRequirementSource.COVERS),
+				new InputRequirementSourceStringConverter());
 
-		Callback<InputRequirementSource, Void> otherInputNameChanged = c -> {
+		callBacks.add(c -> {
 			if (c != requirementSource)
 			{
 				// force to refresh validation
@@ -259,8 +316,7 @@ public class SourceConfigurationController
 				covers.setText(value);
 			}
 			return null;
-		};
-		callBacks.add(otherInputNameChanged);
+		});
 
 		final Callback<CellDataFeatures<MapTableView<String, Integer>.Entry, String>, ObservableValue<String>> cvpKey = (
 				cdf) -> new ReadOnlyStringWrapper(cdf.getValue().getKey());

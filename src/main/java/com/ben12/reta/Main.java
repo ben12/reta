@@ -72,7 +72,7 @@ public class Main extends Application
 		try
 		{
 			LogManager.getLogManager().readConfiguration(
-					ClassLoader.getSystemResourceAsStream("com/ben12/reta/resources/logging/logging.properties"));
+					Main.class.getResourceAsStream("/com/ben12/reta/resources/logging/logging.properties"));
 		}
 		catch (IOException e)
 		{

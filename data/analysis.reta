@@ -1,11 +1,11 @@
 [GENERAL]
-output = data\analysis.xls
+output = analysis.xls
 inputs = DOC1,DOC2,SOURCES
 requirement.attributes = Label
 references.attributes = Comment
 
 [DOC1]
-path = data\DocTest1.doc
+path = DocTest1.doc
 filter = 
 requirement.start.regex = ^[ \t]*REQ_(RETA_(\w+_\d+)(?:_(\w+))?[\s-]+(.*))$
 requirement.start.Version.index = 3
@@ -20,7 +20,7 @@ requirement.ref.Id.index = 1
 covers = DOC2
 
 [DOC2]
-path = data\DocTest2.doc
+path = DocTest2.doc
 filter = 
 requirement.start.regex = ^[ \t]*REQ_RETA_(\w+_\d+)(?:_(\w+))?[\s-]+(.*)$
 requirement.start.Version.index = 2
@@ -35,8 +35,8 @@ requirement.ref.Id.index = 1
 covers = DOC1
 
 [SOURCES]
-path = data\sourcesTests
-filter = 
+path = sourcesTests
+filter = ^(include\\.*\.(h|hpp)|java\\.*\.java|[^\\]*\.(c|cpp))$
 requirement.ref.regex = CF_(?:REQ_)?RETA_(\w+_\d+)(?:_(\w+))?
 requirement.ref.Version.index = 2
 requirement.ref.Id.index = 1
