@@ -31,6 +31,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -174,14 +175,14 @@ public final class RETAAnalysis
 			Map<InputRequirementSource, List<String>> coversMap = new LinkedHashMap<>();
 
 			String attributesStr = ini.get("GENERAL", "requirement.attributes");
-			Iterable<String> attributes = null;
+			Iterable<String> attributes = Collections.emptyList();
 			if (!Strings.isNullOrEmpty(attributesStr))
 			{
 				attributes = Splitter.on(',').trimResults().omitEmptyStrings().split(attributesStr);
 			}
 
 			String refAttributesStr = ini.get("GENERAL", "references.attributes");
-			Iterable<String> refAttributes = null;
+			Iterable<String> refAttributes = Collections.emptyList();
 			if (!Strings.isNullOrEmpty(refAttributesStr))
 			{
 				refAttributes = Splitter.on(',').trimResults().omitEmptyStrings().split(refAttributesStr);
@@ -300,7 +301,7 @@ public final class RETAAnalysis
 									}
 								}
 							}
-							else if (covers != null)
+							else if (!covers.isEmpty())
 							{
 								logger.warning("requirement.ref.regex is mandatory for section " + doc
 										+ " with covers defined.");
@@ -343,6 +344,11 @@ public final class RETAAnalysis
 		catch (IOException e)
 		{
 			logger.log(Level.SEVERE, "Invalid config file " + iniFile, e);
+			// TODO show error as dialog or dimmer panel
+		}
+		catch (Exception e)
+		{
+			logger.log(Level.SEVERE, "Error reading config file " + iniFile, e);
 			// TODO show error as dialog or dimmer panel
 		}
 	}
