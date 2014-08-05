@@ -143,12 +143,12 @@ public class MainConfigurationController implements Initializable
 
 		try
 		{
+			sources.clear();
 			sources.addAll(RETAAnalysis.getInstance().getRequirementSources().values());
 
 			for (InputRequirementSource requirementSource : sources)
 			{
 				sourcesName.add(addSource(requirementSource));
-				bufferedSources.add(requirementSource);
 			}
 
 			panes = new ArrayList<>(sourceConfigurations.getPanes());
