@@ -32,7 +32,11 @@ import java.util.logging.Logger;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.IntegerBinding;
+import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -56,6 +60,7 @@ import com.ben12.reta.util.RETAAnalysis;
 import com.ben12.reta.view.buffering.BufferingManager;
 import com.ben12.reta.view.buffering.ObservableListBuffering;
 import com.ben12.reta.view.buffering.SimpleObjectPropertyBuffering;
+import com.ben12.reta.view.control.MessageDialog;
 import com.ben12.reta.view.validation.ValidationUtils;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
@@ -407,16 +412,37 @@ public class MainConfigurationController implements Initializable
 	@FXML
 	protected void run(ActionEvent event)
 	{
-		try
-		{
-			RETAAnalysis.getInstance().parse();
-			RETAAnalysis.getInstance().analyse();
-			RETAAnalysis.getInstance().writeExcel();
-		}
-		catch (IOException e)
-		{
-			Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", e);
-		}
+		StringProperty stepMessage = new SimpleStringProperty("");
+		DoubleProperty progress = new SimpleDoubleProperty(0);
+		DoubleProperty readProgress = new SimpleDoubleProperty(0);
+
+		MessageDialog.showProgressBar(null, "Running...", stepMessage, progress);
+
+		new Thread(() -> {
+			try
+			{
+				stepMessage.set("Reading all file...");
+				progress.bind(readProgress.multiply(0.70));
+				RETAAnalysis.getInstance().parse(readProgress);
+				progress.unbind();
+				progress.set(0.70);
+				stepMessage.set("Analysing results...");
+				RETAAnalysis.getInstance().analyse();
+				progress.set(0.80);
+				stepMessage.set("Writing excel analysis...");
+				RETAAnalysis.getInstance().writeExcel();
+				stepMessage.set("Traceability analysis completed");
+			}
+			catch (IOException e)
+			{
+				Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", e);
+				stepMessage.set("Error : " + e.getLocalizedMessage());
+			}
+			finally
+			{
+				progress.set(1.0);
+			}
+		}).start();
 	}
 
 	@FXML

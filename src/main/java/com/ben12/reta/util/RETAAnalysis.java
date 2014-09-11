@@ -42,15 +42,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.WindowConstants;
+import javafx.beans.property.DoubleProperty;
+
 import javax.validation.constraints.NotNull;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -72,8 +72,8 @@ import com.ben12.reta.constraints.PathExists;
 import com.ben12.reta.constraints.PathExists.KindOfPath;
 import com.ben12.reta.model.InputRequirementSource;
 import com.ben12.reta.model.Requirement;
+import com.ben12.reta.view.control.MessageDialog;
 import com.google.common.base.Joiner;
-import com.google.common.base.Objects;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
@@ -449,9 +449,10 @@ public final class RETAAnalysis
 		}
 	}
 
-	public void parse() throws IOException
+	public void parse(DoubleProperty progress) throws IOException
 	{
 		final IOException[] ex = { null };
+		final AtomicInteger count = new AtomicInteger(0);
 
 		requirementSources.values()
 				.parallelStream()
@@ -460,6 +461,10 @@ public final class RETAAnalysis
 							try
 							{
 								parse(requirementSource);
+								synchronized (progress)
+								{
+									progress.set( (double) count.incrementAndGet() / requirementSources.size() );
+								}
 							}
 							catch (IOException e)
 							{
@@ -867,27 +872,9 @@ public final class RETAAnalysis
 		}
 		catch (FileNotFoundException e)
 		{
-			final JFrame frame = new JFrame();
-			JOptionPane optionPane = new JOptionPane("Excel output file must be closed.", JOptionPane.QUESTION_MESSAGE,
-					JOptionPane.OK_CANCEL_OPTION);
-			optionPane.addPropertyChangeListener(JOptionPane.VALUE_PROPERTY, p -> frame.dispose());
-			frame.getContentPane().add(optionPane);
-			frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-			frame.pack();
-			frame.setLocationRelativeTo(null);
-			frame.setVisible(true);
-			while (frame.isVisible())
-			{
-				try
-				{
-					Thread.sleep(50);
-				}
-				catch (Exception ex)
-				{
-				}
-			}
+			int confirm = MessageDialog.showQuestionMessage(null, "Excel output file must be closed.");
 
-			if (Objects.equal(optionPane.getValue(), JOptionPane.YES_OPTION))
+			if (confirm == MessageDialog.OK_OPTION)
 			{
 				try (FileOutputStream fos = new FileOutputStream(outputFile.toFile()))
 				{
@@ -895,20 +882,13 @@ public final class RETAAnalysis
 				}
 				catch (IOException e2)
 				{
-					logger.log(Level.SEVERE, "Writing output excel file.", e);
-					throw new IOException(e);
+					throw e2;
 				}
 			}
 			else
 			{
-				logger.log(Level.SEVERE, "Writing output excel file.", e);
-				throw new IOException(e);
+				throw e;
 			}
-		}
-		catch (IOException e)
-		{
-			logger.log(Level.SEVERE, "Writing output excel file.", e);
-			throw e;
 		}
 
 		logger.info("End write excel output");
