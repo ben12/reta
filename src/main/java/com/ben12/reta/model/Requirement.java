@@ -22,10 +22,12 @@ package com.ben12.reta.model;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
@@ -166,7 +168,7 @@ public class Requirement implements Comparable<Requirement>
 	 *            attribute name
 	 * @return attribute value
 	 */
-	public String getAttribut(String name)
+	public String getAttribute(String name)
 	{
 		String att = null;
 		switch (name)
@@ -196,7 +198,7 @@ public class Requirement implements Comparable<Requirement>
 	 * @param value
 	 *            attribute value
 	 */
-	public void putAttribut(String name, String value)
+	public void putAttribute(String name, String value)
 	{
 		switch (name)
 		{
@@ -248,9 +250,20 @@ public class Requirement implements Comparable<Requirement>
 	/**
 	 * @return requirement reference iterable
 	 */
-	public Iterable<Requirement> getReferenceIterable()
+	public List<Requirement> getReferences()
 	{
-		return (references == null ? new ArrayList<Requirement>(0) : references);
+		return (references == null ? new ArrayList<Requirement>(0) : new ArrayList<Requirement>(references));
+	}
+
+	/**
+	 * @return requirement reference iterable
+	 */
+	public List<Requirement> getReferencesFor(InputRequirementSource source)
+	{
+		return (references == null ? new ArrayList<Requirement>(0) : references.stream()
+				.filter((r) -> (r.getSource() == source))
+				.distinct()
+				.collect(Collectors.toList()));
 	}
 
 	/**
@@ -279,9 +292,32 @@ public class Requirement implements Comparable<Requirement>
 	/**
 	 * @return requirement referencing this requirement iterable
 	 */
-	public Iterable<Requirement> getReferredByIterable()
+	public List<Requirement> getReferredByRequirement()
 	{
-		return (referredBy == null ? new ArrayList<Requirement>(0) : referredBy);
+		return (referredBy == null ? new ArrayList<Requirement>(0) : new ArrayList<Requirement>(referredBy));
+	}
+
+	/**
+	 * @return requirement referencing this requirement iterable
+	 */
+	public List<Requirement> getReferredByRequirementFor(InputRequirementSource source)
+	{
+		return (referredBy == null ? new ArrayList<Requirement>(0) : referredBy.stream()
+				.filter((r) -> r.getSource() == source)
+				.distinct()
+				.collect(Collectors.toList()));
+	}
+
+	/**
+	 * @return requirement referencing this requirement iterable
+	 */
+	public List<InputRequirementSource> getReferredBySource()
+	{
+		return (referredBy == null ? new ArrayList<InputRequirementSource>(0) : referredBy.stream()
+				.filter((r) -> r.getSource() != null)
+				.map(Requirement::getSource)
+				.distinct()
+				.collect(Collectors.toList()));
 	}
 
 	/*

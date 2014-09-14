@@ -1,5 +1,5 @@
 [GENERAL]
-output = analysis.xls
+output = analysis.xlsx
 inputs = DOC1,DOC2,SOURCES
 requirement.attributes = Label
 references.attributes = Comment

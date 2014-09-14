@@ -416,7 +416,7 @@ public class MainConfigurationController implements Initializable
 		DoubleProperty progress = new SimpleDoubleProperty(0);
 		DoubleProperty readProgress = new SimpleDoubleProperty(0);
 
-		MessageDialog.showProgressBar(null, "Running...", stepMessage, progress);
+		MessageDialog.showProgressBar(root.getScene().getWindow(), "Running...", stepMessage, progress);
 
 		new Thread(() -> {
 			try
@@ -430,10 +430,10 @@ public class MainConfigurationController implements Initializable
 				RETAAnalysis.getInstance().analyse();
 				progress.set(0.80);
 				stepMessage.set("Writing excel analysis...");
-				RETAAnalysis.getInstance().writeExcel();
+				RETAAnalysis.getInstance().writeExcel(root.getScene().getWindow());
 				stepMessage.set("Traceability analysis completed");
 			}
-			catch (IOException e)
+			catch (Exception e)
 			{
 				Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", e);
 				stepMessage.set("Error : " + e.getLocalizedMessage());

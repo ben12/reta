@@ -41,6 +41,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 
 /**
@@ -65,7 +66,7 @@ public class MessageDialog extends Stage
 	/**
 	 * 
 	 */
-	private MessageDialog(Stage parent)
+	private MessageDialog(Window parent)
 	{
 		super();
 		initOwner(parent);
@@ -101,7 +102,7 @@ public class MessageDialog extends Stage
 		return showMessage(parent, "Error", message, null, BUTTON.OK_CANCEL);
 	}
 
-	public static void showProgressBar(Stage parent, String title, StringProperty message, DoubleProperty progress)
+	public static void showProgressBar(Window parent, String title, StringProperty message, DoubleProperty progress)
 	{
 		if (!Platform.isFxApplicationThread())
 		{
@@ -153,7 +154,7 @@ public class MessageDialog extends Stage
 		dialog.showDialog();
 	}
 
-	public static int showMessage(Stage parent, String title, String message, Image icon, BUTTON buttons)
+	public static int showMessage(Window parent, String title, String message, Image icon, BUTTON buttons)
 	{
 		if (!Platform.isFxApplicationThread())
 		{

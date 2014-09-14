@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -250,6 +251,22 @@ public class InputRequirementSource
 	public TreeSet<Requirement> getRequirements()
 	{
 		return requirements;
+	}
+
+	/**
+	 * @return the set of requirement found in the document
+	 */
+	public List<Requirement> getAllReferences()
+	{
+		return requirements.stream().flatMap((r) -> r.getReferences().stream()).distinct().collect(Collectors.toList());
+	}
+
+	/**
+	 * @return the set of requirement found in the document
+	 */
+	public List<Requirement> getAllUknownReferences()
+	{
+		return getAllReferences().stream().filter((r) -> r.getSource() == null).collect(Collectors.toList());
 	}
 
 	/**

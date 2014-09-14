@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
@@ -50,21 +51,16 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javafx.beans.property.DoubleProperty;
+import javafx.stage.Window;
 
 import javax.validation.constraints.NotNull;
 
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.Font;
-import org.apache.poi.ss.usermodel.IndexedColors;
-import org.apache.poi.ss.usermodel.PrintSetup;
+import net.sf.jett.transform.ExcelTransformer;
+
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.ss.util.WorkbookUtil;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.ini4j.Profile.Section;
 import org.ini4j.Wini;
 
@@ -73,7 +69,6 @@ import com.ben12.reta.constraints.PathExists.KindOfPath;
 import com.ben12.reta.model.InputRequirementSource;
 import com.ben12.reta.model.Requirement;
 import com.ben12.reta.view.control.MessageDialog;
-import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
@@ -166,10 +161,16 @@ public final class RETAAnalysis
 			if (output != null)
 			{
 				this.output = Paths.get(output);
+				String fileName = this.output.getFileName().toString();
+				if (!"xlsx".equals(Files.getFileExtension(fileName)))
+				{
+					logger.warning("output extension changed for xlsx");
+					this.output = this.output.getParent().resolve(Files.getNameWithoutExtension(fileName) + ".xlsx");
+				}
 			}
 			else
 			{
-				this.output = Paths.get(iniFile.getParent(), Files.getNameWithoutExtension(iniFile.getName()) + ".xls");
+				this.output = Paths.get(iniFile.getParent(), Files.getNameWithoutExtension(iniFile.getName()) + ".xlsx");
 			}
 
 			Map<InputRequirementSource, List<String>> coversMap = new LinkedHashMap<>();
@@ -463,7 +464,7 @@ public final class RETAAnalysis
 								parse(requirementSource);
 								synchronized (progress)
 								{
-									progress.set( (double) count.incrementAndGet() / requirementSources.size() );
+									progress.set((double) count.incrementAndGet() / requirementSources.size());
 								}
 							}
 							catch (IOException e)
@@ -628,7 +629,7 @@ public final class RETAAnalysis
 						if (group != null && group <= matcherStart.groupCount())
 						{
 							String reqAtt = Strings.nullToEmpty(matcherStart.group(group));
-							requirement.putAttribut(attName, reqAtt);
+							requirement.putAttribute(attName, reqAtt);
 						}
 					}
 
@@ -676,7 +677,7 @@ public final class RETAAnalysis
 				if (group != null && group <= matcherRef.groupCount())
 				{
 					String reqAtt = Strings.nullToEmpty(matcherRef.group(group));
-					reference.putAttribut(attName, reqAtt);
+					reference.putAttribute(attName, reqAtt);
 				}
 			}
 
@@ -746,7 +747,7 @@ public final class RETAAnalysis
 				for (Requirement req : reqSource)
 				{
 					Set<Requirement> realReqCovers = new TreeSet<>();
-					Iterable<Requirement> refs = req.getReferenceIterable();
+					Iterable<Requirement> refs = req.getReferences();
 					for (Requirement reqRef : refs)
 					{
 						Requirement found = reqCover.ceiling(reqRef);
@@ -770,100 +771,81 @@ public final class RETAAnalysis
 		}
 	}
 
-	public void writeExcel() throws IOException
+	public void writeExcel(Window parent) throws IOException, InvalidFormatException
 	{
 		logger.info("Start write excel output");
-
-		String extension = Files.getFileExtension(output.getFileName().toString());
-		final Workbook wb;
-		if (extension == "xlsx")
-		{
-			wb = new XSSFWorkbook();
-		}
-		else
-		{
-			wb = new HSSFWorkbook();
-		}
-
-		Map<String, CellStyle> styles = createStyles(wb);
-
-		for (InputRequirementSource requirementSource : requirementSources.values())
-		{
-			Set<String> attributes = requirementSource.getAttributesGroup().keySet();
-			int columnCount = attributes.size() + 1;
-
-			Sheet sheet = wb.createSheet(WorkbookUtil.createSafeSheetName(requirementSource.getName()));
-
-			// turn off gridlines
-			sheet.setDisplayGridlines(false);
-			sheet.setPrintGridlines(false);
-			sheet.setFitToPage(true);
-			sheet.setHorizontallyCenter(true);
-			PrintSetup printSetup = sheet.getPrintSetup();
-			printSetup.setLandscape(true);
-
-			// the following three statements are required only for HSSF
-			sheet.setAutobreaks(true);
-			printSetup.setFitHeight((short) 1);
-			printSetup.setFitWidth((short) 1);
-
-			int row = 0;
-
-			Row rowTitle = sheet.createRow(row++);
-			for (int i = 0; i <= columnCount; i++)
-			{
-				rowTitle.createCell(i).setCellStyle(styles.get("title"));
-			}
-			Cell cellTitle = rowTitle.createCell(0);
-			cellTitle.setCellValue(requirementSource.getName());
-			cellTitle.setCellStyle(styles.get("title"));
-			sheet.addMergedRegion(new CellRangeAddress(rowTitle.getRowNum(), rowTitle.getRowNum(), 0, columnCount));
-
-			Row rowFile = sheet.createRow(row++);
-			for (int i = 0; i <= columnCount; i++)
-			{
-				rowFile.createCell(i).setCellStyle(styles.get("file"));
-			}
-			Cell cellFile = rowFile.createCell(0);
-			cellFile.setCellValue(requirementSource.getSourcePath().toString());
-			cellFile.setCellStyle(styles.get("file"));
-			sheet.addMergedRegion(new CellRangeAddress(rowFile.getRowNum(), rowFile.getRowNum(), 0, columnCount));
-
-			row++;
-
-			row = fillRequirementTable(sheet, styles, row, requirementSource);
-
-			row++;
-
-			for (InputRequirementSource coverSource : requirementSource.getCovers())
-			{
-				row = fillCoversRequirementTable(sheet, styles, row, requirementSource, coverSource);
-
-				row++;
-			}
-
-			for (InputRequirementSource coverBySource : requirementSource.getCoversBy().keySet())
-			{
-				row = fillCoversByRequirementTable(sheet, styles, row, requirementSource, coverBySource);
-
-				row++;
-			}
-
-			row = fillUnknownReferencesTable(sheet, styles, row, requirementSource);
-
-			row++;
-
-			for (int i = 0; i < 20; i++)
-			{
-				sheet.autoSizeColumn(i);
-			}
-		}
 
 		Path outputFile = output;
 		if (!outputFile.isAbsolute())
 		{
 			Path root = config.getAbsoluteFile().getParentFile().toPath();
 			outputFile = root.resolve(outputFile);
+		}
+
+		// test using template
+		InputStream is = getClass().getResourceAsStream("/com/ben12/reta/resources/template/template.xlsx");
+		ExcelTransformer transformer = new ExcelTransformer();
+		List<String> sheetNames = new ArrayList<>();
+		List<String> sheetTemplateNames = new ArrayList<>();
+		for (InputRequirementSource requirementSource : requirementSources.values())
+		{
+			sheetTemplateNames.add("DOCUMENT");
+			sheetTemplateNames.add("COVERAGE");
+			sheetNames.add(requirementSource.getName());
+			sheetNames.add(requirementSource.getName() + " coverage");
+		}
+
+		List<Map<String, Object>> sheetValues = new ArrayList<>();
+		for (InputRequirementSource source : requirementSources.values())
+		{
+			Map<String, Object> values = new HashMap<>();
+			values.put("source", source);
+			values.put("null", null);
+			values.put("line", "\n");
+
+			Set<String> attributes = new LinkedHashSet<>();
+			attributes.add(Requirement.ATTRIBUTE_ID);
+			if (source.getAttributesGroup().containsKey(Requirement.ATTRIBUTE_VERSION))
+			{
+				attributes.add(Requirement.ATTRIBUTE_VERSION);
+			}
+			attributes.addAll(source.getAttributesGroup().keySet());
+			attributes.remove(Requirement.ATTRIBUTE_TEXT);
+			values.put("attributes", attributes);
+
+			Set<String> refAttributes = new LinkedHashSet<>();
+			refAttributes.add(Requirement.ATTRIBUTE_ID);
+			if (source.getRefAttributesGroup().containsKey(Requirement.ATTRIBUTE_VERSION))
+			{
+				refAttributes.add(Requirement.ATTRIBUTE_VERSION);
+			}
+			refAttributes.addAll(source.getRefAttributesGroup().keySet());
+			refAttributes.remove(Requirement.ATTRIBUTE_TEXT);
+			values.put("refAttributes", refAttributes);
+
+			sheetValues.add(values);
+			sheetValues.add(values);
+		}
+
+		Workbook wb = transformer.transform(is, sheetTemplateNames, sheetNames, sheetValues);
+		int sheetCount = wb.getNumberOfSheets();
+		for (int i = 0; i < sheetCount; i++)
+		{
+			Sheet sheet = wb.getSheetAt(i);
+			int columns = 0;
+			for (int j = 0; j <= sheet.getLastRowNum(); j++)
+			{
+				Row row = sheet.getRow(j);
+				if (row != null)
+				{
+					row.setHeight((short) -1);
+					columns = Math.max(columns, row.getLastCellNum() + 1);
+				}
+			}
+			for (int j = 0; j < columns; j++)
+			{
+				sheet.autoSizeColumn(j);
+			}
 		}
 
 		try (FileOutputStream fos = new FileOutputStream(outputFile.toFile()))
@@ -892,457 +874,6 @@ public final class RETAAnalysis
 		}
 
 		logger.info("End write excel output");
-	}
-
-	private int fillUnknownReferencesTable(Sheet sheet, Map<String, CellStyle> styles, int row,
-			InputRequirementSource requirementSource)
-	{
-		int count = 0;
-		Map<Requirement, List<Requirement>> unknown = new HashMap<>();
-		for (Requirement req : requirementSource.getRequirements())
-		{
-			for (Requirement ref : req.getReferenceIterable())
-			{
-				if (ref.getSource() == null)
-				{
-					List<Requirement> refs = unknown.get(req);
-					if (refs == null)
-					{
-						refs = new ArrayList<>();
-						unknown.put(req, refs);
-					}
-					refs.add(ref);
-					count++;
-				}
-			}
-		}
-
-		if (count > 0)
-		{
-			List<String> idAndVersion = Arrays.asList(Requirement.ATTRIBUTE_TEXT, Requirement.ATTRIBUTE_ID,
-					Requirement.ATTRIBUTE_VERSION);
-			Set<String> attributes = new HashSet<>(requirementSource.getRefAttributesGroup().keySet());
-			attributes.removeAll(idAndVersion);
-
-			Row rowReqCount = sheet.createRow(row++);
-			for (int i = 1; i <= attributes.size() + 3; i++)
-			{
-				rowReqCount.createCell(i).setCellStyle(styles.get("unknownRefCount"));
-			}
-			Cell cellReqCount = rowReqCount.createCell(1);
-			cellReqCount.setCellStyle(styles.get("unknownRefCount"));
-			cellReqCount.setCellFormula("ROWS(B" + (rowReqCount.getRowNum() + 4) + ":B"
-					+ (rowReqCount.getRowNum() + count + 3) + ")");
-			sheet.addMergedRegion(new CellRangeAddress(rowReqCount.getRowNum(), rowReqCount.getRowNum(), 1,
-					attributes.size() + 3));
-
-			int column = 1;
-			Row rowHeader = sheet.createRow(row++);
-			Cell cellHeader = rowHeader.createCell(column++);
-			cellHeader.setCellValue(requirementSource.getName());
-			cellHeader.setCellStyle(styles.get("header"));
-			sheet.addMergedRegion(new CellRangeAddress(rowHeader.getRowNum(), rowHeader.getRowNum() + 1,
-					cellHeader.getColumnIndex(), cellHeader.getColumnIndex()));
-
-			cellHeader = rowHeader.createCell(column);
-			for (int i = cellHeader.getColumnIndex(); i <= cellHeader.getColumnIndex() + attributes.size() + 1; i++)
-			{
-				rowHeader.createCell(i).setCellStyle(styles.get("header"));
-			}
-			cellHeader.setCellValue("Reference unknown");
-			cellHeader.setCellStyle(styles.get("header"));
-			sheet.addMergedRegion(new CellRangeAddress(rowHeader.getRowNum(), rowHeader.getRowNum(),
-					cellHeader.getColumnIndex(), cellHeader.getColumnIndex() + attributes.size() + 1));
-
-			rowHeader = sheet.createRow(row++);
-
-			cellHeader = rowHeader.createCell(column - 1);
-			cellHeader.setCellStyle(styles.get("header"));
-
-			cellHeader = rowHeader.createCell(column++);
-			cellHeader.setCellValue("ID");
-			cellHeader.setCellStyle(styles.get("header"));
-
-			cellHeader = rowHeader.createCell(column++);
-			cellHeader.setCellValue("Version");
-			cellHeader.setCellStyle(styles.get("header"));
-
-			for (String attName : attributes)
-			{
-				cellHeader = rowHeader.createCell(column++);
-				cellHeader.setCellValue(attName);
-				cellHeader.setCellStyle(styles.get("header"));
-			}
-
-			for (Map.Entry<Requirement, List<Requirement>> entry : unknown.entrySet())
-			{
-				column = 1;
-
-				Row rowReq = sheet.createRow(row++);
-
-				Cell cellReq = rowReq.createCell(column++);
-				cellReq.setCellValue(entry.getKey().getText());
-				cellReq.setCellStyle(styles.get("cell"));
-				sheet.addMergedRegion(new CellRangeAddress(rowReq.getRowNum(), rowReq.getRowNum()
-						+ entry.getValue().size() - 1, cellReq.getColumnIndex(), cellReq.getColumnIndex()));
-
-				for (Requirement ref : entry.getValue())
-				{
-					int c = 0;
-
-					cellReq = rowReq.createCell(column + (c++));
-					cellReq.setCellValue(ref.getId());
-					cellReq.setCellStyle(styles.get("cell"));
-
-					cellReq = rowReq.createCell(column + (c++));
-					cellReq.setCellValue(ref.getVersion());
-					cellReq.setCellStyle(styles.get("cell"));
-
-					for (String attName : attributes)
-					{
-						cellReq = rowReq.createCell(column + (c++));
-						cellReq.setCellValue(ref.getAttribut(attName));
-						cellReq.setCellStyle(styles.get("cell"));
-					}
-
-					rowReq = sheet.createRow(row++);
-
-					cellReq = rowReq.createCell(column - 1);
-					cellReq.setCellStyle(styles.get("cell"));
-				}
-
-				cellReq = rowReq.createCell(column - 1);
-				cellReq.setCellStyle(styles.get("clear"));
-				row--;
-			}
-		}
-		return 0;
-	}
-
-	private int fillRequirementTable(Sheet sheet, Map<String, CellStyle> styles, int row,
-			InputRequirementSource requirementSource)
-	{
-		List<String> idAndVersion = Arrays.asList(Requirement.ATTRIBUTE_TEXT, Requirement.ATTRIBUTE_ID,
-				Requirement.ATTRIBUTE_VERSION);
-		Set<String> attributes = new HashSet<>(requirementSource.getAttributesGroup().keySet());
-		attributes.removeAll(idAndVersion);
-
-		int reqCount = requirementSource.getRequirements().size();
-		Row rowReqCount = sheet.createRow(row++);
-		for (int i = 1; i <= attributes.size() + 3; i++)
-		{
-			rowReqCount.createCell(i).setCellStyle(styles.get("reqCount"));
-		}
-		Cell cellReqCount = rowReqCount.createCell(1);
-		cellReqCount.setCellValue(reqCount);
-		cellReqCount.setCellFormula("ROWS(B" + (rowReqCount.getRowNum() + 3) + ":B"
-				+ (rowReqCount.getRowNum() + reqCount + 2) + ")");
-		cellReqCount.setCellStyle(styles.get("reqCount"));
-		sheet.addMergedRegion(new CellRangeAddress(rowReqCount.getRowNum(), rowReqCount.getRowNum(), 1,
-				attributes.size() + 3));
-
-		int column = 1;
-		Row rowHeader = sheet.createRow(row++);
-		Cell cellHeader = rowHeader.createCell(column++);
-		cellHeader.setCellValue("ID");
-		cellHeader.setCellStyle(styles.get("header"));
-
-		cellHeader = rowHeader.createCell(column++);
-		cellHeader.setCellValue("Version");
-		cellHeader.setCellStyle(styles.get("header"));
-
-		for (String attName : attributes)
-		{
-			cellHeader = rowHeader.createCell(column++);
-			cellHeader.setCellValue(attName);
-			cellHeader.setCellStyle(styles.get("header"));
-		}
-
-		cellHeader = rowHeader.createCell(column++);
-		cellHeader.setCellValue("Cover by");
-		cellHeader.setCellStyle(styles.get("header"));
-
-		for (Requirement req : requirementSource.getRequirements())
-		{
-			column = 1;
-
-			Row rowRequirement = sheet.createRow(row++);
-
-			Set<String> coverBySources = new LinkedHashSet<>();
-			for (Requirement coverBy : req.getReferredByIterable())
-			{
-				InputRequirementSource coverBySource = coverBy.getSource();
-				if (coverBySource != null)
-				{
-					coverBySources.add(coverBySource.getName());
-				}
-			}
-
-			CellStyle style = styles.get("cell");
-			if (!requirementSource.getCoversBy().isEmpty())
-			{
-				if (req.getReferredByCount() == 0)
-				{
-					style = styles.get("redcell");
-				}
-				else if (requirementSource.getCoversBy().size() > coverBySources.size())
-				{
-					style = styles.get("yellowcell");
-				}
-			}
-
-			Cell cellRequirement = rowRequirement.createCell(column++);
-			cellRequirement.setCellValue(req.getId());
-			cellRequirement.setCellStyle(style);
-
-			cellRequirement = rowRequirement.createCell(column++);
-			cellRequirement.setCellValue(Strings.nullToEmpty(req.getVersion()));
-			cellRequirement.setCellStyle(style);
-
-			for (String attName : attributes)
-			{
-				cellRequirement = rowRequirement.createCell(column++);
-				cellRequirement.setCellValue(Strings.nullToEmpty(req.getAttribut(attName)));
-				cellRequirement.setCellStyle(style);
-			}
-
-			cellRequirement = rowRequirement.createCell(column++);
-			cellRequirement.setCellValue(Joiner.on('\n').join(coverBySources));
-			cellRequirement.setCellStyle(style);
-		}
-
-		return row;
-	}
-
-	private int fillCoversRequirementTable(Sheet sheet, Map<String, CellStyle> styles, int row,
-			InputRequirementSource requirementSource, InputRequirementSource coverSource)
-	{
-		double coverage = coverSource.getCoversBy().get(requirementSource);
-
-		Row rowTitle = sheet.createRow(row++);
-		for (int i = 0; i <= 3; i++)
-		{
-			rowTitle.createCell(i).setCellStyle(styles.get("reqCount"));
-		}
-		Cell cellTitle = rowTitle.createCell(0);
-		cellTitle.setCellValue(requirementSource.getName() + " cover " + coverSource.getName() + " at "
-				+ (coverage * 100) + "%");
-		cellTitle.setCellStyle(styles.get("normal"));
-		sheet.addMergedRegion(new CellRangeAddress(rowTitle.getRowNum(), rowTitle.getRowNum(), 0, 3));
-
-		if (coverage > 0.0)
-		{
-			int column = 1;
-			Row rowHeader = sheet.createRow(row++);
-			Cell cellHeader = rowHeader.createCell(column++);
-			cellHeader.setCellValue(requirementSource.getName());
-			cellHeader.setCellStyle(styles.get("header"));
-
-			cellHeader = rowHeader.createCell(column++);
-			cellHeader.setCellValue(coverSource.getName());
-			cellHeader.setCellStyle(styles.get("header"));
-
-			for (Requirement req : requirementSource.getRequirements())
-			{
-				Iterable<Requirement> iterable = req.getReferenceIterable();
-				List<String> cover = new ArrayList<>();
-				for (Requirement ref : iterable)
-				{
-					if (ref.getSource() == coverSource)
-					{
-						cover.add(ref.getText());
-					}
-				}
-				if (!cover.isEmpty())
-				{
-					column = 1;
-
-					Row rowRequirement = sheet.createRow(row++);
-
-					Cell cellRequirement = rowRequirement.createCell(column++);
-					cellRequirement.setCellValue(req.getText());
-					cellRequirement.setCellStyle(styles.get("cell"));
-
-					Cell cellReference = rowRequirement.createCell(column++);
-					cellReference.setCellValue(Joiner.on("\n").join(cover));
-					cellReference.setCellStyle(styles.get("cell"));
-				}
-			}
-		}
-
-		return row;
-	}
-
-	private int fillCoversByRequirementTable(Sheet sheet, Map<String, CellStyle> styles, int row,
-			InputRequirementSource requirementSource, InputRequirementSource coverBySource)
-	{
-		double coverage = requirementSource.getCoversBy().get(coverBySource);
-
-		Row rowTitle = sheet.createRow(row++);
-		for (int i = 0; i <= 3; i++)
-		{
-			rowTitle.createCell(i).setCellStyle(styles.get("reqCount"));
-		}
-		Cell cellTitle = rowTitle.createCell(0);
-		cellTitle.setCellValue(requirementSource.getName() + " is cover by " + coverBySource.getName() + " at "
-				+ (coverage * 100) + "%");
-		cellTitle.setCellStyle(styles.get("normal"));
-		sheet.addMergedRegion(new CellRangeAddress(rowTitle.getRowNum(), rowTitle.getRowNum(), 0, 3));
-
-		if (coverage > 0.0)
-		{
-			int column = 1;
-			Row rowHeader = sheet.createRow(row++);
-			Cell cellHeader = rowHeader.createCell(column++);
-			cellHeader.setCellValue(requirementSource.getName());
-			cellHeader.setCellStyle(styles.get("header"));
-
-			cellHeader = rowHeader.createCell(column++);
-			cellHeader.setCellValue(coverBySource.getName());
-			cellHeader.setCellStyle(styles.get("header"));
-
-			for (Requirement req : requirementSource.getRequirements())
-			{
-				Iterable<Requirement> iterable = req.getReferredByIterable();
-				List<String> cover = new ArrayList<>();
-				for (Requirement ref : iterable)
-				{
-					if (ref.getSource() == coverBySource)
-					{
-						cover.add(ref.getText());
-					}
-				}
-				if (!cover.isEmpty())
-				{
-					column = 1;
-
-					Row rowRequirement = sheet.createRow(row++);
-
-					Cell cellRequirement = rowRequirement.createCell(column++);
-					cellRequirement.setCellValue(req.getText());
-					cellRequirement.setCellStyle(styles.get("cell"));
-
-					Cell cellReference = rowRequirement.createCell(column++);
-					cellReference.setCellValue(Joiner.on("\n").join(cover));
-					cellReference.setCellStyle(styles.get("cell"));
-				}
-			}
-		}
-
-		return row;
-	}
-
-	private static Map<String, CellStyle> createStyles(Workbook wb)
-	{
-		Map<String, CellStyle> styles = new HashMap<String, CellStyle>();
-
-		CellStyle style;
-		style = wb.createCellStyle();
-		styles.put("clear", style);
-
-		Font titleFont = wb.createFont();
-		titleFont.setBoldweight(Font.BOLDWEIGHT_BOLD);
-		style = createBorderedStyle(wb);
-		style.setAlignment(CellStyle.ALIGN_CENTER);
-		style.setFillForegroundColor(IndexedColors.LIGHT_CORNFLOWER_BLUE.getIndex());
-		style.setFillPattern(CellStyle.SOLID_FOREGROUND);
-		style.setFont(titleFont);
-		styles.put("title", style);
-
-		Font fileFont = wb.createFont();
-		fileFont.setBoldweight(Font.BOLDWEIGHT_NORMAL);
-		style = createBorderedStyle(wb);
-		style.setAlignment(CellStyle.ALIGN_CENTER);
-		style.setFillForegroundColor(IndexedColors.LIGHT_CORNFLOWER_BLUE.getIndex());
-		style.setFillPattern(CellStyle.SOLID_FOREGROUND);
-		style.setFont(fileFont);
-		styles.put("file", style);
-
-		Font headerFont = wb.createFont();
-		headerFont.setBoldweight(Font.BOLDWEIGHT_NORMAL);
-		style = createBorderedStyle(wb);
-		style.setAlignment(CellStyle.ALIGN_CENTER);
-		style.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
-		style.setFillPattern(CellStyle.SOLID_FOREGROUND);
-		style.setFont(headerFont);
-		styles.put("header", style);
-
-		Font tableCellFont = wb.createFont();
-		tableCellFont.setBoldweight(Font.BOLDWEIGHT_NORMAL);
-		style = createBorderedStyle(wb);
-		style.setAlignment(CellStyle.ALIGN_LEFT);
-		style.setFillForegroundColor(IndexedColors.WHITE.getIndex());
-		style.setFillPattern(CellStyle.SOLID_FOREGROUND);
-		style.setFont(tableCellFont);
-		style.setWrapText(true);
-		styles.put("cell", style);
-
-		Font tableRedCellFont = wb.createFont();
-		tableRedCellFont.setBoldweight(Font.BOLDWEIGHT_NORMAL);
-		style = createBorderedStyle(wb);
-		style.setAlignment(CellStyle.ALIGN_LEFT);
-		style.setFillForegroundColor(IndexedColors.RED.getIndex());
-		style.setFillPattern(CellStyle.SOLID_FOREGROUND);
-		style.setFont(tableRedCellFont);
-		style.setWrapText(true);
-		styles.put("redcell", style);
-
-		Font tableYellowCellFont = wb.createFont();
-		tableYellowCellFont.setBoldweight(Font.BOLDWEIGHT_NORMAL);
-		style = createBorderedStyle(wb);
-		style.setAlignment(CellStyle.ALIGN_LEFT);
-		style.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
-		style.setFillPattern(CellStyle.SOLID_FOREGROUND);
-		style.setFont(tableYellowCellFont);
-		style.setWrapText(true);
-		styles.put("yellowcell", style);
-
-		Font reqCountFont = wb.createFont();
-		reqCountFont.setBoldweight(Font.BOLDWEIGHT_NORMAL);
-		style = wb.createCellStyle();
-		style.setAlignment(CellStyle.ALIGN_CENTER);
-		style.setFillForegroundColor(IndexedColors.WHITE.getIndex());
-		style.setFillPattern(CellStyle.SOLID_FOREGROUND);
-		style.setFont(reqCountFont);
-		style.setDataFormat(wb.createDataFormat().getFormat(
-				"\\N\\o\\m\\b\\r\\e \\d\\'\\e\\x\\i\\g\\e\\n\\c\\e\\s\\: ###,##0"));
-		styles.put("reqCount", style);
-
-		Font unknownRefCount = wb.createFont();
-		unknownRefCount.setBoldweight(Font.BOLDWEIGHT_NORMAL);
-		style = wb.createCellStyle();
-		style.setAlignment(CellStyle.ALIGN_CENTER);
-		style.setFillForegroundColor(IndexedColors.WHITE.getIndex());
-		style.setFillPattern(CellStyle.SOLID_FOREGROUND);
-		style.setFont(unknownRefCount);
-		style.setDataFormat(wb.createDataFormat().getFormat(
-				"\\N\\o\\m\\b\\r\\e \\d\\e \\r\\e\\f\\e\\r\\e\\n\\c\\e\\s \\i\\n\\c\\o\\n\\n\\u\\e\\s\\: ###,##0"));
-		styles.put("unknownRefCount", style);
-
-		Font normalFont = wb.createFont();
-		normalFont.setBoldweight(Font.BOLDWEIGHT_NORMAL);
-		style = wb.createCellStyle();
-		style.setAlignment(CellStyle.ALIGN_CENTER);
-		style.setFillForegroundColor(IndexedColors.WHITE.getIndex());
-		style.setFillPattern(CellStyle.SOLID_FOREGROUND);
-		style.setFont(normalFont);
-		styles.put("normal", style);
-
-		return styles;
-	}
-
-	private static CellStyle createBorderedStyle(Workbook wb)
-	{
-		CellStyle style = wb.createCellStyle();
-		style.setBorderRight(CellStyle.BORDER_THIN);
-		style.setRightBorderColor(IndexedColors.BLACK.getIndex());
-		style.setBorderBottom(CellStyle.BORDER_THIN);
-		style.setBottomBorderColor(IndexedColors.BLACK.getIndex());
-		style.setBorderLeft(CellStyle.BORDER_THIN);
-		style.setLeftBorderColor(IndexedColors.BLACK.getIndex());
-		style.setBorderTop(CellStyle.BORDER_THIN);
-		style.setTopBorderColor(IndexedColors.BLACK.getIndex());
-		return style;
 	}
 
 	@Override
