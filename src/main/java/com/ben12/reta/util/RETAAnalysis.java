@@ -165,7 +165,15 @@ public final class RETAAnalysis
 				if (!"xlsx".equals(Files.getFileExtension(fileName)))
 				{
 					logger.warning("output extension changed for xlsx");
-					this.output = this.output.getParent().resolve(Files.getNameWithoutExtension(fileName) + ".xlsx");
+					Path parent = this.output.getParent();
+					if (parent == null)
+					{
+						this.output = Paths.get(Files.getNameWithoutExtension(fileName) + ".xlsx");
+					}
+					else
+					{
+						this.output = parent.resolve(Files.getNameWithoutExtension(fileName) + ".xlsx");
+					}
 				}
 			}
 			else

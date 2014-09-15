@@ -440,6 +440,7 @@ public class MainConfigurationController implements Initializable
 			}
 			finally
 			{
+				progress.unbind();
 				progress.set(1.0);
 			}
 		}).start();
@@ -450,7 +451,7 @@ public class MainConfigurationController implements Initializable
 	{
 		Path currentFile = bufferedOutput.get();
 		FileChooser fileChooser = new FileChooser();
-		fileChooser.getExtensionFilters().add(new ExtensionFilter("Excel file", "*.xls", "*.xlsx"));
+		fileChooser.getExtensionFilters().add(new ExtensionFilter("Excel file", "*.xlsx"));
 		fileChooser.setTitle("RETA analysis output file");
 		if (currentFile != null)
 		{
