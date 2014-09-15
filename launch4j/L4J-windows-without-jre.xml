@@ -2,7 +2,7 @@
 <launch4jConfig>
   <dontWrapJar>false</dontWrapJar>
   <headerType>gui</headerType>
-  <jar>D:\Projets\RETA\target\reta-0.1.0.jar</jar>
+  <jar>D:\Projets\RETA\target\reta-0.1.1.jar</jar>
   <outfile>D:\Projets\RETA\target\reta.exe</outfile>
   <errTitle></errTitle>
   <cmdLine></cmdLine>
