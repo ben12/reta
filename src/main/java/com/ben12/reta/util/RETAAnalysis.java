@@ -666,6 +666,14 @@ public final class RETAAnalysis
 
 			r = reader.read(buffer);
 		}
+
+		if (requirement != null && patternRef != null)
+		{
+			// search for references between last requirement end and end of file
+			Matcher matcherRef = patternRef.matcher(builder);
+			parseReferences(requirementSource, requirement, matcherRef);
+			builder.setLength(0);
+		}
 	}
 
 	private void parseReferences(InputRequirementSource requirementSource, Requirement requirement, Matcher matcherRef)
