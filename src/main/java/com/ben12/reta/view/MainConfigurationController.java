@@ -473,7 +473,11 @@ public class MainConfigurationController implements Initializable
 		fileChooser.getExtensionFilters().add(new ExtensionFilter("RETA analysis description", "*.reta"));
 		fileChooser.setTitle("RETA analysis");
 		File file = fileChooser.showOpenDialog(root.getScene().getWindow());
+		open(file);
+	}
 
+	public void open(File file)
+	{
 		if (file != null && file.isFile())
 		{
 			RETAAnalysis.getInstance().configure(file);

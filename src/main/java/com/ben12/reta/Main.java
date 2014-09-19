@@ -20,7 +20,9 @@
 
 package com.ben12.reta;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -31,6 +33,8 @@ import javafx.fxml.JavaFXBuilderFactory;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+
+import com.ben12.reta.view.MainConfigurationController;
 
 /**
  * @author Benoît Moreau (ben.12)
@@ -56,6 +60,14 @@ public class Main extends Application
 			stage.setTitle("RETA Configuration");
 			stage.sizeToScene();
 			stage.show();
+
+			Parameters parameters = getParameters();
+			List<String> args = parameters.getRaw();
+			if (args.size() > 0)
+			{
+				File retaFile = new File(args.get(0));
+				((MainConfigurationController) loader.getController()).open(retaFile);
+			}
 		}
 		catch (Exception e)
 		{
