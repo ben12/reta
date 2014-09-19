@@ -336,7 +336,6 @@ public final class RETAAnalysis
 						if (coverRequirementSource != null)
 						{
 							requirementSource.getCovers().add(coverRequirementSource);
-							coverRequirementSource.getCoversBy().put(requirementSource, 0.0);
 						}
 						else
 						{
@@ -492,7 +491,7 @@ public final class RETAAnalysis
 	{
 		logger.info("Start parsing " + requirementSource.getName());
 
-		requirementSource.getRequirements().clear();
+		requirementSource.clear();
 
 		Pattern patternStart = null;
 		Pattern patternEnd = null;

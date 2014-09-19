@@ -144,6 +144,15 @@ public class InputRequirementSource
 	}
 
 	/**
+	 * Clear previous analysis results.
+	 */
+	public void clear()
+	{
+		requirements.clear();
+		coversBy.clear();
+	}
+
+	/**
 	 * @return the document source name
 	 */
 	public String getName()
