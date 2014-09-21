@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.ObjectBinding;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.adapter.JavaBeanStringPropertyBuilder;
 import javafx.beans.value.ObservableValue;
@@ -56,6 +57,7 @@ import javafx.util.StringConverter;
 import javafx.util.converter.IntegerStringConverter;
 
 import com.ben12.reta.model.InputRequirementSource;
+import com.ben12.reta.model.Requirement;
 import com.ben12.reta.util.RETAAnalysis;
 import com.ben12.reta.view.buffering.Buffering;
 import com.ben12.reta.view.buffering.BufferingManager;
@@ -345,7 +347,12 @@ public class SourceConfigurationController
 		addNewAttribute.disableProperty().bind(newAttribute.textProperty().isEmpty());
 		addNewReference.disableProperty().bind(newReference.textProperty().isEmpty());
 
-		deleteAttribute.disableProperty().bind(attributesTable.getSelectionModel().selectedItemProperty().isNull());
+		ReadOnlyObjectProperty<MapTableView<String, Integer>.Entry> selectedAttribute = attributesTable.getSelectionModel()
+				.selectedItemProperty();
+		deleteAttribute.disableProperty().bind(
+				selectedAttribute.isNull()
+						.or(Bindings.selectString(selectedAttribute, "key").isEqualTo(Requirement.ATTRIBUTE_ID))
+						.or(Bindings.selectString(selectedAttribute, "key").isEqualTo(Requirement.ATTRIBUTE_TEXT)));
 		deleteReference.disableProperty().bind(referencesTable.getSelectionModel().selectedItemProperty().isNull());
 
 		return nameProperty;

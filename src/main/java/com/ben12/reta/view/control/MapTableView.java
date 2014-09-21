@@ -25,6 +25,8 @@ import java.util.stream.Collectors;
 
 import javafx.application.Platform;
 import javafx.beans.property.Property;
+import javafx.beans.property.ReadOnlyObjectPropertyBase;
+import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
@@ -102,11 +104,32 @@ public class MapTableView<K, V> extends TableView<MapTableView<K, V>.Entry>
 
 	public class Entry implements MapChangeListener<K, V>
 	{
-		private final Map.Entry<K, V>	entry;
+		private final Map.Entry<K, V>				entry;
 
-		private final Property<V>		value	= new SimpleObjectProperty<>();
+		private final Property<V>					value	= new SimpleObjectProperty<>();
 
-		private final ChangeListener<V>	changeListener;
+		private final ReadOnlyObjectPropertyBase<K>	key		= new ReadOnlyObjectPropertyBase<K>()
+															{
+																@Override
+																public Object getBean()
+																{
+																	return Entry.this;
+																}
+
+																@Override
+																public String getName()
+																{
+																	return "key";
+																}
+
+																@Override
+																public K get()
+																{
+																	return entry.getKey();
+																}
+															};
+
+		private final ChangeListener<V>				changeListener;
 
 		/**
 		 * 
@@ -143,6 +166,11 @@ public class MapTableView<K, V> extends TableView<MapTableView<K, V>.Entry>
 		public K getKey()
 		{
 			return entry.getKey();
+		}
+
+		public ReadOnlyProperty<K> keyProperty()
+		{
+			return key;
 		}
 
 		public Property<V> valueProperty()

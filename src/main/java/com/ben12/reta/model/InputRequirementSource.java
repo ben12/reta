@@ -140,7 +140,8 @@ public class InputRequirementSource
 		this.sourcePath = Objects.requireNonNull(sourcePath);
 		this.filter = Strings.nullToEmpty(filter);
 
-		attributesGroup.put(Requirement.ATTRIBUTE_ID, null);
+		attributesGroup.put(Requirement.ATTRIBUTE_ID, 0);
+		attributesGroup.put(Requirement.ATTRIBUTE_TEXT, 0);
 	}
 
 	/**

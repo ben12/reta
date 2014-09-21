@@ -336,7 +336,7 @@ public class Requirement implements Comparable<Requirement>
 		else
 		{
 			comp = ComparisonChain.start()
-					.compare(id, other.id)
+					.compare(id, other.id, Ordering.natural().nullsFirst())
 					.compare(version, other.version, Ordering.natural().nullsFirst())
 					.result();
 		}

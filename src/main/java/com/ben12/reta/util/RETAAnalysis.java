@@ -233,18 +233,12 @@ public final class RETAAnalysis
 								if (!endRegex.isEmpty())
 								{
 									logger.severe("requirement.start.regex is mandatory for section " + doc);
-									continue;
 								}
-							}
-							else if (endRegex.isEmpty())
-							{
-								logger.severe("requirement.end.regex is mandatory for section " + doc);
-								continue;
 							}
 							else if (idIndex == null)
 							{
 								logger.severe("requirement.start.Id.index is mandatory for section " + doc);
-								continue;
+								idIndex = 0;
 							}
 
 							requirementSource.setReqStart(startRegex);
@@ -407,7 +401,12 @@ public final class RETAAnalysis
 									reqAttributeGroup.getValue());
 						}
 					}
-					sourceSection.put("requirement.end.regex", requirementSource.getReqEnd());
+
+					String reqEnd = requirementSource.getReqEnd();
+					if (!Strings.isNullOrEmpty(reqEnd))
+					{
+						sourceSection.put("requirement.end.regex", reqEnd);
+					}
 				}
 
 				String reqRef = requirementSource.getReqRef();
@@ -500,11 +499,13 @@ public final class RETAAnalysis
 		{
 			patternRef = Pattern.compile(requirementSource.getReqRef(), Pattern.MULTILINE);
 		}
-		if (!Strings.isNullOrEmpty(requirementSource.getReqStart())
-				&& !Strings.isNullOrEmpty(requirementSource.getReqEnd()))
+		if (!Strings.isNullOrEmpty(requirementSource.getReqStart()))
 		{
 			patternStart = Pattern.compile(requirementSource.getReqStart(), Pattern.MULTILINE);
-			patternEnd = Pattern.compile(requirementSource.getReqEnd(), Pattern.MULTILINE);
+			if (!Strings.isNullOrEmpty(requirementSource.getReqEnd()))
+			{
+				patternEnd = Pattern.compile(requirementSource.getReqEnd(), Pattern.MULTILINE);
+			}
 
 			parseMultiRequirementByFile(requirementSource, patternStart, patternEnd, patternRef);
 		}
@@ -588,13 +589,18 @@ public final class RETAAnalysis
 			buffer.clear();
 
 			Matcher matcherStart = patternStart.matcher(builder);
-			Matcher matcherEnd = patternEnd.matcher(builder);
+			Matcher matcherEnd = (patternEnd != null ? patternEnd.matcher(builder) : null);
 
 			while (matcherStart.find(0))
 			{
 				requirementStarted = true;
 
-				boolean endMatch = matcherEnd.find(matcherStart.end());
+				boolean endMatch = false;
+				if (matcherEnd != null)
+				{
+					endMatch = matcherEnd.find(matcherStart.end());
+				}
+
 				if (endMatch)
 				{
 					int pos = matcherStart.start();
@@ -622,9 +628,17 @@ public final class RETAAnalysis
 					matcherStart.find(0);
 				}
 
-				if (matcherEnd.find(matcherStart.end()))
+				if (matcherEnd == null || matcherEnd.find(matcherStart.end()))
 				{
-					String reqContent = builder.substring(matcherStart.end(), matcherEnd.start());
+					int endPos = matcherStart.end();
+					int endEndPos = matcherStart.end();
+					if (matcherEnd != null)
+					{
+						endPos = matcherEnd.start();
+						endEndPos = matcherEnd.end();
+					}
+
+					String reqContent = builder.substring(matcherStart.end(), endPos);
 
 					requirement = new Requirement(requirementSource);
 					requirement.setContent(reqContent);
@@ -648,7 +662,7 @@ public final class RETAAnalysis
 
 					requirementSource.getRequirements().add(requirement);
 
-					builder.replace(0, matcherEnd.end(), "");
+					builder.replace(0, endEndPos, "");
 					requirementStarted = false;
 				}
 				else
