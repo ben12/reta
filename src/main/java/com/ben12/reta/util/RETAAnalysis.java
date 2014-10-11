@@ -92,9 +92,10 @@ public final class RETAAnalysis
 
 	private File										config				= null;
 
-	@NotNull
+	@NotNull(message = "invalid.path")
+	@com.ben12.reta.constraints.Path
 	@PathExists(kind = KindOfPath.DIRECTORY, parent = true)
-	private Path										output				= null;
+	private String										output				= null;
 
 	// TODO maybe useful to see unknown references and mismatch versions
 	// private final Comparator<Requirement> reqCompId = (req1, req2) -> req1.getId().compareTo(req2.getId());
@@ -131,7 +132,7 @@ public final class RETAAnalysis
 	/**
 	 * @return the output
 	 */
-	public Path getOutput()
+	public String getOutput()
 	{
 		return output;
 	}
@@ -140,7 +141,7 @@ public final class RETAAnalysis
 	 * @param output
 	 *            the output to set
 	 */
-	public void setOutput(Path output)
+	public void setOutput(String output)
 	{
 		this.output = output;
 	}
@@ -160,25 +161,27 @@ public final class RETAAnalysis
 			String output = ini.get("GENERAL", "output");
 			if (output != null)
 			{
-				this.output = Paths.get(output);
-				String fileName = this.output.getFileName().toString();
+				Path outPath = Paths.get(output);
+				this.output = outPath.normalize().toString();
+				String fileName = outPath.getFileName().toString();
 				if (!"xlsx".equals(Files.getFileExtension(fileName)))
 				{
 					logger.warning("output extension changed for xlsx");
-					Path parent = this.output.getParent();
+					Path parent = outPath.getParent();
 					if (parent == null)
 					{
-						this.output = Paths.get(Files.getNameWithoutExtension(fileName) + ".xlsx");
+						this.output = Files.getNameWithoutExtension(fileName) + ".xlsx";
 					}
 					else
 					{
-						this.output = parent.resolve(Files.getNameWithoutExtension(fileName) + ".xlsx");
+						this.output = parent.resolve(Files.getNameWithoutExtension(fileName) + ".xlsx").toString();
 					}
 				}
 			}
 			else
 			{
-				this.output = Paths.get(iniFile.getParent(), Files.getNameWithoutExtension(iniFile.getName()) + ".xlsx");
+				this.output = Paths.get(iniFile.getParent(), Files.getNameWithoutExtension(iniFile.getName()) + ".xlsx")
+						.toString();
 			}
 
 			Map<InputRequirementSource, List<String>> coversMap = new LinkedHashMap<>();
@@ -214,8 +217,7 @@ public final class RETAAnalysis
 					String filter = section.get("filter", "");
 					if (!source.isEmpty())
 					{
-						InputRequirementSource requirementSource = new InputRequirementSource(doc, Paths.get(source),
-								filter);
+						InputRequirementSource requirementSource = new InputRequirementSource(doc, source, filter);
 
 						try
 						{
@@ -526,7 +528,7 @@ public final class RETAAnalysis
 			throws IOException
 	{
 		final ConcatReader reader = getReader(requirementSource);
-		Path root = requirementSource.getSourcePath();
+		Path root = Paths.get(requirementSource.getSourcePath());
 		if (!root.isAbsolute())
 		{
 			Path cfgRoot = config.getAbsoluteFile().getParentFile().toPath();
@@ -717,7 +719,7 @@ public final class RETAAnalysis
 	private ConcatReader getReader(InputRequirementSource requirementSource) throws IOException
 	{
 		ConcatReader concatReader = new ConcatReader();
-		Path srcPath = requirementSource.getSourcePath();
+		Path srcPath = Paths.get(requirementSource.getSourcePath());
 		if (!srcPath.isAbsolute())
 		{
 			Path root = config.getAbsoluteFile().getParentFile().toPath();
@@ -804,7 +806,7 @@ public final class RETAAnalysis
 	{
 		logger.info("Start write excel output");
 
-		Path outputFile = output;
+		Path outputFile = Paths.get(output);
 		if (!outputFile.isAbsolute())
 		{
 			Path root = config.getAbsoluteFile().getParentFile().toPath();

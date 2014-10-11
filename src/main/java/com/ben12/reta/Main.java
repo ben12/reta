@@ -23,13 +23,13 @@ package com.ben12.reta;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
-import javafx.fxml.JavaFXBuilderFactory;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -51,13 +51,15 @@ public class Main extends Application
 	{
 		try
 		{
+			ResourceBundle labels = ResourceBundle.getBundle("com/ben12/reta/view/Labels");
+
 			FXMLLoader loader = new FXMLLoader();
-			loader.setBuilderFactory(new JavaFXBuilderFactory());
 			loader.setLocation(Main.class.getResource("view/MainConfigurationUI.fxml"));
+			loader.setResources(labels);
 			Parent root = (Parent) loader.load();
 
 			stage.setScene(new Scene(root));
-			stage.setTitle("RETA Configuration");
+			stage.setTitle(labels.getString("title"));
 			stage.sizeToScene();
 			stage.show();
 

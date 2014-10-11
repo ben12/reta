@@ -21,6 +21,7 @@ package com.ben12.reta.view;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -69,7 +71,6 @@ import com.ben12.reta.view.control.MapTableView;
 import com.ben12.reta.view.validation.ValidationUtils;
 import com.google.common.base.Objects;
 import com.google.common.base.Splitter;
-import com.google.common.base.Strings;
 
 /**
  * @author Benoît Moreau (ben.12)
@@ -84,6 +85,8 @@ public class SourceConfigurationController
 	private ObservableList<InputRequirementSource>						sources				= null;
 
 	private ObservableList<ObjectProperty<String>>						sourcesName			= null;
+
+	private ResourceBundle												errors				= ResourceBundle.getBundle("ValidationMessages");
 
 	@FXML
 	private TitledPane													titledPane;
@@ -237,7 +240,7 @@ public class SourceConfigurationController
 						infoValidityProperty().set(infoValidityProperty().get() + '\n');
 					}
 					validityProperty().set(false);
-					infoValidityProperty().set(infoValidityProperty().get() + "Must be unique");
+					infoValidityProperty().set(infoValidityProperty().get() + errors.getString("not.unique"));
 				}
 			}
 		};
@@ -247,47 +250,38 @@ public class SourceConfigurationController
 
 		nameProperty.addListener(e -> mainCallBack.call(requirementSource));
 
-		// Input requirement source path
-		StringConverter<Path> pathStringConverter = new StringConverter<Path>()
-		{
-			@Override
-			public Path fromString(String pathname)
-			{
-				return (Strings.isNullOrEmpty(pathname) ? null : Paths.get(pathname));
-			}
-
-			@Override
-			public String toString(Path file)
-			{
-				return (file != null ? file.toString() : null);
-			}
-		};
-
-		final SimpleObjectPropertyBuffering<Path> sourcePathBuffered = bufferingManager.bufferingObject(
+		final SimpleObjectPropertyBuffering<String> sourcePathBuffered = bufferingManager.bufferingString(
 				requirementSource, InputRequirementSource.SOURCE_PATH);
-		initializeLabeled(sourcePath, sourcePathValidity, sourcePathBuffered, pathStringConverter);
+		initializeLabeled(sourcePath, sourcePathValidity, sourcePathBuffered);
 
 		// Input requirement source path filter
 		initializeLabeled(filter, filterValidity,
 				bufferingManager.bufferingString(requirementSource, InputRequirementSource.FILTER));
 		filter.disableProperty().bind(Bindings.createBooleanBinding(() -> {
-			Path path = sourcePathBuffered.getValue();
 			boolean isDirectory = true;
-			if (path != null && !path.isAbsolute())
+			try
 			{
-				File config = RETAAnalysis.getInstance().getConfig();
-				if (config != null)
+				Path path = Paths.get(sourcePathBuffered.getValue());
+				if (path != null && !path.isAbsolute())
 				{
-					path = config.getAbsoluteFile().getParentFile().toPath().resolve(path);
+					File config = RETAAnalysis.getInstance().getConfig();
+					if (config != null)
+					{
+						path = config.getAbsoluteFile().getParentFile().toPath().resolve(path);
+					}
+					else
+					{
+						path = null;
+					}
 				}
-				else
+				if (path != null)
 				{
-					path = null;
+					isDirectory = !Files.exists(path) || Files.isDirectory(path);
 				}
 			}
-			if (path != null)
+			catch (InvalidPathException e)
 			{
-				isDirectory = !Files.exists(path) || Files.isDirectory(path);
+				// Invalid path
 			}
 			return !isDirectory;
 		}, sourcePathBuffered));

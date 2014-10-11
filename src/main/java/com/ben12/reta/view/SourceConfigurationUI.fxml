@@ -8,6 +8,8 @@
 <?import javafx.geometry.*?>
 <?import com.ben12.reta.view.control.*?>
 <?import com.ben12.reta.view.validation.*?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Label?>
 
 <TitledPane xmlns:fx="http://javafx.com/fxml" fx:controller="com.ben12.reta.view.SourceConfigurationController"
 	fx:id="titledPane" prefWidth="400" prefHeight="500">
@@ -38,9 +40,9 @@
 						<RowConstraints vgrow="ALWAYS" />
 					</rowConstraints>
 					<children>
-						<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="0" text="Rename:" />
-						<TextField fx:id="name" promptText="Unique and not empty name" GridPane.columnIndex="1"
-							GridPane.rowIndex="0" GridPane.columnSpan="3">
+						<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="0" text="%rename" />
+						<TextField fx:id="name" promptText="%rename.help" GridPane.columnIndex="1" GridPane.rowIndex="0"
+							GridPane.columnSpan="3">
 							<tooltip>
 								<RETATooltip text="${name.text}" />
 							</tooltip>
@@ -55,9 +57,8 @@
 							</image>
 						</ImageView>
 
-						<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="1" text="Path:" />
-						<TextField fx:id="sourcePath" promptText="Path of file or directory" GridPane.columnIndex="1"
-							GridPane.rowIndex="1">
+						<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="1" text="%path" />
+						<TextField fx:id="sourcePath" promptText="%path.help" GridPane.columnIndex="1" GridPane.rowIndex="1">
 							<tooltip>
 								<RETATooltip text="${sourcePath.text}" />
 							</tooltip>
@@ -71,20 +72,21 @@
 								<fx:reference source="errorImg" />
 							</image>
 						</ImageView>
-						<Button text="File" GridPane.columnIndex="2" GridPane.rowIndex="1" maxWidth="10000" onAction="#chooseSourcePathFile">
+						<Button text="%soure.file" GridPane.columnIndex="2" GridPane.rowIndex="1" maxWidth="10000" onAction="#chooseSourcePathFile">
 							<tooltip>
-								<RETATooltip text="Select a file" />
+								<RETATooltip text="%soure.file.help" />
 							</tooltip>
 						</Button>
-						<Button text="Folder" GridPane.columnIndex="3" GridPane.rowIndex="1" maxWidth="10000" onAction="#chooseSourcePathFolder">
+						<Button text="%source.folder" GridPane.columnIndex="3" GridPane.rowIndex="1" maxWidth="10000"
+							onAction="#chooseSourcePathFolder">
 							<tooltip>
-								<RETATooltip text="Select a folder" />
+								<RETATooltip text="%source.folder.help" />
 							</tooltip>
 						</Button>
 
-						<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="2" text="Filter:" />
-						<TextField fx:id="filter" promptText="File regular expression to match if path is directory"
-							GridPane.columnIndex="1" GridPane.rowIndex="2" GridPane.columnSpan="3">
+						<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="2" text="%filter" />
+						<TextField fx:id="filter" promptText="%filter.help" GridPane.columnIndex="1" GridPane.rowIndex="2"
+							GridPane.columnSpan="3">
 							<tooltip>
 								<RETATooltip text="${filter.text}" />
 							</tooltip>
@@ -99,9 +101,9 @@
 							</image>
 						</ImageView>
 
-						<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="3" text="Requirement start:" />
-						<TextField fx:id="reqStart" promptText="Regular expression to match for requirement start"
-							GridPane.columnIndex="1" GridPane.rowIndex="3" GridPane.columnSpan="3">
+						<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="3" text="%req.start" />
+						<TextField fx:id="reqStart" promptText="%req.start.help" GridPane.columnIndex="1" GridPane.rowIndex="3"
+							GridPane.columnSpan="3">
 							<tooltip>
 								<RETATooltip text="${reqStart.text}" />
 							</tooltip>
@@ -116,9 +118,9 @@
 							</image>
 						</ImageView>
 
-						<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="4" text="Requirement end:" />
-						<TextField fx:id="reqEnd" promptText="Regular expression to match for requirement end"
-							GridPane.columnIndex="1" GridPane.rowIndex="4" GridPane.columnSpan="3">
+						<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="4" text="%req.end" />
+						<TextField fx:id="reqEnd" promptText="%req.end.help" GridPane.columnIndex="1" GridPane.rowIndex="4"
+							GridPane.columnSpan="3">
 							<tooltip>
 								<RETATooltip text="${reqEnd.text}" />
 							</tooltip>
@@ -133,9 +135,9 @@
 							</image>
 						</ImageView>
 
-						<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="5" text="Requirement reference:" />
-						<TextField fx:id="reqRef" promptText="Regular expression to match for requirement reference"
-							GridPane.columnIndex="1" GridPane.rowIndex="5" GridPane.columnSpan="3">
+						<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="5" text="%req.ref" />
+						<TextField fx:id="reqRef" promptText="%req.ref.help" GridPane.columnIndex="1" GridPane.rowIndex="5"
+							GridPane.columnSpan="3">
 							<tooltip>
 								<RETATooltip text="${reqRef.text}" />
 							</tooltip>
@@ -150,11 +152,11 @@
 							</image>
 						</ImageView>
 
-						<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="6" text="Covers:" />
-						<TextField fx:id="covers" promptText="Cover name list separated by ," GridPane.columnIndex="1"
-							GridPane.rowIndex="6" GridPane.columnSpan="3">
+						<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="6" text="%covers" />
+						<TextField fx:id="covers" promptText="%covers.help" GridPane.columnIndex="1" GridPane.rowIndex="6"
+							GridPane.columnSpan="3">
 							<tooltip>
-								<RETATooltip text="${reqRef.text}" />
+								<RETATooltip text="${covers.text}" />
 							</tooltip>
 						</TextField>
 						<ImageView fx:id="coversValidity" GridPane.columnIndex="1" GridPane.rowIndex="6" GridPane.halignment="LEFT"
@@ -176,30 +178,36 @@
 								<ColumnConstraints hgrow="ALWAYS" />
 							</columnConstraints>
 							<rowConstraints>
-								<RowConstraints vgrow="ALWAYS" />
+								<RowConstraints vgrow="NEVER" />
+								<RowConstraints vgrow="ALWAYS" valignment="TOP" />
 								<RowConstraints vgrow="NEVER" />
 							</rowConstraints>
 							<children>
-								<VBox GridPane.columnIndex="0" GridPane.rowIndex="0" spacing="5">
+								<HBox GridPane.columnIndex="0" GridPane.rowIndex="0" GridPane.columnSpan="2" spacing="5" alignment="BASELINE_LEFT">
 									<children>
-										<Button fx:id="deleteAttribute" text="Delete" maxWidth="1000" onAction="#deleteAttribute" />
+										<Separator HBox.hgrow="ALWAYS" />
+										<Label textFill="DIMGREY" text="%req.start.att.title" />
+										<Separator HBox.hgrow="ALWAYS" />
 									</children>
-								</VBox>
+								</HBox>
+							
+								<Button fx:id="deleteAttribute" GridPane.columnIndex="0" GridPane.rowIndex="1" text="%delete.att.index"
+									maxWidth="1000" onAction="#deleteAttribute" />
 
-								<MapTableView fx:id="attributesTable" GridPane.columnIndex="1" GridPane.rowIndex="0" editable="true">
+								<MapTableView fx:id="attributesTable" GridPane.columnIndex="1" GridPane.rowIndex="1" editable="true">
 									<columns>
-										<TableColumn fx:id="reqAttNameColumn" text="Attribute" />
-										<TableColumn fx:id="reqAttGroupColumn" text="Start Regex Group" sortType="ASCENDING" />
+										<TableColumn fx:id="reqAttNameColumn" text="%attribute" />
+										<TableColumn fx:id="reqAttGroupColumn" text="%req.start.att.index" sortType="ASCENDING" />
 									</columns>
 									<columnResizePolicy>
 										<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
 									</columnResizePolicy>
 								</MapTableView>
 
-								<HBox GridPane.columnIndex="1" GridPane.rowIndex="1" spacing="5">
+								<HBox GridPane.columnIndex="1" GridPane.rowIndex="2" spacing="5">
 									<children>
-										<TextField fx:id="newAttribute" promptText="Attribute Name" prefWidth="${reqAttNameColumn.width}" />
-										<Button fx:id="addNewAttribute" text="New" minWidth="50" onAction="#addNewAttribute" />
+										<TextField fx:id="newAttribute" promptText="%new.att.index.help" prefWidth="${reqAttNameColumn.width}" />
+										<Button fx:id="addNewAttribute" text="%new.att.index" minWidth="50" onAction="#addNewAttribute" />
 									</children>
 								</HBox>
 							</children>
@@ -214,30 +222,36 @@
 								<ColumnConstraints hgrow="ALWAYS" />
 							</columnConstraints>
 							<rowConstraints>
-								<RowConstraints vgrow="ALWAYS" />
+								<RowConstraints vgrow="NEVER" />
+								<RowConstraints vgrow="ALWAYS" valignment="TOP" />
 								<RowConstraints vgrow="NEVER" />
 							</rowConstraints>
 							<children>
-								<VBox GridPane.columnIndex="0" GridPane.rowIndex="0" spacing="5">
+								<HBox GridPane.columnIndex="0" GridPane.rowIndex="0" GridPane.columnSpan="2" spacing="5" alignment="BASELINE_LEFT">
 									<children>
-										<Button fx:id="deleteReference" text="Delete" maxWidth="1000" onAction="#deleteReference" />
+										<Separator HBox.hgrow="ALWAYS" />
+										<Label textFill="DIMGREY" text="%ref.att.title" />
+										<Separator HBox.hgrow="ALWAYS" />
 									</children>
-								</VBox>
+								</HBox>
 
-								<MapTableView fx:id="referencesTable" GridPane.columnIndex="1" GridPane.rowIndex="0" editable="true">
+								<Button fx:id="deleteReference" GridPane.columnIndex="0" GridPane.rowIndex="1" text="%delete.att.index"
+									maxWidth="1000" onAction="#deleteReference" />
+
+								<MapTableView fx:id="referencesTable" GridPane.columnIndex="1" GridPane.rowIndex="1" editable="true">
 									<columns>
-										<TableColumn fx:id="refAttNameColumn" text="Attribute" />
-										<TableColumn fx:id="refAttGroupColumn" text="Reference Regex Group" sortType="ASCENDING" />
+										<TableColumn fx:id="refAttNameColumn" text="%attribute" />
+										<TableColumn fx:id="refAttGroupColumn" text="%ref.att.index" sortType="ASCENDING" />
 									</columns>
 									<columnResizePolicy>
 										<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
 									</columnResizePolicy>
 								</MapTableView>
 
-								<HBox GridPane.columnIndex="1" GridPane.rowIndex="1" spacing="5">
+								<HBox GridPane.columnIndex="1" GridPane.rowIndex="2" spacing="5">
 									<children>
-										<TextField fx:id="newReference" promptText="Attribute Name" prefWidth="${reqAttNameColumn.width}" />
-										<Button fx:id="addNewReference" text="New" minWidth="50" onAction="#addNewReference" />
+										<TextField fx:id="newReference" promptText="%new.att.index.help" prefWidth="${reqAttNameColumn.width}" />
+										<Button fx:id="addNewReference" text="%new.att.index" minWidth="50" onAction="#addNewReference" />
 									</children>
 								</HBox>
 							</children>

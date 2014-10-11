@@ -21,7 +21,9 @@ package com.ben12.reta.constraints.validator;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
@@ -33,7 +35,7 @@ import com.ben12.reta.util.RETAAnalysis;
 /**
  * @author Benoît Moreau (ben.12)
  */
-public class PathExistsValidator implements ConstraintValidator<PathExists, Path>
+public class PathExistsValidator implements ConstraintValidator<PathExists, CharSequence>
 {
 	private KindOfPath	kindOfPath	= KindOfPath.FILE_OR_DIRECTORY;
 
@@ -57,26 +59,36 @@ public class PathExistsValidator implements ConstraintValidator<PathExists, Path
 	 * @see javax.validation.ConstraintValidator#isValid(java.lang.Object, javax.validation.ConstraintValidatorContext)
 	 */
 	@Override
-	public boolean isValid(Path value, ConstraintValidatorContext context)
+	public boolean isValid(CharSequence value, ConstraintValidatorContext context)
 	{
 		boolean valid = true;
 		if (value != null)
 		{
-			if (value != null && parent)
+			Path path = null;
+			try
 			{
-				value = value.getParent();
+				path = Paths.get(value.toString());
+			}
+			catch (InvalidPathException e)
+			{
+				return false;
 			}
 
-			if (value == null)
+			if (path != null && parent)
+			{
+				path = path.getParent();
+			}
+
+			if (path == null)
 			{
 				return true;
 			}
-			else if (!value.isAbsolute())
+			else if (!path.isAbsolute())
 			{
 				File root = RETAAnalysis.getInstance().getConfig();
 				if (root != null)
 				{
-					value = root.getParentFile().getAbsoluteFile().toPath().resolve(value);
+					path = root.getParentFile().getAbsoluteFile().toPath().resolve(path);
 				}
 				else
 				{
@@ -84,15 +96,15 @@ public class PathExistsValidator implements ConstraintValidator<PathExists, Path
 				}
 			}
 
-			if (!Files.exists(value))
+			if (!Files.exists(path))
 			{
 				valid = false;
 			}
-			else if (KindOfPath.DIRECTORY.equals(kindOfPath) && !Files.isDirectory(value))
+			else if (KindOfPath.DIRECTORY.equals(kindOfPath) && !Files.isDirectory(path))
 			{
 				valid = false;
 			}
-			else if (KindOfPath.FILE.equals(kindOfPath) && !Files.isRegularFile(value))
+			else if (KindOfPath.FILE.equals(kindOfPath) && !Files.isRegularFile(path))
 			{
 				valid = false;
 			}

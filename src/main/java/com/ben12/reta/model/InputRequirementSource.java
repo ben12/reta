@@ -20,7 +20,6 @@
 
 package com.ben12.reta.model;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +34,7 @@ import javax.validation.constraints.Pattern;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import com.ben12.reta.constraints.NotNullElement;
+import com.ben12.reta.constraints.Path;
 import com.ben12.reta.constraints.PathExists;
 import com.ben12.reta.constraints.Regex;
 import com.google.common.base.Strings;
@@ -69,8 +69,9 @@ public class InputRequirementSource
 	 * Source document path.
 	 */
 	@NotNull
+	@Path
 	@PathExists
-	private Path										sourcePath;
+	private String										sourcePath;
 
 	/**
 	 * Regular expression filtering files if {@link #sourcePath} is a folder.
@@ -134,7 +135,7 @@ public class InputRequirementSource
 	 * @param filter
 	 *            regular expression filtering files if {@link #sourcePath} is a folder
 	 */
-	public InputRequirementSource(String name, Path sourcePath, String filter)
+	public InputRequirementSource(String name, String sourcePath, String filter)
 	{
 		this.name = name;
 		this.sourcePath = Objects.requireNonNull(sourcePath);
@@ -173,7 +174,7 @@ public class InputRequirementSource
 	/**
 	 * @return the document source path
 	 */
-	public Path getSourcePath()
+	public String getSourcePath()
 	{
 		return sourcePath;
 	}
@@ -182,7 +183,7 @@ public class InputRequirementSource
 	 * @param newSourcePath
 	 *            the sourcePath to set
 	 */
-	public void setSourcePath(Path newSourcePath)
+	public void setSourcePath(String newSourcePath)
 	{
 		sourcePath = newSourcePath;
 	}

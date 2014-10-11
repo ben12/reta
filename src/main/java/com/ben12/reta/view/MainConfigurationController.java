@@ -43,7 +43,6 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.fxml.JavaFXBuilderFactory;
 import javafx.scene.Parent;
 import javafx.scene.control.Accordion;
 import javafx.scene.control.Button;
@@ -53,7 +52,6 @@ import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.util.Callback;
-import javafx.util.StringConverter;
 
 import com.ben12.reta.model.InputRequirementSource;
 import com.ben12.reta.util.RETAAnalysis;
@@ -62,7 +60,6 @@ import com.ben12.reta.view.buffering.ObservableListBuffering;
 import com.ben12.reta.view.buffering.SimpleObjectPropertyBuffering;
 import com.ben12.reta.view.control.MessageDialog;
 import com.ben12.reta.view.validation.ValidationUtils;
-import com.google.common.base.Strings;
 import com.google.common.io.Files;
 
 /**
@@ -72,7 +69,7 @@ public class MainConfigurationController implements Initializable
 {
 	private final BufferingManager											bufferingManager	= new BufferingManager();
 
-	private final SimpleObjectPropertyBuffering<Path>						bufferedOutput;
+	private final SimpleObjectPropertyBuffering<String>						bufferedOutput;
 
 	private final ObservableList<InputRequirementSource>					sources				= FXCollections.observableArrayList();
 
@@ -90,6 +87,8 @@ public class MainConfigurationController implements Initializable
 																													c -> c.call(e));
 																									return null;
 																								};
+
+	private ResourceBundle													labels				= null;
 
 	private List<TitledPane>												panes				= new ArrayList<>();
 
@@ -133,7 +132,7 @@ public class MainConfigurationController implements Initializable
 		bufferingManager.add((ObservableListBuffering<InputRequirementSource>) bufferedSources);
 
 		bufferedSourcesName = bufferingManager.buffering(sourcesName);
-		bufferedOutput = bufferingManager.bufferingObject(RETAAnalysis.getInstance(), "output");
+		bufferedOutput = bufferingManager.bufferingString(RETAAnalysis.getInstance(), "output");
 	}
 
 	/**
@@ -174,22 +173,11 @@ public class MainConfigurationController implements Initializable
 	@Override
 	public void initialize(URL location, ResourceBundle resources)
 	{
+		labels = resources;
+
 		try
 		{
-			outputFile.textProperty().bindBidirectional(bufferedOutput, new StringConverter<Path>()
-			{
-				@Override
-				public Path fromString(String pathname)
-				{
-					return (Strings.isNullOrEmpty(pathname) ? null : Paths.get(pathname));
-				}
-
-				@Override
-				public String toString(Path file)
-				{
-					return (file != null ? file.toString() : null);
-				}
-			});
+			outputFile.textProperty().bindBidirectional(bufferedOutput);
 			ValidationUtils.bindValidationLabel(outputFile, outputFileValidity, bufferedOutput);
 
 			delete.disableProperty().bind(
@@ -249,8 +237,8 @@ public class MainConfigurationController implements Initializable
 			NoSuchMethodException
 	{
 		FXMLLoader loader = new FXMLLoader();
-		loader.setBuilderFactory(new JavaFXBuilderFactory());
 		loader.setLocation(MainConfigurationController.class.getResource("SourceConfigurationUI.fxml"));
+		loader.setResources(labels);
 		TitledPane inputPane = (TitledPane) loader.load();
 		SourceConfigurationController controller = loader.getController();
 		ObjectProperty<String> sourceName = controller.bind(bufferingManager, requirementSource, bufferedSources,
@@ -264,7 +252,7 @@ public class MainConfigurationController implements Initializable
 	@FXML
 	protected void newSource(ActionEvent event) throws NoSuchMethodException, IOException
 	{
-		InputRequirementSource requirementSource = new InputRequirementSource("NEW", Paths.get(""), "");
+		InputRequirementSource requirementSource = new InputRequirementSource("NEW", "", "");
 
 		bufferedSourcesName.add(addSource(requirementSource));
 
@@ -340,8 +328,8 @@ public class MainConfigurationController implements Initializable
 		RETAAnalysis retaAnalysis = RETAAnalysis.getInstance();
 
 		FileChooser fileChooser = new FileChooser();
-		fileChooser.getExtensionFilters().add(new ExtensionFilter("RETA analysis description", "*.reta"));
-		fileChooser.setTitle("RETA analysis");
+		fileChooser.getExtensionFilters().add(new ExtensionFilter(labels.getString("reta.file.desc"), "*.reta"));
+		fileChooser.setTitle(labels.getString("save.title"));
 		if (retaAnalysis.getConfig() != null)
 		{
 			fileChooser.setInitialDirectory(retaAnalysis.getConfig().getParentFile());
@@ -416,27 +404,28 @@ public class MainConfigurationController implements Initializable
 		DoubleProperty progress = new SimpleDoubleProperty(0);
 		DoubleProperty readProgress = new SimpleDoubleProperty(0);
 
-		MessageDialog.showProgressBar(root.getScene().getWindow(), "Running...", stepMessage, progress);
+		MessageDialog.showProgressBar(root.getScene().getWindow(), labels.getString("progress.title"), stepMessage,
+				progress);
 
 		new Thread(() -> {
 			try
 			{
-				stepMessage.set("Reading all file...");
+				stepMessage.set(labels.getString("progress.reading"));
 				progress.bind(readProgress.multiply(0.70));
 				RETAAnalysis.getInstance().parse(readProgress);
 				progress.unbind();
 				progress.set(0.70);
-				stepMessage.set("Analysing results...");
+				stepMessage.set(labels.getString("progress.analysing"));
 				RETAAnalysis.getInstance().analyse();
 				progress.set(0.80);
-				stepMessage.set("Writing excel analysis...");
+				stepMessage.set(labels.getString("progress.writing"));
 				RETAAnalysis.getInstance().writeExcel(root.getScene().getWindow());
-				stepMessage.set("Traceability analysis completed");
+				stepMessage.set(labels.getString("progress.complete"));
 			}
 			catch (Exception e)
 			{
 				Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", e);
-				stepMessage.set("Error : " + e.getLocalizedMessage());
+				stepMessage.set(labels.getString("progress.error") + e.getLocalizedMessage());
 			}
 			finally
 			{
@@ -449,10 +438,10 @@ public class MainConfigurationController implements Initializable
 	@FXML
 	protected void selectOutputFile(ActionEvent e)
 	{
-		Path currentFile = bufferedOutput.get();
+		Path currentFile = Paths.get(bufferedOutput.get());
 		FileChooser fileChooser = new FileChooser();
-		fileChooser.getExtensionFilters().add(new ExtensionFilter("Excel file", "*.xlsx"));
-		fileChooser.setTitle("RETA analysis output file");
+		fileChooser.getExtensionFilters().add(new ExtensionFilter(labels.getString("excel.file.desc"), "*.xlsx"));
+		fileChooser.setTitle(labels.getString("output.title"));
 		if (currentFile != null)
 		{
 			fileChooser.setInitialDirectory(currentFile.toFile().getParentFile());
@@ -462,7 +451,7 @@ public class MainConfigurationController implements Initializable
 
 		if (file != null)
 		{
-			bufferedOutput.set(file.toPath());
+			bufferedOutput.set(file.getPath());
 		}
 	}
 
@@ -470,8 +459,8 @@ public class MainConfigurationController implements Initializable
 	protected void open(ActionEvent e)
 	{
 		FileChooser fileChooser = new FileChooser();
-		fileChooser.getExtensionFilters().add(new ExtensionFilter("RETA analysis description", "*.reta"));
-		fileChooser.setTitle("RETA analysis");
+		fileChooser.getExtensionFilters().add(new ExtensionFilter(labels.getString("reta.file.desc"), "*.reta"));
+		fileChooser.setTitle(labels.getString("open.title"));
 		File file = fileChooser.showOpenDialog(root.getScene().getWindow());
 		open(file);
 	}
