@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.ben12</groupId>
 	<artifactId>reta</artifactId>
-	<version>0.1.1</version>
+	<version>0.1.2</version>
 	<name>Requirement Engineering Traceability Analysis</name>
 	<properties>
 		<project.build.sourceEncoding>cp1252</project.build.sourceEncoding>
