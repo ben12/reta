@@ -79,7 +79,7 @@ import com.google.common.io.Files;
  */
 public final class RETAAnalysis
 {
-	/** Buffer size (2 Mo), this is also the maximum requirement text length. */
+	/** Buffer size (2 Mo). */
 	private static final int							BUFFER_SIZE			= 2 * 1024 * 1024;
 
 	public static final String							REQUIREMENT_SOURCES	= "requirementSources";
@@ -590,12 +590,23 @@ public final class RETAAnalysis
 			builder.append(buffer, 0, r);
 			buffer.clear();
 
+			Path path = reader.getCurrentPath();
+			r = reader.read(buffer);
+			Path newPath = reader.getCurrentPath();
+
 			Matcher matcherStart = patternStart.matcher(builder);
 			Matcher matcherEnd = (patternEnd != null ? patternEnd.matcher(builder) : null);
 
 			while (matcherStart.find(0))
 			{
 				requirementStarted = true;
+
+				// find start is at the end of buffer and we are not at the eof.
+				if (matcherStart.end() == builder.length() && r >= 0 && path.equals(newPath))
+				{
+					// requirement could be partial
+					break;
+				}
 
 				boolean endMatch = false;
 				if (matcherEnd != null)
@@ -612,7 +623,8 @@ public final class RETAAnalysis
 					boolean hasNextStart = matcherStart.find(matcherStart.end());
 					while (hasNextStart && matcherStart.start() < endPos)
 					{
-						logger.info(requirementSource.getName() + ": Ignore matching requirement without end :" + req);
+						logger.warning(requirementSource.getName() + " (" + path
+								+ "): \nIgnore matching requirement without end :" + req);
 						pos = matcherStart.start();
 						req = matcherStart.group();
 						hasNextStart = matcherStart.find(matcherStart.end());
@@ -662,7 +674,11 @@ public final class RETAAnalysis
 						parseReferences(requirementSource, requirement, matcherRef);
 					}
 
-					requirementSource.getRequirements().add(requirement);
+					if (!requirementSource.getRequirements().add(requirement))
+					{
+						logger.warning(requirementSource.getName() + " (" + path
+								+ "): \nIgnore duplicate matching requirement :" + matcherStart.group());
+					}
 
 					builder.replace(0, endEndPos, "");
 					requirementStarted = false;
@@ -679,8 +695,6 @@ public final class RETAAnalysis
 			{
 				builder.delete(0, builder.length() - BUFFER_SIZE);
 			}
-
-			r = reader.read(buffer);
 		}
 
 		if (requirement != null && patternRef != null)
