@@ -114,7 +114,7 @@ public class InputRequirementSource
 	/**
 	 * List of covered document sources by this document source.
 	 */
-	@NotNullElement
+	@NotNullElement(message = "{unknown.cover.source}")
 	private final List<InputRequirementSource>			covers				= new ArrayList<>();
 
 	/**
@@ -325,9 +325,10 @@ public class InputRequirementSource
 		builder.append(name);
 		builder.append(" (");
 		builder.append(sourcePath);
-		builder.append("):\n");
+		builder.append("):\n\n");
 		for (Requirement req : requirements)
 		{
+			builder.append("--------------------------------------------------------------------\n");
 			builder.append(req.toString());
 			builder.append('\n');
 		}

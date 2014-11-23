@@ -417,8 +417,11 @@ public class Requirement implements Comparable<Requirement>
 				builder.append("\n");
 			}
 		}
-		builder.append("\tContent: ");
-		builder.append(content);
+		if (!content.isEmpty())
+		{
+			builder.append("\tContent:");
+			builder.append(content);
+		}
 
 		return builder.toString();
 	}

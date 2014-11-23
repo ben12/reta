@@ -20,6 +20,7 @@
 package com.ben12.reta.view;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -31,6 +32,8 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import javafx.beans.binding.Bindings;
@@ -44,6 +47,9 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
@@ -54,6 +60,9 @@ import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.image.ImageView;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 import javafx.util.converter.IntegerStringConverter;
@@ -68,6 +77,7 @@ import com.ben12.reta.view.buffering.ObservableMapBuffering;
 import com.ben12.reta.view.buffering.PropertyBufferingValidation;
 import com.ben12.reta.view.buffering.SimpleObjectPropertyBuffering;
 import com.ben12.reta.view.control.MapTableView;
+import com.ben12.reta.view.control.MessageDialog;
 import com.ben12.reta.view.validation.ValidationUtils;
 import com.google.common.base.Objects;
 import com.google.common.base.Splitter;
@@ -81,6 +91,8 @@ public class SourceConfigurationController
 
 	/** Keeps a reference on buffered properties. */
 	private final List<Buffering<?>>									bufferedProperties	= new ArrayList<>();
+
+	private InputRequirementSource										requirementSource	= null;
 
 	private ObservableList<InputRequirementSource>						sources				= null;
 
@@ -171,6 +183,12 @@ public class SourceConfigurationController
 	@FXML
 	private Button														deleteReference;
 
+	@FXML
+	private TextField													previewLimit;
+
+	@FXML
+	private Button														preview;
+
 	private ObservableMapBuffering<String, Integer>						referenceMap;
 
 	private FileChooser													fileChooser			= null;
@@ -199,11 +217,13 @@ public class SourceConfigurationController
 		ValidationUtils.bindValidationLabel(input, validity, property);
 	}
 
-	public ObjectProperty<String> bind(BufferingManager newBufferingManager, InputRequirementSource requirementSource,
-			ObservableList<InputRequirementSource> newSources, ObservableList<ObjectProperty<String>> newSourcesName,
+	public ObjectProperty<String> bind(BufferingManager newBufferingManager,
+			InputRequirementSource newRequirementSource, ObservableList<InputRequirementSource> newSources,
+			ObservableList<ObjectProperty<String>> newSourcesName,
 			ObservableList<Callback<InputRequirementSource, Void>> callBacks,
 			Callback<InputRequirementSource, Void> mainCallBack) throws NoSuchMethodException
 	{
+		requirementSource = newRequirementSource;
 		bufferingManager = newBufferingManager;
 		sources = newSources;
 		sourcesName = newSourcesName;
@@ -349,6 +369,9 @@ public class SourceConfigurationController
 						.or(Bindings.selectString(selectedAttribute, "key").isEqualTo(Requirement.ATTRIBUTE_TEXT)));
 		deleteReference.disableProperty().bind(referencesTable.getSelectionModel().selectedItemProperty().isNull());
 
+		preview.disableProperty().bind(
+				bufferingManager.bufferingProperty().or(Bindings.not(bufferingManager.validProperty())));
+
 		return nameProperty;
 	}
 
@@ -450,6 +473,56 @@ public class SourceConfigurationController
 		if (!name.isEmpty() && !referenceMap.containsKey(name))
 		{
 			referenceMap.put(name, null);
+		}
+	}
+
+	@FXML
+	protected void preview(ActionEvent event)
+	{
+		try
+		{
+			String limitStr = previewLimit.getText();
+
+			int limit;
+			try
+			{
+				limit = Integer.parseInt(limitStr);
+			}
+			catch (NumberFormatException e)
+			{
+				// limitStr empty or not a number
+				limit = Integer.MAX_VALUE;
+			}
+
+			StringBuilder sourceText = new StringBuilder(Math.min(limit, 2 * 1024));
+
+			RETAAnalysis.getInstance().parse(requirementSource, sourceText, limit);
+
+			Stage previewStage = new Stage(StageStyle.UTILITY);
+			previewStage.initOwner(titledPane.getScene().getWindow());
+			previewStage.initModality(Modality.APPLICATION_MODAL);
+
+			ResourceBundle labels = ResourceBundle.getBundle("com/ben12/reta/view/Labels");
+
+			FXMLLoader loader = new FXMLLoader();
+			loader.setLocation(getClass().getResource("SourcePreviewUI.fxml"));
+			loader.setResources(labels);
+			Parent root = (Parent) loader.load();
+
+			SourcePreviewController previewController = loader.getController();
+			previewController.analysedTextProperty().setValue(sourceText.toString());
+			previewController.resultTextProperty().setValue(requirementSource.toString());
+
+			previewStage.setScene(new Scene(root));
+			previewStage.setTitle(labels.getString("preview.title"));
+			previewStage.sizeToScene();
+			previewStage.show();
+		}
+		catch (IOException e)
+		{
+			Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", e);
+			MessageDialog.showErrorMessage(titledPane.getScene().getWindow(), e.getMessage());
+			e.printStackTrace();
 		}
 	}
 

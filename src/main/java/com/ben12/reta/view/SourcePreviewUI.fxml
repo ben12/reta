@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ben12.reta.view.SourcePreviewController" prefWidth="500"
+	prefHeight="500">
+	<children>
+		<HBox spacing="5" alignment="BASELINE_LEFT">
+			<children>
+				<Separator HBox.hgrow="ALWAYS" />
+				<Label text="%source.part.analysed" />
+				<Separator HBox.hgrow="ALWAYS" />
+			</children>
+		</HBox>
+		<TextArea fx:id="analysedText" editable="false" VBox.vgrow="ALWAYS" />
+		<HBox spacing="5" alignment="BASELINE_LEFT">
+			<children>
+				<Separator HBox.hgrow="ALWAYS" />
+				<Label text="%result.part.analysed" />
+				<Separator HBox.hgrow="ALWAYS" />
+			</children>
+		</HBox>
+		<TextArea fx:id="resultText" editable="false" VBox.vgrow="ALWAYS" />
+	</children>
+</VBox>
+

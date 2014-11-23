@@ -8,8 +8,6 @@
 <?import javafx.geometry.*?>
 <?import com.ben12.reta.view.control.*?>
 <?import com.ben12.reta.view.validation.*?>
-<?import javafx.scene.control.Separator?>
-<?import javafx.scene.control.Label?>
 
 <TitledPane xmlns:fx="http://javafx.com/fxml" fx:controller="com.ben12.reta.view.SourceConfigurationController"
 	fx:id="titledPane" prefWidth="400" prefHeight="500">
@@ -29,16 +27,6 @@
 						<ColumnConstraints minWidth="50" />
 						<ColumnConstraints minWidth="50" />
 					</columnConstraints>
-					<rowConstraints>
-						<RowConstraints vgrow="NEVER" />
-						<RowConstraints vgrow="NEVER" />
-						<RowConstraints vgrow="NEVER" />
-						<RowConstraints vgrow="NEVER" />
-						<RowConstraints vgrow="NEVER" />
-						<RowConstraints vgrow="NEVER" />
-						<RowConstraints vgrow="ALWAYS" />
-						<RowConstraints vgrow="ALWAYS" />
-					</rowConstraints>
 					<children>
 						<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="0" text="%rename" />
 						<TextField fx:id="name" promptText="%rename.help" GridPane.columnIndex="1" GridPane.rowIndex="0"
@@ -190,11 +178,12 @@
 										<Separator HBox.hgrow="ALWAYS" />
 									</children>
 								</HBox>
-							
+
 								<Button fx:id="deleteAttribute" GridPane.columnIndex="0" GridPane.rowIndex="1" text="%delete.att.index"
 									maxWidth="1000" onAction="#deleteAttribute" />
 
-								<MapTableView fx:id="attributesTable" GridPane.columnIndex="1" GridPane.rowIndex="1" editable="true">
+								<MapTableView fx:id="attributesTable" minHeight="50" GridPane.columnIndex="1" GridPane.rowIndex="1"
+									editable="true">
 									<columns>
 										<TableColumn fx:id="reqAttNameColumn" text="%attribute" />
 										<TableColumn fx:id="reqAttGroupColumn" text="%req.start.att.index" sortType="ASCENDING" />
@@ -238,7 +227,8 @@
 								<Button fx:id="deleteReference" GridPane.columnIndex="0" GridPane.rowIndex="1" text="%delete.att.index"
 									maxWidth="1000" onAction="#deleteReference" />
 
-								<MapTableView fx:id="referencesTable" GridPane.columnIndex="1" GridPane.rowIndex="1" editable="true">
+								<MapTableView fx:id="referencesTable" minHeight="50" GridPane.columnIndex="1" GridPane.rowIndex="1"
+									editable="true">
 									<columns>
 										<TableColumn fx:id="refAttNameColumn" text="%attribute" />
 										<TableColumn fx:id="refAttGroupColumn" text="%ref.att.index" sortType="ASCENDING" />
@@ -256,6 +246,12 @@
 								</HBox>
 							</children>
 						</GridPane>
+						<HBox alignment="CENTER_RIGHT" spacing="5" GridPane.columnIndex="0" GridPane.rowIndex="9" GridPane.columnSpan="4">
+							<children>
+								<TextField fx:id="previewLimit" HBox.hgrow="ALWAYS" promptText="%preview.limit.help" />
+								<Button fx:id="preview" text="%preview.button" minWidth="50" onAction="#preview" />
+							</children>
+						</HBox>
 					</children>
 				</GridPane>
 			</content>

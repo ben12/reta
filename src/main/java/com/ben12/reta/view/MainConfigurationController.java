@@ -156,6 +156,10 @@ public class MainConfigurationController implements Initializable
 			}
 
 			panes = new ArrayList<>(sourceConfigurations.getPanes());
+			if (!panes.isEmpty())
+			{
+				sourceConfigurations.setExpandedPane(panes.get(0));
+			}
 
 			bufferingManager.revert();
 		}

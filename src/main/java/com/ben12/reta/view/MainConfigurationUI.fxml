@@ -8,7 +8,7 @@
 <?import com.ben12.reta.view.control.*?>
 <?import com.ben12.reta.view.validation.*?>
 
-<VBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.ben12.reta.view.MainConfigurationController" prefWidth="600"
+<VBox fx:id="root" xmlns:fx="http://javafx.com/fxml" fx:controller="com.ben12.reta.view.MainConfigurationController" prefWidth="600"
 	prefHeight="700">
 	<fx:define>
 		<Image fx:id="errorImg" url="@/com/ben12/reta/resources/images/error.png" />
@@ -23,7 +23,7 @@
 				</Menu>
 			</menus>
 		</MenuBar>
-		<GridPane fx:id="root" VBox.vgrow="ALWAYS" hgap="2" vgap="2">
+		<GridPane VBox.vgrow="ALWAYS" hgap="2" vgap="2">
 			<padding>
 				<Insets bottom="2" left="2" right="2" top="2" />
 			</padding>

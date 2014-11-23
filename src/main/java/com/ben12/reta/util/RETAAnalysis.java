@@ -490,6 +490,11 @@ public final class RETAAnalysis
 
 	private void parse(InputRequirementSource requirementSource) throws IOException
 	{
+		parse(requirementSource, null, Integer.MAX_VALUE);
+	}
+
+	public void parse(InputRequirementSource requirementSource, StringBuilder sourceText, int limit) throws IOException
+	{
 		logger.info("Start parsing " + requirementSource.getName());
 
 		requirementSource.clear();
@@ -509,11 +514,11 @@ public final class RETAAnalysis
 				patternEnd = Pattern.compile(requirementSource.getReqEnd(), Pattern.MULTILINE);
 			}
 
-			parseMultiRequirementByFile(requirementSource, patternStart, patternEnd, patternRef);
+			parseMultiRequirementByFile(requirementSource, patternStart, patternEnd, patternRef, sourceText, limit);
 		}
 		else
 		{
-			parseReferencesInFiles(requirementSource, patternRef);
+			parseReferencesInFiles(requirementSource, patternRef, sourceText, limit);
 		}
 
 		logger.info("End parsing " + requirementSource.getName());
@@ -524,8 +529,8 @@ public final class RETAAnalysis
 	 * @param newPatternRef
 	 * @throws IOException
 	 */
-	private void parseReferencesInFiles(InputRequirementSource requirementSource, Pattern patternRef)
-			throws IOException
+	private void parseReferencesInFiles(InputRequirementSource requirementSource, Pattern patternRef,
+			StringBuilder sourceText, int limit) throws IOException
 	{
 		final ConcatReader reader = getReader(requirementSource);
 		Path root = Paths.get(requirementSource.getSourcePath());
@@ -537,11 +542,20 @@ public final class RETAAnalysis
 		final CharBuffer buffer = CharBuffer.allocate(BUFFER_SIZE);
 		StringBuilder builder = new StringBuilder(3 * BUFFER_SIZE);
 		int r = reader.read(buffer);
-		while (r >= 0)
+		while (r >= 0 && (limit == Integer.MAX_VALUE || limit > 0))
 		{
 			buffer.flip();
-			builder.append(buffer, 0, r);
+			builder.append(buffer, 0, Math.min(limit, r));
+			if (sourceText != null)
+			{
+				buffer.rewind();
+				sourceText.append(buffer, 0, Math.min(limit, r));
+			}
 			buffer.clear();
+			if (limit != Integer.MAX_VALUE)
+			{
+				limit -= r;
+			}
 
 			Path prevPath = reader.getCurrentPath();
 			r = reader.read(buffer);
@@ -576,7 +590,7 @@ public final class RETAAnalysis
 	 * @throws IOException
 	 */
 	private void parseMultiRequirementByFile(InputRequirementSource requirementSource, Pattern patternStart,
-			Pattern patternEnd, Pattern patternRef) throws IOException
+			Pattern patternEnd, Pattern patternRef, StringBuilder sourceText, int limit) throws IOException
 	{
 		boolean requirementStarted = false;
 		Requirement requirement = null;
@@ -584,11 +598,20 @@ public final class RETAAnalysis
 		final CharBuffer buffer = CharBuffer.allocate(BUFFER_SIZE);
 		StringBuilder builder = new StringBuilder(3 * BUFFER_SIZE);
 		int r = reader.read(buffer);
-		while (r >= 0)
+		while (r >= 0 && (limit == Integer.MAX_VALUE || limit > 0))
 		{
 			buffer.flip();
-			builder.append(buffer, 0, r);
+			builder.append(buffer, 0, Math.min(limit, r));
+			if (sourceText != null)
+			{
+				buffer.rewind();
+				sourceText.append(buffer, 0, Math.min(limit, r));
+			}
 			buffer.clear();
+			if (limit != Integer.MAX_VALUE)
+			{
+				limit -= r;
+			}
 
 			Path path = reader.getCurrentPath();
 			r = reader.read(buffer);

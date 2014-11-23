@@ -87,17 +87,17 @@ public class MessageDialog extends Stage
 		show();
 	}
 
-	public static void showErrorMessage(Stage parent, String message)
+	public static void showErrorMessage(Window parent, String message)
 	{
 		showMessage(parent, "Error", message, null, BUTTON.OK);
 	}
 
-	public static int showConfirmationMessage(Stage parent, String message)
+	public static int showConfirmationMessage(Window parent, String message)
 	{
 		return showMessage(parent, "Error", message, null, BUTTON.YES_NO);
 	}
 
-	public static int showQuestionMessage(Stage parent, String message)
+	public static int showQuestionMessage(Window parent, String message)
 	{
 		return showMessage(parent, "Error", message, null, BUTTON.OK_CANCEL);
 	}
