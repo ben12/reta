@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.text.*?>
+<?import com.ben12.reta.view.control.*?>
+<?import com.ben12.reta.view.validation.*?>
+
+<VBox fx:id="root" xmlns:fx="http://javafx.com/fxml" fx:controller="com.ben12.reta.view.MainConfigurationController"
+	prefWidth="600" prefHeight="700">
+	<children>
+		<MenuBar>
+			<menus>
+				<Menu text="%menu.file" mnemonicParsing="true">
+					<items>
+						<MenuItem text="%menu.file.open" accelerator="Ctrl+O" mnemonicParsing="true" onAction="#open" />
+					</items>
+				</Menu>
+			</menus>
+		</MenuBar>
+		<GridPane VBox.vgrow="ALWAYS" hgap="2" vgap="2">
+			<padding>
+				<Insets bottom="2" left="2" right="2" top="2" />
+			</padding>
+			<columnConstraints>
+				<ColumnConstraints hgrow="ALWAYS" />
+			</columnConstraints>
+			<rowConstraints>
+				<RowConstraints vgrow="ALWAYS" />
+				<RowConstraints vgrow="NEVER" />
+			</rowConstraints>
+			<children>
+				<GridPane GridPane.columnIndex="0" GridPane.rowIndex="0" hgap="2" vgap="5">
+					<padding>
+						<Insets bottom="0" left="0" right="0" top="2" />
+					</padding>
+					<columnConstraints>
+						<ColumnConstraints hgrow="NEVER" />
+						<ColumnConstraints hgrow="ALWAYS" />
+					</columnConstraints>
+					<rowConstraints>
+						<RowConstraints vgrow="NEVER" />
+						<RowConstraints vgrow="ALWAYS" />
+					</rowConstraints>
+					<children>
+						<VBox GridPane.columnIndex="0" GridPane.rowIndex="0" GridPane.rowSpan="2" spacing="5">
+							<children>
+								<Button text="%new" minWidth="50" maxWidth="10000" onAction="#newSource">
+									<tooltip>
+										<Tooltip text="%new.help" />
+									</tooltip>
+								</Button>
+								<Button fx:id="delete" text="%delete" minWidth="50" maxWidth="10000" onAction="#deleteSource">
+									<tooltip>
+										<Tooltip text="%delete.help" />
+									</tooltip>
+								</Button>
+								<Button fx:id="upSource" text="%up" minWidth="50" maxWidth="10000" onAction="#upSource">
+									<tooltip>
+										<Tooltip text="%up.help" />
+									</tooltip>
+								</Button>
+								<Button fx:id="downSource" text="%down" minWidth="50" maxWidth="10000" onAction="#downSource">
+									<tooltip>
+										<Tooltip text="%down.help" />
+									</tooltip>
+								</Button>
+							</children>
+						</VBox>
+						<HBox GridPane.columnIndex="1" GridPane.rowIndex="0" alignment="CENTER" spacing="5">
+							<children>
+								<Label text="%output" />
+								<StackPane HBox.hgrow="ALWAYS">
+									<children>
+										<ValidationDecorator fx:id="outputFile">
+											<TextField fx:id="outputFileField" promptText="%output.help">
+												<tooltip>
+													<RETATooltip text="${outputFileField.text}" />
+												</tooltip>
+											</TextField>
+										</ValidationDecorator>
+									</children>
+								</StackPane>
+								<Button text="%select.output" onAction="#selectOutputFile" />
+							</children>
+						</HBox>
+						<Accordion fx:id="sourceConfigurations" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+					</children>
+				</GridPane>
+				<GridPane GridPane.columnIndex="0" GridPane.rowIndex="1" hgap="5">
+					<columnConstraints>
+						<ColumnConstraints hgrow="NEVER" />
+						<ColumnConstraints hgrow="NEVER" />
+						<ColumnConstraints hgrow="ALWAYS" halignment="RIGHT" />
+					</columnConstraints>
+					<rowConstraints>
+						<RowConstraints vgrow="NEVER" />
+					</rowConstraints>
+					<children>
+						<Button fx:id="save" text="%save" GridPane.columnIndex="0" GridPane.rowIndex="0" onAction="#save" />
+						<Button fx:id="cancel" text="%cancel" GridPane.columnIndex="1" GridPane.rowIndex="0" onAction="#cancel" />
+						<Button fx:id="run" text="%run" GridPane.columnIndex="2" GridPane.rowIndex="0" onAction="#run" />
+					</children>
+				</GridPane>
+			</children>
+		</GridPane>
+	</children>
+</VBox>

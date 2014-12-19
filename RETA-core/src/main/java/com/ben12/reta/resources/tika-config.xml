@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tika>
+  <parsers>
+
+    <!-- use the default parser in most cases, it is a composite of all 
+         the parsers listed in META-INF/services/org.apache.tika.parser.Parser -->
+    <parser class="org.apache.tika.parser.DefaultParser"/>
+
+    <!-- Disable org.apache.tika.parser.code.SourceCodeParser-->    
+    <parser class="org.apache.tika.parser.txt.TXTParser">
+      <mime>text/x-c++src</mime>
+      <mime>text/x-java-source</mime>
+      <mime>text/x-groovy</mime>
+    </parser>
+
+  </parsers>
+</tika>
