@@ -29,6 +29,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -111,6 +112,24 @@ public final class RETAAnalysis
 	}
 
 	/**
+	 * @return the plugin list
+	 */
+	public Collection<SourceProviderPlugin> getPluginList()
+	{
+		return plugins.values();
+	}
+
+	/**
+	 * @param pluginClass
+	 *            plugin class implementation
+	 * @return the plugin
+	 */
+	public SourceProviderPlugin getPlugin(final String pluginClass)
+	{
+		return plugins.get(pluginClass);
+	}
+
+	/**
 	 * @return the requirementSources
 	 */
 	public Map<String, InputRequirementSource> getRequirementSources()
@@ -135,12 +154,12 @@ public final class RETAAnalysis
 	}
 
 	/**
-	 * @param output
+	 * @param newOutput
 	 *            the output to set
 	 */
-	public void setOutput(final String output)
+	public void setOutput(final String newOutput)
 	{
-		this.output = output;
+		output = newOutput;
 	}
 
 	public void configure(final File iniFile)
@@ -164,11 +183,11 @@ public final class RETAAnalysis
 			ini.getConfig().setFileEncoding(Charset.forName("CP1252"));
 			ini.load(iniFile);
 
-			final String output = ini.get("GENERAL", "output");
-			if (output != null)
+			final String outputFile = ini.get("GENERAL", "output");
+			if (outputFile != null)
 			{
-				final Path outPath = Paths.get(output);
-				this.output = outPath.normalize().toString();
+				final Path outPath = Paths.get(outputFile);
+				output = outPath.normalize().toString();
 				final String fileName = outPath.getFileName().toString();
 				if (!"xlsx".equals(Files.getFileExtension(fileName)))
 				{
@@ -176,17 +195,17 @@ public final class RETAAnalysis
 					final Path parent = outPath.getParent();
 					if (parent == null)
 					{
-						this.output = Files.getNameWithoutExtension(fileName) + ".xlsx";
+						output = Files.getNameWithoutExtension(fileName) + ".xlsx";
 					}
 					else
 					{
-						this.output = parent.resolve(Files.getNameWithoutExtension(fileName) + ".xlsx").toString();
+						output = parent.resolve(Files.getNameWithoutExtension(fileName) + ".xlsx").toString();
 					}
 				}
 			}
 			else
 			{
-				this.output = Paths.get(iniFile.getParent(), Files.getNameWithoutExtension(iniFile.getName()) + ".xlsx")
+				output = Paths.get(iniFile.getParent(), Files.getNameWithoutExtension(iniFile.getName()) + ".xlsx")
 						.toString();
 			}
 
@@ -206,12 +225,21 @@ public final class RETAAnalysis
 					if (section == null)
 					{
 						LOGGER.warning("No section defined for input " + doc);
+						MessageDialog.showErrorMessage(null, "No description for input named: " + doc);
 						continue;
 					}
 
-					final String pluginClass = section.get("parser",
+					// Use Tika file source for retro-compatibility (but it may be a folder source)
+					final String pluginClass = section.get("plugin",
 							"com.ben12.reta.plugin.tika.TikaSourceProviderPlugin");
 					final SourceProviderPlugin plugin = plugins.get(pluginClass);
+					if (plugin == null)
+					{
+						// Unsupported plugin
+						LOGGER.severe("Unsupported plugin: " + pluginClass);
+						MessageDialog.showErrorMessage(null, "Unsupported plugin for " + doc + " : " + pluginClass);
+						continue;
+					}
 
 					final SourceConfiguration configuration = plugin.loadSourceConfiguration(section);
 					if (configuration != null)
@@ -230,7 +258,9 @@ public final class RETAAnalysis
 					}
 					else
 					{
-						LOGGER.warning("No source defined for input " + doc);
+						LOGGER.severe("No source defined for input " + doc);
+						MessageDialog.showErrorMessage(null, "Error in source configuration : " + doc);
+						continue;
 					}
 				}
 
@@ -325,7 +355,7 @@ public final class RETAAnalysis
 						requirementSource -> {
 							try
 							{
-								parse(requirementSource, null, -1);
+								requirementSource.getConfiguration().parseSource(requirementSource);
 								synchronized (progress)
 								{
 									progress.set((double) count.incrementAndGet() / requirementSources.size());
@@ -353,8 +383,7 @@ public final class RETAAnalysis
 			throws RETAParseException
 	{
 		requirementSource.clear();
-
-		// TODO
+		requirementSource.getConfiguration().parseSourcePreview(requirementSource, sourceText, limit);
 	}
 
 	public void analyse() throws IOException

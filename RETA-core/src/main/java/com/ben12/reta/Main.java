@@ -35,6 +35,7 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import com.ben12.reta.view.MainConfigurationController;
+import com.ben12.reta.view.control.MessageDialog;
 
 /**
  * @author Benoît Moreau (ben.12)
@@ -47,31 +48,33 @@ public class Main extends Application
 	 * @see javafx.application.Application#start(javafx.stage.Stage)
 	 */
 	@Override
-	public void start(Stage stage) throws Exception
+	public void start(final Stage stage) throws Exception
 	{
 		try
 		{
-			ResourceBundle labels = ResourceBundle.getBundle("com/ben12/reta/view/Labels");
+			MessageDialog.setDefaultParent(stage);
 
-			FXMLLoader loader = new FXMLLoader();
+			final ResourceBundle labels = ResourceBundle.getBundle("com/ben12/reta/view/Labels");
+
+			final FXMLLoader loader = new FXMLLoader();
 			loader.setLocation(Main.class.getResource("view/MainConfigurationUI.fxml"));
 			loader.setResources(labels);
-			Parent root = (Parent) loader.load();
+			final Parent root = (Parent) loader.load();
 
 			stage.setScene(new Scene(root));
 			stage.setTitle(labels.getString("title"));
 			stage.sizeToScene();
 			stage.show();
 
-			Parameters parameters = getParameters();
-			List<String> args = parameters.getRaw();
+			final Parameters parameters = getParameters();
+			final List<String> args = parameters.getRaw();
 			if (args.size() > 0)
 			{
-				File retaFile = new File(args.get(0));
+				final File retaFile = new File(args.get(0));
 				((MainConfigurationController) loader.getController()).open(retaFile);
 			}
 		}
-		catch (Exception e)
+		catch (final Exception e)
 		{
 			Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", e);
 			System.exit(0);
@@ -81,14 +84,14 @@ public class Main extends Application
 	/**
 	 * @param args
 	 */
-	public static void main(String[] args)
+	public static void main(final String[] args)
 	{
 		try
 		{
 			LogManager.getLogManager().readConfiguration(
 					Main.class.getResourceAsStream("/com/ben12/reta/resources/logging/logging.properties"));
 		}
-		catch (IOException e)
+		catch (final IOException e)
 		{
 			Logger.getLogger(Main.class.getName()).log(Level.SEVERE, "", e);
 		}

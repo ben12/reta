@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 <?import com.ben12.reta.view.validation.*?>
 <?import com.ben12.reta.view.control.*?>
+<?import com.ben12.reta.plugin.tika.view.control.*?>
 
 <GridPane fx:controller="com.ben12.reta.plugin.tika.view.SourceConfigurationController" hgap="5" vgap="5"
 	xmlns:fx="http://javafx.com/fxml/1">
@@ -13,29 +15,27 @@
 		<ColumnConstraints minWidth="50" />
 	</columnConstraints>
 	<children>
-		<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="0" text="%path" />
-		<ValidationDecorator fx:id="sourcePath" GridPane.columnIndex="1" GridPane.rowIndex="0">
+		<HBox GridPane.columnIndex="0" GridPane.rowIndex="0" GridPane.columnSpan="3" spacing="5" alignment="BASELINE_LEFT">
+			<children>
+				<Separator HBox.hgrow="ALWAYS" />
+				<Label text="%plugin.file.title" />
+				<Separator HBox.hgrow="ALWAYS" />
+			</children>
+		</HBox>
+
+		<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="1" text="%path" />
+		<ValidationDecorator fx:id="sourcePath" GridPane.columnIndex="1" GridPane.rowIndex="1">
 			<TextField fx:id="sourcePathField" promptText="%path.help">
 				<tooltip>
 					<RETATooltip text="${sourcePathField.text}" />
 				</tooltip>
 			</TextField>
 		</ValidationDecorator>
-		<Button text="%source.folder" GridPane.columnIndex="2" GridPane.rowIndex="0" maxWidth="10000" onAction="#chooseSourcePathFolder">
+		<Button text="%soure.file" GridPane.columnIndex="2" GridPane.rowIndex="1" maxWidth="10000" onAction="#chooseSourcePathFile">
 			<tooltip>
-				<RETATooltip text="%source.folder.help" />
+				<RETATooltip text="%soure.file.help" />
 			</tooltip>
 		</Button>
-
-		<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="1" text="%filter" />
-		<ValidationDecorator fx:id="filter" GridPane.columnIndex="1" GridPane.rowIndex="1"
-			GridPane.columnSpan="2">
-			<TextField fx:id="filterField" promptText="%filter.help">
-				<tooltip>
-					<RETATooltip text="${filterField.text}" />
-				</tooltip>
-			</TextField>
-		</ValidationDecorator>
 
 		<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="2" text="%req.start" />
 		<ValidationDecorator fx:id="reqStart" GridPane.columnIndex="1" GridPane.rowIndex="2"
@@ -67,17 +67,7 @@
 			</TextField>
 		</ValidationDecorator>
 
-		<Label minHeight="25" GridPane.columnIndex="0" GridPane.rowIndex="5" text="%covers" />
-		<ValidationDecorator fx:id="covers" GridPane.columnIndex="1" GridPane.rowIndex="5"
-			GridPane.columnSpan="2">
-			<TextField fx:id="coversField" promptText="%covers.help">
-				<tooltip>
-					<RETATooltip text="${coversField.text}" />
-				</tooltip>
-			</TextField>
-		</ValidationDecorator>
-
-		<GridPane hgap="2" GridPane.columnIndex="0" GridPane.rowIndex="6" GridPane.columnSpan="3">
+		<GridPane hgap="2" GridPane.columnIndex="0" GridPane.rowIndex="5" GridPane.columnSpan="3">
 			<padding>
 				<Insets bottom="2" left="2" right="2" top="2" />
 			</padding>
@@ -123,7 +113,7 @@
 			</children>
 		</GridPane>
 
-		<GridPane hgap="2" GridPane.columnIndex="0" GridPane.rowIndex="7" GridPane.columnSpan="3">
+		<GridPane hgap="2" GridPane.columnIndex="0" GridPane.rowIndex="6" GridPane.columnSpan="3">
 			<padding>
 				<Insets bottom="2" left="2" right="2" top="2" />
 			</padding>

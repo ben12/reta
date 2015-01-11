@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -39,15 +40,19 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.control.TitledPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.stage.Window;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 
@@ -60,7 +65,6 @@ import com.ben12.reta.model.InputRequirementSource;
 import com.ben12.reta.util.RETAAnalysis;
 import com.ben12.reta.view.control.MessageDialog;
 import com.ben12.reta.view.validation.ValidationDecorator;
-import com.google.common.base.Objects;
 import com.google.common.base.Splitter;
 
 /**
@@ -89,6 +93,9 @@ public class SourceConfigurationController
 
 	@FXML
 	private ValidationDecorator<TextField>			covers;
+
+	@FXML
+	private HBox									parserPane;
 
 	@FXML
 	private TextField								previewLimit;
@@ -142,7 +149,7 @@ public class SourceConfigurationController
 
 				// must be unique
 				final boolean unique = (sources.stream()
-						.filter(s -> s != requirementSource && Objects.equal(s.getName(), get()))
+						.filter(s -> s != requirementSource && Objects.equals(s.getName(), get()))
 						.count() == 0);
 				if (!unique)
 				{
@@ -182,6 +189,11 @@ public class SourceConfigurationController
 		preview.disableProperty().bind(
 				bufferingManager.bufferingProperty().or(Bindings.not(bufferingManager.validProperty())));
 
+		final Node pluginNode = requirementSource.getProvider().createSourceConfigurationEditor(
+				requirementSource.getConfiguration(), bufferingManager);
+		HBox.setHgrow(pluginNode, Priority.ALWAYS);
+		parserPane.getChildren().add(pluginNode);
+
 		return nameProperty;
 	}
 
@@ -208,7 +220,8 @@ public class SourceConfigurationController
 			RETAAnalysis.getInstance().parse(requirementSource, sourceText, limit);
 
 			final Stage previewStage = new Stage(StageStyle.UTILITY);
-			previewStage.initOwner(titledPane.getScene().getWindow());
+			final Window parent = titledPane.getScene().getWindow();
+			previewStage.initOwner(parent);
 			previewStage.initModality(Modality.APPLICATION_MODAL);
 
 			final ResourceBundle labels = ResourceBundle.getBundle("com/ben12/reta/view/Labels");
@@ -216,7 +229,7 @@ public class SourceConfigurationController
 			final FXMLLoader loader = new FXMLLoader();
 			loader.setLocation(getClass().getResource("SourcePreviewUI.fxml"));
 			loader.setResources(labels);
-			final Parent root = (Parent) loader.load();
+			final Pane root = (Pane) loader.load();
 
 			final SourcePreviewController previewController = loader.getController();
 			previewController.analysedTextProperty().setValue(sourceText.toString());
@@ -225,6 +238,20 @@ public class SourceConfigurationController
 			previewStage.setScene(new Scene(root));
 			previewStage.setTitle(labels.getString("preview.title"));
 			previewStage.sizeToScene();
+
+			final double px = parent.getX();
+			final double py = parent.getY();
+			final double pwidth = parent.getScene().getWidth();
+			final double pheight = parent.getScene().getHeight();
+
+			final double width = root.getPrefWidth();
+			final double height = root.getPrefHeight();
+
+			final double x = px + (pwidth / 2.0) - (width / 2.0);
+			final double y = py + (pheight / 2.0) - (height / 2.0);
+
+			previewStage.setX(x);
+			previewStage.setY(y);
 			previewStage.show();
 		}
 		catch (final RETAParseException | IOException e)

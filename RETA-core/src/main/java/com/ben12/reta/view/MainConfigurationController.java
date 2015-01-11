@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.IntegerBinding;
@@ -56,6 +57,7 @@ import com.ben12.reta.beans.property.buffering.BufferingManager;
 import com.ben12.reta.beans.property.buffering.ObservableListBuffering;
 import com.ben12.reta.beans.property.buffering.SimpleObjectPropertyBuffering;
 import com.ben12.reta.model.InputRequirementSource;
+import com.ben12.reta.plugin.SourceProviderPlugin;
 import com.ben12.reta.util.RETAAnalysis;
 import com.ben12.reta.view.control.MessageDialog;
 import com.ben12.reta.view.validation.ValidationDecorator;
@@ -224,8 +226,6 @@ public class MainConfigurationController implements Initializable
 			cancel.disableProperty().bind(Bindings.not(bufferingManager.bufferingProperty()));
 			run.disableProperty().bind(
 					bufferingManager.bufferingProperty().or(Bindings.not(bufferingManager.validProperty())));
-
-			newSource(null);
 		}
 		catch (final Exception e)
 		{
@@ -252,12 +252,26 @@ public class MainConfigurationController implements Initializable
 	@FXML
 	protected void newSource(final ActionEvent event) throws NoSuchMethodException, IOException
 	{
-		final InputRequirementSource requirementSource = new InputRequirementSource("NEW", null, null); // TODO
+		final List<SourceProviderPlugin> plugins = new ArrayList<SourceProviderPlugin>(RETAAnalysis.getInstance()
+				.getPluginList());
+		final List<String> pluginNames = plugins.stream()
+				.map(SourceProviderPlugin::getSourceName)
+				.collect(Collectors.toList());
 
-		bufferedSourcesName.add(addSource(requirementSource));
+		final Object pluginSelected = MessageDialog.showOptionsMessage(root.getScene().getWindow(), "Plugin to use",
+				pluginNames.toArray());
 
-		bufferedSources.add(requirementSource);
-		refreshAll.call(requirementSource);
+		if (pluginSelected != null)
+		{
+			final SourceProviderPlugin plugin = plugins.get(pluginNames.indexOf(pluginSelected));
+			final InputRequirementSource requirementSource = new InputRequirementSource("NEW", plugin,
+					plugin.createNewSourceConfiguration());
+
+			bufferedSourcesName.add(addSource(requirementSource));
+
+			bufferedSources.add(requirementSource);
+			refreshAll.call(requirementSource);
+		}
 	}
 
 	@FXML

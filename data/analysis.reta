@@ -35,6 +35,7 @@ requirement.ref.Id.index = 1
 covers = DOC1
 
 [SOURCES]
+plugin = com.ben12.reta.plugin.tika.TikaDirectorySourceProviderPlugin
 path = sourcesTests
 filter = ^(include\\.*\.(h|hpp)|java\\.*\.java|[^\\]*\.(c|cpp))$
 requirement.ref.regex = CF_(?:REQ_)?RETA_(\w+_\d+)(?:_(\w+))?

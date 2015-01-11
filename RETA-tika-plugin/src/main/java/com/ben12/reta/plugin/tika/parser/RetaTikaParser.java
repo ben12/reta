@@ -232,48 +232,8 @@ public class RetaTikaParser
 
 				if (matcherEnd == null || matcherEnd.find(matcherStart.end()))
 				{
-					int endPos = matcherStart.end();
-					int endEndPos = matcherStart.end();
-					if (matcherEnd != null)
-					{
-						endPos = matcherEnd.start();
-						endEndPos = matcherEnd.end();
-					}
-
-					final String reqContent = builder.substring(matcherStart.end(), endPos);
-					final Map<String, String> attributes = new HashMap<>();
-
-					for (final Map.Entry<String, Integer> attEntry : configuration.getAttributesGroup().entrySet())
-					{
-						final String attName = attEntry.getKey();
-						final Integer group = attEntry.getValue();
-						if (group != null && group <= matcherStart.groupCount())
-						{
-							final String reqAtt = Strings.nullToEmpty(matcherStart.group(group));
-							attributes.put(attName, reqAtt);
-						}
-					}
-
-					requirement = requirementSource.addRequirement(
-							attributes.remove(SourceConfiguration.ATTRIBUTE_TEXT),
-							attributes.remove(SourceConfiguration.ATTRIBUTE_ID),
-							attributes.remove(SourceConfiguration.ATTRIBUTE_VERSION), reqContent, attributes);
-
-					if (requirement != null)
-					{
-						if (patternRef != null)
-						{
-							final Matcher matcherRef = patternRef.matcher(reqContent);
-							parseReferences(requirementSource, requirement, matcherRef);
-						}
-					}
-					else
-					{
-						LOGGER.warning(requirementSource.getName() + " (" + path
-								+ "): \nIgnore duplicate matching requirement :" + matcherStart.group());
-					}
-
-					builder.replace(0, endEndPos, "");
+					requirement = extractRequirement(requirementSource, builder, path, matcherStart, matcherEnd,
+							patternRef);
 					requirementStarted = false;
 				}
 				else
@@ -297,6 +257,64 @@ public class RetaTikaParser
 			parseReferences(requirementSource, requirement, matcherRef);
 			builder.setLength(0);
 		}
+	}
+
+	/**
+	 * @param requirementSource
+	 * @param builder
+	 * @param path
+	 * @param matcherStart
+	 * @param matcherEnd
+	 * @param patternRef
+	 * @return
+	 */
+	public Requirement extractRequirement(final RequirementSourceManager requirementSource,
+			final StringBuilder builder, final Path path, final Matcher matcherStart, final Matcher matcherEnd,
+			final Pattern patternRef)
+	{
+		Requirement requirement;
+		int endPos = matcherStart.end();
+		int endEndPos = matcherStart.end();
+		if (matcherEnd != null)
+		{
+			endPos = matcherEnd.start();
+			endEndPos = matcherEnd.end();
+		}
+
+		final String reqContent = builder.substring(matcherStart.end(), endPos);
+		final Map<String, String> attributes = new HashMap<>();
+
+		for (final Map.Entry<String, Integer> attEntry : configuration.getAttributesGroup().entrySet())
+		{
+			final String attName = attEntry.getKey();
+			final Integer group = attEntry.getValue();
+			if (group != null && group <= matcherStart.groupCount())
+			{
+				final String reqAtt = Strings.nullToEmpty(matcherStart.group(group));
+				attributes.put(attName, reqAtt);
+			}
+		}
+
+		requirement = requirementSource.addRequirement(attributes.remove(SourceConfiguration.ATTRIBUTE_TEXT),
+				attributes.remove(SourceConfiguration.ATTRIBUTE_ID),
+				attributes.remove(SourceConfiguration.ATTRIBUTE_VERSION), reqContent, attributes);
+
+		if (requirement != null)
+		{
+			if (patternRef != null)
+			{
+				final Matcher matcherRef = patternRef.matcher(reqContent);
+				parseReferences(requirementSource, requirement, matcherRef);
+			}
+		}
+		else
+		{
+			LOGGER.warning(requirementSource.getName() + " (" + path + "): \nIgnore duplicate matching requirement :"
+					+ matcherStart.group());
+		}
+
+		builder.replace(0, endEndPos, "");
+		return requirement;
 	}
 
 	private void parseReferences(final RequirementSourceManager requirementSource, final Requirement requirement,

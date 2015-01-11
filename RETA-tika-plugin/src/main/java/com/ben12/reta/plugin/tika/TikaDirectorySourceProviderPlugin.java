@@ -19,24 +19,29 @@
 // along with RETA.  If not, see <http://www.gnu.org/licenses/>.
 package com.ben12.reta.plugin.tika;
 
+import java.io.IOException;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+
+import com.ben12.reta.api.SourceConfiguration;
+import com.ben12.reta.beans.property.buffering.BufferingManager;
+import com.ben12.reta.plugin.tika.model.TikaSourceConfiguration;
+import com.ben12.reta.plugin.tika.view.SourceConfigurationController;
 
 /**
  * @author Benoît Moreau (ben.12)
  */
 public class TikaDirectorySourceProviderPlugin extends TikaSourceProviderPlugin
 {
+	private static final Logger		LOGGER			= Logger.getLogger(TikaDirectorySourceProviderPlugin.class.getName());
 
 	private static final String		PROVIDER_NAME	= "tika.dir.provider";
 
 	private final ResourceBundle	labels			= ResourceBundle.getBundle("com/ben12/reta/plugin/tika/Labels");
-
-	/**
-	 * 
-	 */
-	public TikaDirectorySourceProviderPlugin()
-	{
-	}
 
 	/*
 	 * (non-Javadoc)
@@ -47,5 +52,38 @@ public class TikaDirectorySourceProviderPlugin extends TikaSourceProviderPlugin
 	public String getSourceName()
 	{
 		return labels.getString(PROVIDER_NAME);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.ben12.reta.plugin.tika.TikaSourceProviderPlugin#createSourceConfigurationEditor(com.ben12.reta.api.SourceConfiguration)
+	 */
+	@Override
+	public Node createSourceConfigurationEditor(final SourceConfiguration sourceConfiguration,
+			final BufferingManager bufferingManager)
+	{
+		Node node = null;
+
+		if (sourceConfiguration instanceof TikaSourceConfiguration)
+		{
+			final FXMLLoader loader = new FXMLLoader();
+			loader.setLocation(SourceConfigurationController.class.getResource("FolderSourceConfigurationUI.fxml"));
+			loader.setResources(labels);
+
+			try
+			{
+				node = loader.load();
+				final SourceConfigurationController controller = loader.getController();
+
+				controller.bind(bufferingManager, (TikaSourceConfiguration) sourceConfiguration);
+			}
+			catch (final IOException | NoSuchMethodException e)
+			{
+				LOGGER.log(Level.SEVERE, "Loading Tika FXML", e);
+			}
+		}
+
+		return node;
 	}
 }

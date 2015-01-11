@@ -24,6 +24,22 @@
 			<artifactId>guava</artifactId>
 			<version>18.0</version>
 		</dependency>
+		<!-- Use non beta POI version -->
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi</artifactId>
+			<version>3.11</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+			<version>3.11</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-scratchpad</artifactId>
+			<version>3.11</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<resources>

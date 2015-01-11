@@ -28,18 +28,25 @@ import javafx.scene.control.TextArea;
  */
 public class SourcePreviewController
 {
-
+	/** Analysed text (depends on source type/plugin). */
 	@FXML
 	private TextArea	analysedText;
 
+	/** Parser result. */
 	@FXML
 	private TextArea	resultText;
 
+	/**
+	 * @return Analysed text property
+	 */
 	public StringProperty analysedTextProperty()
 	{
 		return analysedText.textProperty();
 	}
 
+	/**
+	 * @return Result text property
+	 */
 	public StringProperty resultTextProperty()
 	{
 		return resultText.textProperty();

@@ -30,6 +30,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import com.ben12.reta.api.SourceConfiguration;
+import com.google.common.base.Strings;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 
@@ -101,7 +102,7 @@ public class Requirement implements com.ben12.reta.api.Requirement, Comparable<R
 	 */
 	public void setId(final String id)
 	{
-		this.id = id;
+		this.id = Strings.nullToEmpty(id);
 	}
 
 	/**
@@ -118,7 +119,7 @@ public class Requirement implements com.ben12.reta.api.Requirement, Comparable<R
 	 */
 	public void setVersion(final String version)
 	{
-		this.version = version;
+		this.version = Strings.nullToEmpty(version);
 	}
 
 	/**
@@ -135,7 +136,7 @@ public class Requirement implements com.ben12.reta.api.Requirement, Comparable<R
 	 */
 	public void setText(final String text)
 	{
-		this.text = text;
+		this.text = Strings.nullToEmpty(text);
 	}
 
 	/**
@@ -152,7 +153,7 @@ public class Requirement implements com.ben12.reta.api.Requirement, Comparable<R
 	 */
 	public void setContent(final String content)
 	{
-		this.content = content;
+		this.content = Strings.nullToEmpty(content);
 	}
 
 	/**
@@ -177,7 +178,7 @@ public class Requirement implements com.ben12.reta.api.Requirement, Comparable<R
 		default:
 			if (attributes != null)
 			{
-				att = attributes.get(name);
+				att = Strings.nullToEmpty(attributes.get(name));
 			}
 			break;
 		}
@@ -210,7 +211,7 @@ public class Requirement implements com.ben12.reta.api.Requirement, Comparable<R
 			}
 			if (attributes != null)
 			{
-				this.attributes.put(name, value);
+				attributes.put(name, Strings.nullToEmpty(value));
 			}
 			break;
 		}
@@ -220,7 +221,7 @@ public class Requirement implements com.ben12.reta.api.Requirement, Comparable<R
 	 * @param reference
 	 *            requirement reference
 	 */
-	public void addReference(final Requirement reference)
+	public boolean addReference(final Requirement reference)
 	{
 		if (references == null)
 		{
@@ -228,7 +229,7 @@ public class Requirement implements com.ben12.reta.api.Requirement, Comparable<R
 		}
 		// replace reference
 		references.remove(reference);
-		references.add(reference);
+		return references.add(reference);
 	}
 
 	/**
@@ -329,7 +330,7 @@ public class Requirement implements com.ben12.reta.api.Requirement, Comparable<R
 		{
 			requirement.putAttribute(att.getKey(), att.getValue());
 		}
-		return references.add(requirement);
+		return addReference(requirement);
 	}
 
 	/*

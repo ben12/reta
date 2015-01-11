@@ -22,7 +22,6 @@ package com.ben12.reta.plugin.tika.model;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 import javax.validation.constraints.NotNull;
 
@@ -33,7 +32,6 @@ import com.ben12.reta.beans.constraints.Path;
 import com.ben12.reta.beans.constraints.PathExists;
 import com.ben12.reta.plugin.tika.beans.constraints.Regex;
 import com.ben12.reta.plugin.tika.parser.RetaTikaParser;
-import com.google.common.base.Strings;
 
 /**
  * @author Benoît Moreau (ben.12)
@@ -57,7 +55,7 @@ public class TikaSourceConfiguration implements SourceConfiguration
 	@NotNull
 	@Path
 	@PathExists
-	private String						sourcePath;
+	private String						sourcePath			= "";
 
 	/**
 	 * Regular expression filtering files if {@link #sourcePath} is a folder.
@@ -103,16 +101,10 @@ public class TikaSourceConfiguration implements SourceConfiguration
 	private RetaTikaParser				parser				= null;
 
 	/**
-	 * @param newSourcePath
-	 *            document source path
-	 * @param newFilter
-	 *            regular expression filtering files if {@link #sourcePath} is a folder
+	 * 
 	 */
-	public TikaSourceConfiguration(final String newSourcePath, final String newFilter)
+	public TikaSourceConfiguration()
 	{
-		this.sourcePath = Objects.requireNonNull(newSourcePath);
-		this.filter = Strings.nullToEmpty(newFilter);
-
 		attributesGroup.put(ATTRIBUTE_ID, 0);
 		attributesGroup.put(ATTRIBUTE_TEXT, 0);
 	}

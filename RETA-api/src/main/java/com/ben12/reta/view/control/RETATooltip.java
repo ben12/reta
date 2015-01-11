@@ -26,16 +26,25 @@ import javafx.stage.Window;
 import com.google.common.base.Strings;
 
 /**
+ * Tool-tip which is hidden if its text is empty or null.
+ * 
  * @author Benoît Moreau (ben.12)
  */
 public class RETATooltip extends Tooltip
 {
+	/**
+	 * Hidden {@link RETATooltip}.
+	 */
 	public RETATooltip()
 	{
 		this("");
 	}
 
-	public RETATooltip(String text)
+	/**
+	 * @param text
+	 *            tool-tip text
+	 */
+	public RETATooltip(final String text)
 	{
 		super(text);
 
@@ -53,7 +62,7 @@ public class RETATooltip extends Tooltip
 	 * @see javafx.stage.PopupWindow#show(javafx.scene.Node, double, double)
 	 */
 	@Override
-	public void show(Node ownerNode, double anchorX, double anchorY)
+	public void show(final Node ownerNode, final double anchorX, final double anchorY)
 	{
 		if (!Strings.isNullOrEmpty(getText()))
 		{
@@ -67,7 +76,7 @@ public class RETATooltip extends Tooltip
 	 * @see javafx.stage.PopupWindow#show(javafx.stage.Window)
 	 */
 	@Override
-	public void show(Window owner)
+	public void show(final Window owner)
 	{
 		if (!Strings.isNullOrEmpty(getText()))
 		{
@@ -81,7 +90,7 @@ public class RETATooltip extends Tooltip
 	 * @see javafx.stage.PopupWindow#show(javafx.stage.Window, double, double)
 	 */
 	@Override
-	public void show(Window ownerWindow, double anchorX, double anchorY)
+	public void show(final Window ownerWindow, final double anchorX, final double anchorY)
 	{
 		if (!Strings.isNullOrEmpty(getText()))
 		{

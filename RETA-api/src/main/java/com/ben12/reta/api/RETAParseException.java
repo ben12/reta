@@ -24,11 +24,11 @@ package com.ben12.reta.api;
  */
 public class RETAParseException extends Exception
 {
-
 	private static final long	serialVersionUID	= -8420537781672663994L;
 
 	/**
 	 * @param message
+	 *            the detail message
 	 */
 	public RETAParseException(final String message)
 	{
@@ -37,6 +37,7 @@ public class RETAParseException extends Exception
 
 	/**
 	 * @param cause
+	 *            cause the cause
 	 */
 	public RETAParseException(final Throwable cause)
 	{
@@ -45,11 +46,12 @@ public class RETAParseException extends Exception
 
 	/**
 	 * @param message
+	 *            the detail message
 	 * @param cause
+	 *            cause the cause
 	 */
 	public RETAParseException(final String message, final Throwable cause)
 	{
 		super(message, cause);
 	}
-
 }

@@ -24,11 +24,10 @@ import javafx.scene.Node;
 import org.ini4j.Profile.Section;
 
 import com.ben12.reta.api.SourceConfiguration;
+import com.ben12.reta.beans.property.buffering.BufferingManager;
 
 /**
  * @author Benoît Moreau (ben.12)
- * @param <C>
- *            {@link SourceConfiguration} plugin implementation
  */
 public interface SourceProviderPlugin
 {
@@ -60,7 +59,9 @@ public interface SourceProviderPlugin
 	/**
 	 * @param sourceConfiguration
 	 *            source configuration to edit
+	 * @param bufferingManager
+	 *            buffering manager to use
 	 * @return JavaFX GUI for source configuration edition
 	 */
-	Node createSourceConfigurationEditor(SourceConfiguration sourceConfiguration);
+	Node createSourceConfigurationEditor(SourceConfiguration sourceConfiguration, BufferingManager bufferingManager);
 }

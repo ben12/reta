@@ -25,19 +25,21 @@ package com.ben12.reta.api;
 public interface SourceConfiguration
 {
 	/** Name of requirement attribute "Text". */
-	public static final String	ATTRIBUTE_TEXT		= "Text";
+	String	ATTRIBUTE_TEXT		= "Text";
 
 	/** Name of requirement attribute "Id". */
-	public static final String	ATTRIBUTE_ID		= "Id";
+	String	ATTRIBUTE_ID		= "Id";
 
 	/** Name of requirement attribute "Version". */
-	public static final String	ATTRIBUTE_VERSION	= "Version";
+	String	ATTRIBUTE_VERSION	= "Version";
 
 	/**
 	 * Parse the source and use {@code manager} for add requirements found.
 	 * 
 	 * @param manager
 	 *            requirement source manager
+	 * @throws RETAParseException
+	 *             Parsing exception
 	 */
 	void parseSource(RequirementSourceManager manager) throws RETAParseException;
 
@@ -50,6 +52,8 @@ public interface SourceConfiguration
 	 *            source content parsed
 	 * @param limit
 	 *            source limit size to parse
+	 * @throws RETAParseException
+	 *             Parsing exception
 	 */
 	void parseSourcePreview(RequirementSourceManager manager, StringBuilder output, int limit)
 			throws RETAParseException;
