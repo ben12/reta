@@ -40,7 +40,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
@@ -91,7 +90,7 @@ public final class MessageDialog extends Stage
 	 * @param parent
 	 *            dialog parent
 	 */
-	private MessageDialog(final Window parent)
+	public MessageDialog(final Window parent)
 	{
 		super();
 		initOwner(parent == null ? defaultParent : parent);
@@ -112,21 +111,21 @@ public final class MessageDialog extends Stage
 	/**
 	 * Show message dialog and wait.
 	 */
-	private void showAndWaitDialog()
+	public void showAndWaitDialog()
 	{
 		sizeToScene();
-		centerOnOwner();
+		Platform.runLater(() -> centerOnOwner());
 		showAndWait();
 	}
 
 	/**
 	 * Show the message dialog.
 	 */
-	private void showDialog()
+	public void showDialog()
 	{
 		sizeToScene();
-		centerOnOwner();
 		show();
+		centerOnOwner();
 	}
 
 	/**
@@ -142,8 +141,8 @@ public final class MessageDialog extends Stage
 			final double pwidth = parent.getScene().getWidth();
 			final double pheight = parent.getScene().getHeight();
 
-			final double width = ((Pane) getScene().getRoot()).getPrefWidth();
-			final double height = ((Pane) getScene().getRoot()).getPrefHeight();
+			final double width = getScene().getWidth();
+			final double height = getScene().getHeight();
 
 			final double x = px + (pwidth / 2.0) - (width / 2.0);
 			final double y = py + (pheight / 2.0) - (height / 2.0);

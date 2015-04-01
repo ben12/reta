@@ -107,6 +107,10 @@ public class RetaTikaParser
 		if (!root.isAbsolute())
 		{
 			root = Paths.get(System.getProperty("user.dir")).resolve(root);
+			if (root.toFile().isFile())
+			{
+				root = root.getParent();
+			}
 		}
 		final CharBuffer buffer = CharBuffer.allocate(BUFFER_SIZE);
 		final StringBuilder builder = new StringBuilder(3 * BUFFER_SIZE);

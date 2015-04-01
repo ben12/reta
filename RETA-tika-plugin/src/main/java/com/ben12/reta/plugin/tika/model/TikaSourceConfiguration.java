@@ -224,7 +224,7 @@ public class TikaSourceConfiguration implements SourceConfiguration
 		}
 		try
 		{
-			parser.parse(manager, null, -1);
+			parser.parse(manager, null, Integer.MAX_VALUE);
 		}
 		catch (final IOException e)
 		{

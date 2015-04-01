@@ -49,9 +49,6 @@ import javafx.scene.control.TitledPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
@@ -219,10 +216,8 @@ public class SourceConfigurationController
 
 			RETAAnalysis.getInstance().parse(requirementSource, sourceText, limit);
 
-			final Stage previewStage = new Stage(StageStyle.UTILITY);
 			final Window parent = titledPane.getScene().getWindow();
-			previewStage.initOwner(parent);
-			previewStage.initModality(Modality.APPLICATION_MODAL);
+			final MessageDialog previewStage = new MessageDialog(parent);
 
 			final ResourceBundle labels = ResourceBundle.getBundle("com/ben12/reta/view/Labels");
 
@@ -237,22 +232,9 @@ public class SourceConfigurationController
 
 			previewStage.setScene(new Scene(root));
 			previewStage.setTitle(labels.getString("preview.title"));
-			previewStage.sizeToScene();
+			previewStage.setResizable(true);
 
-			final double px = parent.getX();
-			final double py = parent.getY();
-			final double pwidth = parent.getScene().getWidth();
-			final double pheight = parent.getScene().getHeight();
-
-			final double width = root.getPrefWidth();
-			final double height = root.getPrefHeight();
-
-			final double x = px + (pwidth / 2.0) - (width / 2.0);
-			final double y = py + (pheight / 2.0) - (height / 2.0);
-
-			previewStage.setX(x);
-			previewStage.setY(y);
-			previewStage.show();
+			previewStage.showDialog();
 		}
 		catch (final RETAParseException | IOException e)
 		{

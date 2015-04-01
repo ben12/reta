@@ -1,10 +1,9 @@
 [GENERAL]
 output = analysis.xlsx
 inputs = DOC1,DOC2,SOURCES
-requirement.attributes = Label
-references.attributes = Comment
 
 [DOC1]
+plugin = com.ben12.reta.plugin.tika.TikaSourceProviderPlugin
 path = DocTest1.doc
 filter = 
 requirement.start.regex = ^[ \t]*REQ_(RETA_(\w+_\d+)(?:_(\w+))?[\s-]+(.*))$
@@ -20,6 +19,7 @@ requirement.ref.Id.index = 1
 covers = DOC2
 
 [DOC2]
+plugin = com.ben12.reta.plugin.tika.TikaSourceProviderPlugin
 path = DocTest2.doc
 filter = 
 requirement.start.regex = ^[ \t]*REQ_RETA_(\w+_\d+)(?:_(\w+))?[\s-]+(.*)$
