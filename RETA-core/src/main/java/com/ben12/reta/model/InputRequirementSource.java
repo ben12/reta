@@ -22,6 +22,7 @@ package com.ben12.reta.model;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,43 +43,44 @@ import com.ben12.reta.plugin.SourceProviderPlugin;
  */
 public class InputRequirementSource implements RequirementSourceManager
 {
-	public static final String							NAME			= "name";
+	/** {@link #name} property name. */
+	public static final String							NAME					= "name";
 
-	public static final String							COVERS			= "covers";
+	/** {@link #covers} property name. */
+	public static final String							COVERS					= "covers";
 
-	/**
-	 * Source document name.
-	 */
+	/** Source document name. */
 	@NotEmpty
 	@Pattern(regexp = "[^,]*")
 	private String										name;
 
+	/** Source provider plugin. */
 	private final SourceProviderPlugin					provider;
 
-	/**
-	 * List of covered document sources by this document source.
-	 */
+	/** List of covered document sources by this document source. */
 	@NotNullElement(message = "{unknown.cover.source}")
-	private final List<InputRequirementSource>			covers			= new ArrayList<>();
+	private final List<InputRequirementSource>			covers					= new ArrayList<>();
 
-	/**
-	 * Set of requirement found in the document.
-	 */
-	private final TreeSet<Requirement>					requirements	= new TreeSet<>();
+	/** Set of requirement found in the document. */
+	private final TreeSet<Requirement>					requirements			= new TreeSet<>();
 
-	/**
-	 * Coverage rate of this document by the other documents.
-	 */
-	private final Map<InputRequirementSource, Double>	coversBy		= new HashMap<>();
+	/** Coverage rate of this document by the other documents. */
+	private final Map<InputRequirementSource, Double>	coversBy				= new HashMap<>();
 
-	/**
-	 * Plug-in source configuration.
-	 */
+	/** Plug-in source configuration. */
 	private final SourceConfiguration					configuration;
+
+	/** Requirement attribute names added. */
+	private final Set<String>							requirementAttributes	= new LinkedHashSet<>();
+
+	/** Reference attribute names added. */
+	private final Set<String>							referenceAttributes		= new LinkedHashSet<>();
 
 	/**
 	 * @param theName
 	 *            document source name
+	 * @param theProvider
+	 *            plug-in source provider
 	 * @param theConfiguration
 	 *            plug-in source configuration
 	 */
@@ -97,6 +99,7 @@ public class InputRequirementSource implements RequirementSourceManager
 	{
 		requirements.clear();
 		coversBy.clear();
+		requirementAttributes.clear();
 	}
 
 	/*
@@ -176,19 +179,28 @@ public class InputRequirementSource implements RequirementSourceManager
 	}
 
 	/**
-	 * @return all attributes set
+	 * @return all requirement attributes set
 	 */
-	public Set<String> getAllReqAttributes()
+	public Set<String> getRequirementAttributes()
 	{
-		return requirements.stream().flatMap(r -> r.getReqAttributeNames().stream()).collect(Collectors.toSet());
+		return requirementAttributes;
 	}
 
 	/**
-	 * @return all attributes set
+	 * @return all reference attributes set
 	 */
-	public Set<String> getAllRefAttributes()
+	public Set<String> getReferenceAttributes()
 	{
-		return requirements.stream().flatMap(r -> r.getRefAttributeNames().stream()).collect(Collectors.toSet());
+		return referenceAttributes;
+	}
+
+	/**
+	 * @param att
+	 *            reference attribute name to add
+	 */
+	public void addReferenceAttribute(final String att)
+	{
+		referenceAttributes.add(att);
 	}
 
 	/*
@@ -208,6 +220,7 @@ public class InputRequirementSource implements RequirementSourceManager
 		for (final Map.Entry<String, String> att : attributes.entrySet())
 		{
 			requirement.putAttribute(att.getKey(), att.getValue());
+			requirementAttributes.add(att.getKey());
 		}
 		if (!requirements.add(requirement))
 		{

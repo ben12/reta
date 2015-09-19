@@ -44,20 +44,12 @@ import com.ben12.reta.plugin.tika.beans.constraints.validator.RegexValidator;
 @Constraint(validatedBy = RegexValidator.class)
 public @interface Regex
 {
+	/** Error message to display. */
 	String message() default "{com.ben12.reta.constraints.Regex.message}";
 
+	/** Validating groups. */
 	Class<?>[] groups() default {};
 
+	/** Custom payload. */
 	Class<? extends Payload>[] payload() default {};
-
-	/**
-	 * Defines several {@code @Regex} annotations on the same element.
-	 */
-	@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
-	@Retention(RUNTIME)
-	@Documented
-	public @interface List
-	{
-		Regex[] value();
-	}
 }

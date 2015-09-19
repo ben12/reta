@@ -22,6 +22,10 @@ package com.ben12.reta.beans.property.buffering;
 import com.ben12.reta.beans.property.validation.BeanPropertyValidation;
 
 /**
+ * Adds validation interface to {@link PropertyBuffering}.
+ * 
+ * @param <T>
+ *            {@link PropertyBuffering} value type
  * @author Benoît
  */
 public interface PropertyBufferingValidation<T> extends PropertyBuffering<T>, BeanPropertyValidation<T>

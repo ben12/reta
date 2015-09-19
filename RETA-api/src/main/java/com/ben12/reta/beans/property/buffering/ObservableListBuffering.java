@@ -22,8 +22,6 @@ package com.ben12.reta.beans.property.buffering;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.ben12.reta.beans.property.validation.BeanPropertyValidation;
-
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -35,42 +33,64 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.WeakListChangeListener;
 
+import com.ben12.reta.beans.property.validation.BeanPropertyValidation;
+
 /**
+ * Observable list buffering.
+ * 
+ * @param <E>
+ *            list elements type
  * @author Benoît Moreau (ben.12)
  */
 public class ObservableListBuffering<E> extends SimpleListProperty<E> implements Buffering<ObservableList<E>>,
 		BeanPropertyValidation<ObservableList<E>>
 {
+	/** Bean type (used for validation). */
 	private final Class<?>				beanType;
 
+	/** Bean property name (used for validation). */
 	private final String				propertyName;
 
+	/** Buffered list. */
 	private final ObservableList<E>		subject;
 
+	/** List is buffering. */
 	private final BooleanProperty		buffering		= new SimpleBooleanProperty(false);
 
+	/** List validity. */
 	private final BooleanProperty		validity		= new SimpleBooleanProperty(true);
 
+	/** List validity info. */
 	private final StringProperty		infoValidity	= new SimpleStringProperty(null);
 
+	/** Use equals method for check buffering. */
 	private boolean						equalsBuffering	= true;
 
+	/** Listener for buffered list. */
 	private final ListChangeListener<E>	thisListener;
 
+	/** Listener for subject list. */
 	private final ListChangeListener<E>	subjectListener;
 
+	/** Weak listener wrapper of subject listener. */
 	private final ListChangeListener<E>	weakSubjectListener;
 
 	/**
-	 * 
+	 * @param newSubject
+	 *            subject list to buffer
 	 */
-	public ObservableListBuffering(final ObservableList<E> subject)
+	public ObservableListBuffering(final ObservableList<E> newSubject)
 	{
-		this(null, null, subject);
+		this(null, null, newSubject);
 	}
 
 	/**
-	 * 
+	 * @param newBeanType
+	 *            bean type
+	 * @param newPropertyName
+	 *            bean property name
+	 * @param newSubject
+	 *            property value
 	 */
 	public ObservableListBuffering(final Class<?> newBeanType, final String newPropertyName,
 			final ObservableList<E> newSubject)
@@ -120,7 +140,9 @@ public class ObservableListBuffering<E> extends SimpleListProperty<E> implements
 		};
 
 		addListener(thisListener);
-		subject.addListener(weakSubjectListener = new WeakListChangeListener<E>(subjectListener));
+
+		weakSubjectListener = new WeakListChangeListener<E>(subjectListener);
+		subject.addListener(weakSubjectListener);
 
 		validate();
 	}
@@ -139,7 +161,7 @@ public class ObservableListBuffering<E> extends SimpleListProperty<E> implements
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.ben12.reta.beans.property.buffering.PropertyValidation#getBeanType()
+	 * @see com.ben12.reta.beans.property.validation.BeanPropertyValidation#getBeanType()
 	 */
 	@Override
 	public Class<?> getBeanType()
@@ -150,7 +172,7 @@ public class ObservableListBuffering<E> extends SimpleListProperty<E> implements
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.ben12.reta.beans.property.buffering.PropertyValidation#getPropertyName()
+	 * @see com.ben12.reta.beans.property.validation.BeanPropertyValidation#getPropertyName()
 	 */
 	@Override
 	public String getPropertyName()
@@ -271,7 +293,7 @@ public class ObservableListBuffering<E> extends SimpleListProperty<E> implements
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.ben12.reta.beans.property.buffering.PropertyValidation#validityProperty()
+	 * @see com.ben12.reta.beans.property.validation.PropertyValidation#validityProperty()
 	 */
 	@Override
 	public BooleanProperty validityProperty()
@@ -291,8 +313,7 @@ public class ObservableListBuffering<E> extends SimpleListProperty<E> implements
 	}
 
 	/**
-	 * @param newSubject
-	 * @return
+	 * @return true if buffered value equals subject value
 	 */
 	private boolean equalsSubject()
 	{

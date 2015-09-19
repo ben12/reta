@@ -40,6 +40,8 @@ import com.ben12.reta.plugin.tika.model.TikaSourceConfiguration;
 import com.google.common.base.Strings;
 
 /**
+ * RETA parser using TIKA.
+ * 
  * @author Benoît Moreau (ben.12)
  */
 public class RetaTikaParser
@@ -47,23 +49,31 @@ public class RetaTikaParser
 	/** Buffer size (2 Mo). */
 	private static final int				BUFFER_SIZE	= 2 * 1024 * 1024;
 
+	/** Class logger. */
 	private static final Logger				LOGGER		= Logger.getLogger(RetaTikaParser.class.getName());
 
+	/** Configuration container. */
 	private final TikaSourceConfiguration	configuration;
 
 	/**
-	 * 
+	 * @param theConfiguration
+	 *            the configuration container
 	 */
 	public RetaTikaParser(final TikaSourceConfiguration theConfiguration)
 	{
 		configuration = theConfiguration;
 	}
 
-	private void parse(final RequirementSourceManager requirementSource) throws IOException
-	{
-		parse(requirementSource, null, Integer.MAX_VALUE);
-	}
-
+	/**
+	 * @param requirementSource
+	 *            RETA requirement manager
+	 * @param sourceText
+	 *            text output for preview
+	 * @param limit
+	 *            text output length limit for preview
+	 * @throws IOException
+	 *             I/O exception
+	 */
 	public void parse(final RequirementSourceManager requirementSource, final StringBuilder sourceText, final int limit)
 			throws IOException
 	{
@@ -95,13 +105,21 @@ public class RetaTikaParser
 	}
 
 	/**
-	 * @param newRequirementSource
-	 * @param newPatternRef
+	 * @param requirementSource
+	 *            RETA requirement manager
+	 * @param patternRef
+	 *            reference regex pattern
+	 * @param sourceText
+	 *            text output for preview
+	 * @param limit
+	 *            text output length limit for preview
 	 * @throws IOException
+	 *             I/O exception
 	 */
 	private void parseReferencesInFiles(final RequirementSourceManager requirementSource, final Pattern patternRef,
-			final StringBuilder sourceText, int limit) throws IOException
+			final StringBuilder sourceText, final int limit) throws IOException
 	{
+		int remLimit = limit;
 		final ConcatReader reader = getReader();
 		Path root = Paths.get(configuration.getSourcePath());
 		if (!root.isAbsolute())
@@ -115,19 +133,19 @@ public class RetaTikaParser
 		final CharBuffer buffer = CharBuffer.allocate(BUFFER_SIZE);
 		final StringBuilder builder = new StringBuilder(3 * BUFFER_SIZE);
 		int r = reader.read(buffer);
-		while (r >= 0 && (limit == Integer.MAX_VALUE || limit > 0))
+		while (r >= 0 && (limit == Integer.MAX_VALUE || remLimit > 0))
 		{
 			buffer.flip();
-			builder.append(buffer, 0, Math.min(limit, r));
+			builder.append(buffer, 0, Math.min(remLimit, r));
 			if (sourceText != null)
 			{
 				buffer.rewind();
-				sourceText.append(buffer, 0, Math.min(limit, r));
+				sourceText.append(buffer, 0, Math.min(remLimit, r));
 			}
 			buffer.clear();
 			if (limit != Integer.MAX_VALUE)
 			{
-				limit -= r;
+				remLimit -= r;
 			}
 
 			final Path prevPath = reader.getCurrentPath();
@@ -152,34 +170,44 @@ public class RetaTikaParser
 
 	/**
 	 * @param requirementSource
+	 *            RETA requirement manager
 	 * @param patternStart
+	 *            requirement start regex pattern
 	 * @param patternEnd
+	 *            requirement end regex pattern
 	 * @param patternRef
+	 *            reference regex pattern
+	 * @param sourceText
+	 *            text output for preview
+	 * @param limit
+	 *            text output length limit for preview
 	 * @throws IOException
+	 *             I/O exception
 	 */
 	private void parseMultiRequirementByFile(final RequirementSourceManager requirementSource,
 			final Pattern patternStart, final Pattern patternEnd, final Pattern patternRef,
-			final StringBuilder sourceText, int limit) throws IOException
+			final StringBuilder sourceText, final int limit) throws IOException
 	{
+		int remLimit = limit;
 		boolean requirementStarted = false;
 		Requirement requirement = null;
 		final ConcatReader reader = getReader();
 		final CharBuffer buffer = CharBuffer.allocate(BUFFER_SIZE);
 		final StringBuilder builder = new StringBuilder(3 * BUFFER_SIZE);
 		int r = reader.read(buffer);
-		while (r >= 0 && (limit == Integer.MAX_VALUE || limit > 0))
+		while (r >= 0 && (limit == Integer.MAX_VALUE || remLimit > 0))
 		{
 			buffer.flip();
-			builder.append(buffer, 0, Math.min(limit, r));
+			builder.append(buffer, 0, Math.min(remLimit, r));
 			if (sourceText != null)
 			{
 				buffer.rewind();
-				sourceText.append(buffer, 0, Math.min(limit, r));
+				sourceText.append(buffer, 0, Math.min(remLimit, r));
 			}
 			buffer.clear();
 			if (limit != Integer.MAX_VALUE)
 			{
-				limit -= r;
+				remLimit -= r;
 			}
 
 			final Path path = reader.getCurrentPath();
@@ -265,14 +293,20 @@ public class RetaTikaParser
 
 	/**
 	 * @param requirementSource
+	 *            RETA requirement manager
 	 * @param builder
+	 *            input text
 	 * @param path
+	 *            input source path
 	 * @param matcherStart
+	 *            requirement start regex matcher
 	 * @param matcherEnd
+	 *            requirement end regex matcher
 	 * @param patternRef
-	 * @return
+	 *            reference regex pattern
+	 * @return built requirement
 	 */
-	public Requirement extractRequirement(final RequirementSourceManager requirementSource,
+	private Requirement extractRequirement(final RequirementSourceManager requirementSource,
 			final StringBuilder builder, final Path path, final Matcher matcherStart, final Matcher matcherEnd,
 			final Pattern patternRef)
 	{
@@ -321,6 +355,14 @@ public class RetaTikaParser
 		return requirement;
 	}
 
+	/**
+	 * @param requirementSource
+	 *            RETA requirement manager
+	 * @param requirement
+	 *            referred requirement
+	 * @param matcherRef
+	 *            reference regex matcher
+	 */
 	private void parseReferences(final RequirementSourceManager requirementSource, final Requirement requirement,
 			final Matcher matcherRef)
 	{
@@ -345,6 +387,11 @@ public class RetaTikaParser
 		}
 	}
 
+	/**
+	 * @return {@link ConcatReader} of source
+	 * @throws IOException
+	 *             I/O exception
+	 */
 	private ConcatReader getReader() throws IOException
 	{
 		final ConcatReader concatReader = new ConcatReader();
@@ -370,6 +417,18 @@ public class RetaTikaParser
 		return concatReader;
 	}
 
+	/**
+	 * @param concatReader
+	 *            {@link ConcatReader} where adds input file
+	 * @param base
+	 *            path base used for relativize paths
+	 * @param root
+	 *            path root to explore
+	 * @param filter
+	 *            filter regex pattern
+	 * @throws IOException
+	 *             I/O exception
+	 */
 	private void fillReaders(final ConcatReader concatReader, final Path base, final Path root, final Pattern filter)
 			throws IOException
 	{

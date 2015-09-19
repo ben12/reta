@@ -69,16 +69,16 @@ public class Requirement implements com.ben12.reta.api.Requirement, Comparable<R
 	 */
 	public Requirement()
 	{
-		this.source = null;
+		source = null;
 	}
 
 	/**
-	 * @param source
+	 * @param reqSource
 	 *            requirement document source
 	 */
-	public Requirement(final InputRequirementSource source)
+	public Requirement(final InputRequirementSource reqSource)
 	{
-		this.source = source;
+		source = reqSource;
 	}
 
 	/**
@@ -98,12 +98,12 @@ public class Requirement implements com.ben12.reta.api.Requirement, Comparable<R
 	}
 
 	/**
-	 * @param id
+	 * @param newId
 	 *            requirement identifying
 	 */
-	public void setId(final String id)
+	public void setId(final String newId)
 	{
-		this.id = Strings.nullToEmpty(id);
+		id = Strings.nullToEmpty(newId);
 	}
 
 	/**
@@ -115,12 +115,12 @@ public class Requirement implements com.ben12.reta.api.Requirement, Comparable<R
 	}
 
 	/**
-	 * @param version
+	 * @param newVersion
 	 *            requirement version
 	 */
-	public void setVersion(final String version)
+	public void setVersion(final String newVersion)
 	{
-		this.version = Strings.nullToEmpty(version);
+		version = Strings.nullToEmpty(newVersion);
 	}
 
 	/**
@@ -132,12 +132,12 @@ public class Requirement implements com.ben12.reta.api.Requirement, Comparable<R
 	}
 
 	/**
-	 * @param text
+	 * @param newText
 	 *            requirement human text
 	 */
-	public void setText(final String text)
+	public void setText(final String newText)
 	{
-		this.text = Strings.nullToEmpty(text);
+		text = Strings.nullToEmpty(newText);
 	}
 
 	/**
@@ -149,12 +149,12 @@ public class Requirement implements com.ben12.reta.api.Requirement, Comparable<R
 	}
 
 	/**
-	 * @param content
+	 * @param newContent
 	 *            requirement content description
 	 */
-	public void setContent(final String content)
+	public void setContent(final String newContent)
 	{
-		this.content = Strings.nullToEmpty(content);
+		content = Strings.nullToEmpty(newContent);
 	}
 
 	/**
@@ -242,11 +242,16 @@ public class Requirement implements com.ben12.reta.api.Requirement, Comparable<R
 			}
 			break;
 		}
+		if (source != null)
+		{
+			source.addReferenceAttribute(name);
+		}
 	}
 
 	/**
 	 * @param reference
 	 *            requirement reference
+	 * @return true if did not already contain a reference with same id and version, false otherwise
 	 */
 	public boolean addReference(final Requirement reference)
 	{
@@ -276,12 +281,14 @@ public class Requirement implements com.ben12.reta.api.Requirement, Comparable<R
 	}
 
 	/**
-	 * @return requirement reference iterable
+	 * @param aSource
+	 *            referenced requirement source by this source to find
+	 * @return requirement reference list
 	 */
-	public List<Requirement> getReferencesFor(final InputRequirementSource source)
+	public List<Requirement> getReferencesFor(final InputRequirementSource aSource)
 	{
 		return (references == null ? new ArrayList<Requirement>(0) : references.stream()
-				.filter((r) -> (r.getSource() == source))
+				.filter((r) -> r.getSource() == aSource)
 				.distinct()
 				.collect(Collectors.toList()));
 	}
@@ -318,12 +325,14 @@ public class Requirement implements com.ben12.reta.api.Requirement, Comparable<R
 	}
 
 	/**
-	 * @return requirement referencing this requirement iterable
+	 * @param aSource
+	 *            requirement source referencing this source to find
+	 * @return requirement referencing this requirement list
 	 */
-	public List<Requirement> getReferredByRequirementFor(final InputRequirementSource source)
+	public List<Requirement> getReferredByRequirementFor(final InputRequirementSource aSource)
 	{
 		return (referredBy == null ? new ArrayList<Requirement>(0) : referredBy.stream()
-				.filter((r) -> r.getSource() == source)
+				.filter((r) -> r.getSource() == aSource)
 				.distinct()
 				.collect(Collectors.toList()));
 	}

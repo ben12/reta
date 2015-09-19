@@ -29,6 +29,8 @@ import com.ben12.reta.beans.constraints.Path;
 import com.google.common.base.Strings;
 
 /**
+ * {@link Path} validator.
+ * 
  * @author Benoît Moreau (ben.12)
  */
 public class PathValidator implements ConstraintValidator<Path, CharSequence>
@@ -39,7 +41,7 @@ public class PathValidator implements ConstraintValidator<Path, CharSequence>
 	 * @see javax.validation.ConstraintValidator#initialize(java.lang.annotation.Annotation)
 	 */
 	@Override
-	public void initialize(Path parameters)
+	public void initialize(final Path parameters)
 	{
 	}
 
@@ -49,27 +51,32 @@ public class PathValidator implements ConstraintValidator<Path, CharSequence>
 	 * @see javax.validation.ConstraintValidator#isValid(java.lang.Object, javax.validation.ConstraintValidatorContext)
 	 */
 	@Override
-	public boolean isValid(CharSequence value, ConstraintValidatorContext context)
+	public boolean isValid(final CharSequence value, final ConstraintValidatorContext context)
 	{
+		boolean valid = false;
+
 		if (value == null || value.length() == 0)
 		{
-			return true;
+			valid = true;
 		}
-
-		try
+		else
 		{
-			Paths.get(value.toString());
-		}
-		catch (InvalidPathException e)
-		{
-			if (!Strings.isNullOrEmpty(e.getLocalizedMessage()))
+			try
 			{
-				context.disableDefaultConstraintViolation();
-				context.buildConstraintViolationWithTemplate(e.getLocalizedMessage()).addConstraintViolation();
+				Paths.get(value.toString());
+				valid = true;
 			}
-			return false;
+			catch (final InvalidPathException e)
+			{
+				if (!Strings.isNullOrEmpty(e.getLocalizedMessage()))
+				{
+					context.disableDefaultConstraintViolation();
+					context.buildConstraintViolationWithTemplate(e.getLocalizedMessage()).addConstraintViolation();
+				}
+				valid = false;
+			}
 		}
 
-		return true;
+		return valid;
 	}
 }

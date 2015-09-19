@@ -32,40 +32,60 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.WeakChangeListener;
 
 /**
+ * Simple object property buffering implementation.
+ * 
+ * @param <T>
+ *            property value type
  * @author Benoît Moreau (ben.12)
  */
 public class SimpleObjectPropertyBuffering<T> extends SimpleObjectProperty<T> implements PropertyBufferingValidation<T>
 {
+	/** Bean type (used for validation). */
 	private final Class<?>			beanType;
 
+	/** Bean property name (used for validation). */
 	private final String			propertyName;
 
+	/** Buffered property value. */
 	private final Property<T>		subject;
 
-	private final ChangeListener<T>	subjectListener;
-
-	private final ChangeListener<T>	thisListener;
-
-	private final ChangeListener<T>	weakSubjectListener;
-
+	/** Property is buffering. */
 	private final BooleanProperty	buffering		= new SimpleBooleanProperty(false);
 
+	/** Property validity. */
 	private final BooleanProperty	validity		= new SimpleBooleanProperty(true);
 
-	private final StringProperty	infoValidity	= new SimpleStringProperty("");
+	/** Property validity info. */
+	private final StringProperty	infoValidity	= new SimpleStringProperty(null);
 
+	/** Use equals method for check buffering. */
 	private boolean					equalsBuffering	= true;
 
+	/** Listener for buffered property. */
+	private final ChangeListener<T>	subjectListener;
+
+	/** Listener for subject property. */
+	private final ChangeListener<T>	thisListener;
+
+	/** Weak listener wrapper of subject listener. */
+	private final ChangeListener<T>	weakSubjectListener;
+
 	/**
-	 * 
+	 * @param newSubject
+	 *            subject property to buffer
 	 */
-	public SimpleObjectPropertyBuffering(final Property<T> subject)
+	public SimpleObjectPropertyBuffering(final Property<T> newSubject)
 	{
-		this(null, null, subject);
+		this(null, null, newSubject);
 	}
 
 	/**
-	 * 
+	 * @param newBeanType
+	 *            bean type
+	 * @param newPropertyName
+	 *            bean property name
+	 * @param newSubject
+	 *            property value
 	 */
 	public SimpleObjectPropertyBuffering(final Class<?> newBeanType, final String newPropertyName,
 			final Property<T> newSubject)
@@ -190,7 +210,7 @@ public class SimpleObjectPropertyBuffering<T> extends SimpleObjectProperty<T> im
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.ben12.reta.beans.property.buffering.PropertyBuffering#commit()
+	 * @see com.ben12.reta.beans.property.buffering.Buffering#commit()
 	 */
 	@Override
 	public void commit()
@@ -204,7 +224,7 @@ public class SimpleObjectPropertyBuffering<T> extends SimpleObjectProperty<T> im
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.ben12.reta.beans.property.buffering.PropertyBuffering#revert()
+	 * @see com.ben12.reta.beans.property.buffering.Buffering#revert()
 	 */
 	@Override
 	public void revert()
@@ -219,7 +239,7 @@ public class SimpleObjectPropertyBuffering<T> extends SimpleObjectProperty<T> im
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.ben12.reta.beans.property.buffering.PropertyValidation#validityProperty()
+	 * @see com.ben12.reta.beans.property.validation.PropertyValidation#validityProperty()
 	 */
 	@Override
 	public BooleanProperty validityProperty()
@@ -230,7 +250,7 @@ public class SimpleObjectPropertyBuffering<T> extends SimpleObjectProperty<T> im
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.ben12.reta.beans.property.buffering.PropertyValidation#infoValidityProperty()
+	 * @see com.ben12.reta.beans.property.validation.PropertyValidation#infoValidityProperty()
 	 */
 	@Override
 	public StringProperty infoValidityProperty()
