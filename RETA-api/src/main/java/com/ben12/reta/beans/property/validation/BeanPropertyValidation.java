@@ -31,17 +31,30 @@ import com.google.common.base.Strings;
 /**
  * PropertyValidation extension using Bean validation.
  * 
+ * @param <T>
+ *            value type to validate
  * @see javax.validation.Validation
+ * @see javax.validation.Validator
  * @author Benoît Moreau (ben.12)
  */
 public interface BeanPropertyValidation<T> extends PropertyValidation
 {
+	/** Default {@link Validator}. */
 	Validator	DEFAULT_VALIDATOR	= Validation.buildDefaultValidatorFactory().getValidator();
 
+	/**
+	 * @return value to validate
+	 */
 	T get();
 
-	<C> Class<C> getBeanType();
+	/**
+	 * @return bean type containing the value to validate
+	 */
+	Class<?> getBeanType();
 
+	/**
+	 * @return property name in the {@link #getBeanType()} to validate
+	 */
 	String getPropertyName();
 
 	/**
@@ -49,11 +62,14 @@ public interface BeanPropertyValidation<T> extends PropertyValidation
 	 */
 	default void validate()
 	{
-		Set<ConstraintViolation<Object>> violations;
+		@SuppressWarnings("unchecked")
+		final Class<Object> beanType = (Class<Object>) getBeanType();
+		final String propertyName = getPropertyName();
 
-		if (getBeanType() != null && !Strings.isNullOrEmpty(getPropertyName()))
+		Set<ConstraintViolation<Object>> violations;
+		if (beanType != null && !Strings.isNullOrEmpty(propertyName))
 		{
-			violations = DEFAULT_VALIDATOR.validateValue(getBeanType(), getPropertyName(), get());
+			violations = DEFAULT_VALIDATOR.validateValue(beanType, propertyName, get());
 		}
 		else
 		{

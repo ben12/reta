@@ -50,37 +50,57 @@ import com.ben12.reta.beans.property.validation.PropertyValidation;
 import com.google.common.collect.Iterables;
 
 /**
+ * Buffering manager.
+ * 
  * @author Benoît Moreau (ben.12)
  */
 public class BufferingManager
 {
+	/** List of buffered value. */
 	private final List<WeakReference<Buffering<?>>>	buffers				= new ArrayList<>();
 
+	/** Has buffering values. */
 	private final BooleanProperty					buffering			= new SimpleBooleanProperty(false);
 
+	/** Buffering expression for all buffered values. */
 	private BooleanExpression						bufferingExpression	= new SimpleBooleanProperty(false);
 
+	/** Buffered values validity. */
 	private final BooleanProperty					valid				= new SimpleBooleanProperty(true);
 
+	/** Validity expression for all buffered values. */
 	private BooleanExpression						validExpression		= new SimpleBooleanProperty(true);
 
+	/** Use equals method for check buffering. */
 	private boolean									equalsBuffering		= true;
 
+	/**
+	 * @return buffering property
+	 */
 	public BooleanProperty bufferingProperty()
 	{
 		return buffering;
 	}
 
+	/**
+	 * @return has buffering values
+	 */
 	public boolean isBuffering()
 	{
 		return buffering.get();
 	}
 
+	/**
+	 * @return valid property
+	 */
 	public BooleanProperty validProperty()
 	{
 		return valid;
 	}
 
+	/**
+	 * @return validity of buffered values
+	 */
 	public boolean isValid()
 	{
 		return valid.get();
@@ -124,6 +144,9 @@ public class BufferingManager
 		return equalsBuffering;
 	}
 
+	/**
+	 * Commits changes.
+	 */
 	public void commit()
 	{
 		boolean purge = false;
@@ -145,6 +168,9 @@ public class BufferingManager
 		}
 	}
 
+	/**
+	 * Revert changes.
+	 */
 	public void revert()
 	{
 		boolean purge = false;
@@ -166,6 +192,15 @@ public class BufferingManager
 		}
 	}
 
+	/**
+	 * @param bean
+	 *            bean instance
+	 * @param propertyName
+	 *            bean string property name
+	 * @return string {@link Buffering} for the bean property
+	 * @throws NoSuchMethodException
+	 *             if cannot found getter and setter of the Java Bean property
+	 */
 	public SimpleObjectPropertyBuffering<String> bufferingString(final Object bean, final String propertyName)
 			throws NoSuchMethodException
 	{
@@ -173,6 +208,15 @@ public class BufferingManager
 				propertyName);
 	}
 
+	/**
+	 * @param bean
+	 *            bean instance
+	 * @param propertyName
+	 *            bean integer property name
+	 * @return integer {@link Buffering} for the bean property
+	 * @throws NoSuchMethodException
+	 *             if cannot found getter and setter of the Java Bean property
+	 */
 	public SimpleObjectPropertyBuffering<Number> bufferingInteger(final Object bean, final String propertyName)
 			throws NoSuchMethodException
 	{
@@ -180,6 +224,17 @@ public class BufferingManager
 				bean.getClass(), propertyName);
 	}
 
+	/**
+	 * @param bean
+	 *            bean instance
+	 * @param propertyName
+	 *            bean property name
+	 * @return {@link Buffering} for the bean property
+	 * @param <T>
+	 *            bean property type
+	 * @throws NoSuchMethodException
+	 *             if cannot found getter and setter of the Java Bean property
+	 */
 	public <T extends Object> SimpleObjectPropertyBuffering<T> bufferingObject(final Object bean,
 			final String propertyName) throws NoSuchMethodException
 	{
@@ -190,11 +245,29 @@ public class BufferingManager
 		return buffering(property, bean.getClass(), propertyName);
 	}
 
+	/**
+	 * @param p
+	 *            property to buffer
+	 * @return {@link PropertyBuffering} for the property
+	 * @param <T>
+	 *            buffered value type
+	 */
 	public <T> PropertyBuffering<T> buffering(final Property<T> p)
 	{
 		return buffering(p, null, null);
 	}
 
+	/**
+	 * @param p
+	 *            property to buffer
+	 * @param beanType
+	 *            bean type
+	 * @param propertyName
+	 *            bean property name
+	 * @return {@link SimpleObjectPropertyBuffering} for the property
+	 * @param <T>
+	 *            buffered value type
+	 */
 	public <T> SimpleObjectPropertyBuffering<T> buffering(final Property<T> p, final Class<?> beanType,
 			final String propertyName)
 	{
@@ -205,6 +278,7 @@ public class BufferingManager
 
 	/**
 	 * @param b
+	 *            {@link Buffering} instance to add in this manager
 	 */
 	public void add(final Buffering<?> b)
 	{
@@ -225,7 +299,7 @@ public class BufferingManager
 
 	/**
 	 * @param properties
-	 *            buffered properties
+	 *            {@link Buffering} instances to add in this manager
 	 */
 	public void addAll(final List<Buffering<?>> properties)
 	{
@@ -234,7 +308,7 @@ public class BufferingManager
 
 	/**
 	 * @param properties
-	 *            buffered properties
+	 *            {@link Buffering} instances to remove of this manager
 	 */
 	public void removeAll(final List<Buffering<?>> properties)
 	{
@@ -247,19 +321,16 @@ public class BufferingManager
 		}
 	}
 
-	public <T> boolean remove(final Buffering<T> p, final boolean rebuild)
+	/**
+	 * @param p
+	 *            {@link Buffering} instance to remove of this manager
+	 * @param rebuild
+	 *            rebuild global buffering and validity properties
+	 * @return true if removed, false if not found in buffering list
+	 */
+	private boolean remove(final Buffering<?> p, final boolean rebuild)
 	{
-		final boolean changed = Iterables.removeIf(buffers, br -> {
-			final Buffering<?> b = br.get();
-			if (b != null)
-			{
-				return b == p;
-			}
-			else
-			{
-				return true;
-			}
-		});
+		final boolean changed = Iterables.removeIf(buffers, br -> br.get() == p);
 		if (changed && rebuild)
 		{
 			rebuildBufferingExpression();
@@ -268,6 +339,9 @@ public class BufferingManager
 		return changed;
 	}
 
+	/**
+	 * Purge empty weak references in {@link #buffers}.
+	 */
 	public void purge()
 	{
 		final boolean changed = Iterables.removeIf(buffers, br -> (br.get() == null));
@@ -278,6 +352,9 @@ public class BufferingManager
 		}
 	}
 
+	/**
+	 * Rebuild {@link #bufferingExpression}.
+	 */
 	private void rebuildBufferingExpression()
 	{
 		buffering.unbind();
@@ -303,6 +380,9 @@ public class BufferingManager
 		}
 	}
 
+	/**
+	 * Rebuild {@link #validExpression}.
+	 */
 	private void rebuildValidExpression()
 	{
 		valid.unbind();
@@ -332,36 +412,37 @@ public class BufferingManager
 	}
 
 	/**
-	 * @param newSources
-	 * @return
+	 * @param bean
+	 *            bean instance
+	 * @param propertyName
+	 *            bean list property name
+	 * @return {@link ObservableListBuffering} for the property
+	 * @param <T>
+	 *            list element type
 	 */
 	public <T> ObservableListBuffering<T> bufferingList(final Object bean, final String propertyName)
 	{
 		ObservableListBuffering<T> lb = null;
-		try
+		@SuppressWarnings("unchecked")
+		final List<T> value = getPropertyValue(bean, propertyName, List.class);
+		if (value instanceof ObservableList<?>)
 		{
-			@SuppressWarnings("unchecked")
-			final List<T> value = getPropertyValue(bean, propertyName, List.class);
-			if (value instanceof ObservableList<?>)
-			{
-				lb = new ObservableListBuffering<>(bean.getClass(), propertyName, (ObservableList<T>) value);
-			}
-			else
-			{
-				lb = new ObservableListBuffering<>(bean.getClass(), propertyName, FXCollections.observableList(value));
-			}
-			add(lb);
+			lb = new ObservableListBuffering<>(bean.getClass(), propertyName, (ObservableList<T>) value);
 		}
-		catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | IntrospectionException e)
+		else
 		{
-			Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", e);
+			lb = new ObservableListBuffering<>(bean.getClass(), propertyName, FXCollections.observableList(value));
 		}
+		add(lb);
 		return lb;
 	}
 
 	/**
-	 * @param newSources
-	 * @return
+	 * @param list
+	 *            observable list to buffer
+	 * @return {@link ObservableListBuffering} for the list
+	 * @param <T>
+	 *            list element type
 	 */
 	public <T> ObservableListBuffering<T> buffering(final ObservableList<T> list)
 	{
@@ -371,36 +452,37 @@ public class BufferingManager
 	}
 
 	/**
-	 * @param newSources
-	 * @return
+	 * @param bean
+	 *            bean instance
+	 * @param propertyName
+	 *            bean set property name
+	 * @return {@link ObservableSetBuffering} for the property
+	 * @param <T>
+	 *            set element type
 	 */
 	public <T> ObservableSetBuffering<T> bufferingSet(final Object bean, final String propertyName)
 	{
 		ObservableSetBuffering<T> lb = null;
-		try
+		@SuppressWarnings("unchecked")
+		final Set<T> value = getPropertyValue(bean, propertyName, Set.class);
+		if (value instanceof ObservableSet<?>)
 		{
-			@SuppressWarnings("unchecked")
-			final Set<T> value = getPropertyValue(bean, propertyName, Set.class);
-			if (value instanceof ObservableSet<?>)
-			{
-				lb = new ObservableSetBuffering<>(bean.getClass(), propertyName, (ObservableSet<T>) value);
-			}
-			else
-			{
-				lb = new ObservableSetBuffering<>(bean.getClass(), propertyName, FXCollections.observableSet(value));
-			}
-			add(lb);
+			lb = new ObservableSetBuffering<>(bean.getClass(), propertyName, (ObservableSet<T>) value);
 		}
-		catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | IntrospectionException e)
+		else
 		{
-			Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", e);
+			lb = new ObservableSetBuffering<>(bean.getClass(), propertyName, FXCollections.observableSet(value));
 		}
+		add(lb);
 		return lb;
 	}
 
 	/**
-	 * @param newSources
-	 * @return
+	 * @param set
+	 *            observable set to buffer
+	 * @return {@link ObservableSetBuffering} for the set
+	 * @param <T>
+	 *            set element type
 	 */
 	public <T> ObservableSetBuffering<T> buffering(final ObservableSet<T> set)
 	{
@@ -410,8 +492,13 @@ public class BufferingManager
 	}
 
 	/**
-	 * @param newSources
-	 * @return
+	 * @param map
+	 *            observable map to buffer
+	 * @return {@link ObservableMapBuffering} for the map
+	 * @param <K>
+	 *            map key type
+	 * @param <E>
+	 *            map value type
 	 */
 	public <K, E> ObservableMapBuffering<K, E> buffering(final ObservableMap<K, E> map)
 	{
@@ -420,15 +507,33 @@ public class BufferingManager
 		return sb;
 	}
 
+	/**
+	 * @param bean
+	 *            bean instance
+	 * @param propertyName
+	 *            property name
+	 * @param expectedClass
+	 *            property value {@link Class}
+	 * @return bean property value
+	 * @param <T>
+	 *            bean property value type
+	 */
 	private <T> T getPropertyValue(final Object bean, final String propertyName, final Class<T> expectedClass)
-			throws IntrospectionException, IllegalAccessException, InvocationTargetException
 	{
-		final BeanInfo beanInfo = Introspector.getBeanInfo(bean.getClass());
-		final PropertyDescriptor descriptor = Stream.of(beanInfo.getPropertyDescriptors())
-				.filter(p -> p.getName().equals(propertyName))
-				.findFirst()
-				.get();
-		final Object value = descriptor.getReadMethod().invoke(bean);
+		Object value = null;
+		try
+		{
+			final BeanInfo beanInfo = Introspector.getBeanInfo(bean.getClass());
+			final PropertyDescriptor descriptor = Stream.of(beanInfo.getPropertyDescriptors())
+					.filter(p -> p.getName().equals(propertyName))
+					.findFirst()
+					.get();
+			value = descriptor.getReadMethod().invoke(bean);
+		}
+		catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | IntrospectionException e)
+		{
+			Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", e);
+		}
 		return expectedClass.cast(value);
 	}
 }

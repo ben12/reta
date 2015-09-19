@@ -75,9 +75,10 @@ import com.google.common.io.Files;
  */
 public final class RETAAnalysis
 {
-
+	/** {@link RETAAnalysis} logger. */
 	private static final Logger							LOGGER				= Logger.getLogger(RETAAnalysis.class.getName());
 
+	/** {@link #requirementSources} property name. */
 	public static final String							REQUIREMENT_SOURCES	= "requirementSources";
 
 	private static RETAAnalysis							instance			= null;
@@ -296,11 +297,10 @@ public final class RETAAnalysis
 		}
 	}
 
-	public void saveConfig()
-	{
-		saveConfig(config);
-	}
-
+	/**
+	 * @param iniFile
+	 *            INI file where save configuration
+	 */
 	public void saveConfig(final File iniFile)
 	{
 		final Wini ini = new Wini();
@@ -459,21 +459,21 @@ public final class RETAAnalysis
 
 			final Set<String> attributes = new LinkedHashSet<>();
 			attributes.add(SourceConfiguration.ATTRIBUTE_ID);
-			if (source.getAllAttributes().contains(SourceConfiguration.ATTRIBUTE_VERSION))
+			if (source.getRequirementAttributes().contains(SourceConfiguration.ATTRIBUTE_VERSION))
 			{
 				attributes.add(SourceConfiguration.ATTRIBUTE_VERSION);
 			}
-			attributes.addAll(source.getAllAttributes());
+			attributes.addAll(source.getRequirementAttributes());
 			attributes.remove(SourceConfiguration.ATTRIBUTE_TEXT);
 			values.put("attributes", attributes);
 
 			final Set<String> refAttributes = new LinkedHashSet<>();
 			refAttributes.add(SourceConfiguration.ATTRIBUTE_ID);
-			if (source.getAllAttributes().contains(SourceConfiguration.ATTRIBUTE_VERSION))
+			if (source.getReferenceAttributes().contains(SourceConfiguration.ATTRIBUTE_VERSION))
 			{
 				refAttributes.add(SourceConfiguration.ATTRIBUTE_VERSION);
 			}
-			refAttributes.addAll(source.getAllAttributes());
+			refAttributes.addAll(source.getReferenceAttributes());
 			refAttributes.remove(SourceConfiguration.ATTRIBUTE_TEXT);
 			values.put("refAttributes", refAttributes);
 

@@ -27,6 +27,8 @@ import javax.validation.ConstraintValidatorContext;
 import com.ben12.reta.constraints.NotNullElement;
 
 /**
+ * {@link NotNullElement} validator.
+ * 
  * @author Benoît Moreau (ben.12)
  */
 public class NotNullElementValidator implements ConstraintValidator<NotNullElement, Collection<?>>
@@ -39,7 +41,7 @@ public class NotNullElementValidator implements ConstraintValidator<NotNullEleme
 	 * Annotation)
 	 */
 	@Override
-	public void initialize(NotNullElement parameters)
+	public void initialize(final NotNullElement parameters)
 	{
 	}
 
@@ -50,12 +52,8 @@ public class NotNullElementValidator implements ConstraintValidator<NotNullEleme
 	 * javax.validation.ConstraintValidatorContext)
 	 */
 	@Override
-	public boolean isValid(Collection<?> value, ConstraintValidatorContext context)
+	public boolean isValid(final Collection<?> value, final ConstraintValidatorContext context)
 	{
-		if (value == null)
-		{
-			return true;
-		}
-		return value.stream().noneMatch(e -> e == null);
+		return (value == null || value.stream().noneMatch(e -> e == null));
 	}
 }

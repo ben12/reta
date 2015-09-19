@@ -41,26 +41,38 @@ import javafx.stage.Window;
 import com.ben12.reta.beans.property.validation.PropertyValidation;
 
 /**
+ * {@link Node} validation decorator.
+ * 
+ * @param <N>
+ *            Decorated node type
  * @author Benoît Moreau (ben.12)
  */
 @DefaultProperty("child")
 public class ValidationDecorator<N extends Node> extends Region implements PropertyValidation
 {
+	/** Default CSS style class. */
 	private static final String			DEFAULT_STYLE_CLASS	= "validation-decorator";
 
+	/** {@link #valid} property CSS pseudo class. */
 	private static final PseudoClass	PSEUDO_CLASS_VALID	= PseudoClass.getPseudoClass("valid");
 
+	/** Default error image icon. */
 	private static final Image			ERROR_ICON			= new Image(
 																	ValidationDecorator.class.getResourceAsStream("/com/ben12/reta/resources/images/error.png"));
 
+	/** Default error node effect. */
 	private static final DropShadow		ERROR_EFFECT		= new DropShadow(5, Color.RED);
 
+	/** Error image icon. */
 	private final ImageView				errorIcon;
 
+	/** Decorated node. */
 	private N							child;
 
+	/** Error info tool-tip. */
 	private final Tooltip				errorTooltip;
 
+	/** Node validity property. */
 	private final BooleanProperty		valid				= new BooleanPropertyBase(true)
 															{
 																@Override
@@ -83,7 +95,7 @@ public class ValidationDecorator<N extends Node> extends Region implements Prope
 															};
 
 	/**
-	 * 
+	 * Constructor.
 	 */
 	public ValidationDecorator()
 	{
@@ -94,39 +106,7 @@ public class ValidationDecorator<N extends Node> extends Region implements Prope
 		effectProperty().bind(Bindings.createObjectBinding(() -> (valid.get() ? null : ERROR_EFFECT), valid));
 		pseudoClassStateChanged(PSEUDO_CLASS_VALID, valid.get());
 
-		// Workaround against font bug https://javafx-jira.kenai.com/browse/RT-34948
-		errorTooltip = new Tooltip()
-		{
-			private final double	fsize	= getFont().getSize();
-
-			@Override
-			protected void show()
-			{
-				setFont(Font.font("monospace", fsize));
-				super.show();
-			}
-
-			@Override
-			public void show(final Node ownerNode, final double anchorX, final double anchorY)
-			{
-				setFont(Font.font("monospace", fsize));
-				super.show(ownerNode, anchorX, anchorY);
-			}
-
-			@Override
-			public void show(final Window owner)
-			{
-				setFont(Font.font("monospace", fsize));
-				super.show(owner);
-			}
-
-			@Override
-			public void show(final Window ownerWindow, final double anchorX, final double anchorY)
-			{
-				setFont(Font.font("monospace", fsize));
-				super.show(ownerWindow, anchorX, anchorY);
-			}
-		};
+		errorTooltip = new ErrorTooltip();
 		errorTooltip.setFont(Font.font("monospace", errorTooltip.getFont().getSize()));
 		Tooltip.install(errorIcon, errorTooltip);
 	}
@@ -134,7 +114,7 @@ public class ValidationDecorator<N extends Node> extends Region implements Prope
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.ben12.reta.beans.property.buffering.PropertyValidation#infoValidityProperty()
+	 * @see com.ben12.reta.beans.property.validation.PropertyValidation#infoValidityProperty()
 	 */
 	@Override
 	public StringProperty infoValidityProperty()
@@ -145,7 +125,7 @@ public class ValidationDecorator<N extends Node> extends Region implements Prope
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.ben12.reta.beans.property.buffering.PropertyValidation#validityProperty()
+	 * @see com.ben12.reta.beans.property.validation.PropertyValidation#validityProperty()
 	 */
 	@Override
 	public BooleanProperty validityProperty()
@@ -311,5 +291,43 @@ public class ValidationDecorator<N extends Node> extends Region implements Prope
 			width = super.computePrefWidth(height);
 		}
 		return width;
+	}
+
+	/**
+	 * Error Tool-tip class.
+	 * (Workaround against font bug https://javafx-jira.kenai.com/browse/RT-34948)
+	 */
+	private class ErrorTooltip extends Tooltip
+	{
+		/** Default font size. */
+		private final double	fsize	= getFont().getSize();
+
+		@Override
+		protected void show()
+		{
+			setFont(Font.font("monospace", fsize));
+			super.show();
+		}
+
+		@Override
+		public void show(final Node ownerNode, final double anchorX, final double anchorY)
+		{
+			setFont(Font.font("monospace", fsize));
+			super.show(ownerNode, anchorX, anchorY);
+		}
+
+		@Override
+		public void show(final Window owner)
+		{
+			setFont(Font.font("monospace", fsize));
+			super.show(owner);
+		}
+
+		@Override
+		public void show(final Window ownerWindow, final double anchorX, final double anchorY)
+		{
+			setFont(Font.font("monospace", fsize));
+			super.show(ownerWindow, anchorX, anchorY);
+		}
 	}
 }

@@ -50,25 +50,25 @@ public class RegexValidator implements ConstraintValidator<Regex, CharSequence>
 	@Override
 	public boolean isValid(final CharSequence value, final ConstraintValidatorContext context)
 	{
-		if (value == null || value.length() == 0)
-		{
-			return true;
-		}
+		boolean valid = true;
 
-		try
+		if (value != null && value.length() > 0)
 		{
-			Pattern.compile(value.toString());
-		}
-		catch (final IllegalArgumentException e)
-		{
-			if (!Strings.isNullOrEmpty(e.getLocalizedMessage()))
+			try
 			{
-				context.disableDefaultConstraintViolation();
-				context.buildConstraintViolationWithTemplate(e.getLocalizedMessage()).addConstraintViolation();
+				Pattern.compile(value.toString());
 			}
-			return false;
+			catch (final IllegalArgumentException e)
+			{
+				if (!Strings.isNullOrEmpty(e.getLocalizedMessage()))
+				{
+					context.disableDefaultConstraintViolation();
+					context.buildConstraintViolationWithTemplate(e.getLocalizedMessage()).addConstraintViolation();
+				}
+				valid = false;
+			}
 		}
 
-		return true;
+		return valid;
 	}
 }

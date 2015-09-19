@@ -22,24 +22,50 @@ package com.ben12.reta.beans.property.buffering;
 import javafx.beans.property.BooleanProperty;
 
 /**
+ * Buffering interface.
+ * 
+ * @param <T>
+ *            buffered value type
  * @author Benoît Moreau (ben.12)
  */
 public interface Buffering<T>
 {
+	/**
+	 * @return buffered subject
+	 */
 	T getSubject();
 
+	/**
+	 * @return use equals method for check buffering
+	 */
 	boolean isEqualsBuffering();
 
+	/**
+	 * @param equalsBuffering
+	 *            true for use equals method for check buffering, use == otherwise
+	 */
 	void setEqualsBuffering(boolean equalsBuffering);
 
+	/**
+	 * @return buffering property
+	 */
 	BooleanProperty bufferingProperty();
 
+	/**
+	 * @return value is buffering
+	 */
 	default boolean isBuffering()
 	{
 		return bufferingProperty().get();
 	}
 
+	/**
+	 * Commits change.
+	 */
 	void commit();
 
+	/**
+	 * Reverts change.
+	 */
 	void revert();
 }

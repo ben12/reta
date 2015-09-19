@@ -44,20 +44,12 @@ import com.ben12.reta.constraints.validator.NotNullElementValidator;
 @Constraint(validatedBy = NotNullElementValidator.class)
 public @interface NotNullElement
 {
+	/** Error message to display. */
 	String message() default "{com.ben12.reta.constraints.NotNullElement.message}";
 
+	/** Validating groups. */
 	Class<?>[] groups() default {};
 
+	/** Custom payload. */
 	Class<? extends Payload>[] payload() default {};
-
-	/**
-	 * Defines several {@code @Regex} annotations on the same element.
-	 */
-	@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
-	@Retention(RUNTIME)
-	@Documented
-	public @interface List
-	{
-		NotNullElement[] value();
-	}
 }

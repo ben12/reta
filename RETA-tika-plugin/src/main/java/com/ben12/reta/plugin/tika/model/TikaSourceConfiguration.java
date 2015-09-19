@@ -38,15 +38,19 @@ import com.ben12.reta.plugin.tika.parser.RetaTikaParser;
  */
 public class TikaSourceConfiguration implements SourceConfiguration
 {
-
+	/** {@link #sourcePath} property name. */
 	public static final String			SOURCE_PATH			= "sourcePath";
 
+	/** {@link #filter} property name. */
 	public static final String			FILTER				= "filter";
 
+	/** {@link #reqStart} property name. */
 	public static final String			REQ_START			= "reqStart";
 
+	/** {@link #reqEnd} property name. */
 	public static final String			REQ_END				= "reqEnd";
 
+	/** {@link #reqRef} property name. */
 	public static final String			REQ_REF				= "reqRef";
 
 	/**
@@ -222,6 +226,7 @@ public class TikaSourceConfiguration implements SourceConfiguration
 		{
 			parser = new RetaTikaParser(this);
 		}
+
 		try
 		{
 			parser.parse(manager, null, Integer.MAX_VALUE);
@@ -245,6 +250,7 @@ public class TikaSourceConfiguration implements SourceConfiguration
 		{
 			parser = new RetaTikaParser(this);
 		}
+
 		try
 		{
 			parser.parse(manager, output, limit);

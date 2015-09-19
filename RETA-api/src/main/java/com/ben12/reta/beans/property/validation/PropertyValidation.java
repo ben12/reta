@@ -23,20 +23,35 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.StringProperty;
 
 /**
+ * Property validation interface.
+ * 
  * @author Benoît Moreau (ben.12)
  */
 public interface PropertyValidation
 {
+	/**
+	 * @return Validity property
+	 */
 	BooleanProperty validityProperty();
 
+	/**
+	 * @return Validation info property
+	 */
 	StringProperty infoValidityProperty();
 
+	/**
+	 * @param other
+	 *            Other property validation to bind
+	 */
 	default void bindValidation(final PropertyValidation other)
 	{
 		validityProperty().bind(other.validityProperty());
 		infoValidityProperty().bind(other.infoValidityProperty());
 	}
 
+	/**
+	 * Un-bind property validation.
+	 */
 	default void unbindValidation()
 	{
 		validityProperty().unbind();

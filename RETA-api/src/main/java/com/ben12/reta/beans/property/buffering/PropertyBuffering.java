@@ -22,6 +22,10 @@ package com.ben12.reta.beans.property.buffering;
 import javafx.beans.property.Property;
 
 /**
+ * Buffering interface for {@link Property}.
+ * 
+ * @param <T>
+ *            {@link Property} value type
  * @author Benoît Moreau (ben.12)
  */
 public interface PropertyBuffering<T> extends Property<T>, Buffering<Property<T>>

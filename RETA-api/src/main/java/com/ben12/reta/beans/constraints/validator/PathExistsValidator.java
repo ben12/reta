@@ -32,12 +32,16 @@ import com.ben12.reta.beans.constraints.PathExists;
 import com.ben12.reta.beans.constraints.PathExists.KindOfPath;
 
 /**
+ * {@link PathExists} validator.
+ * 
  * @author Benoît Moreau (ben.12)
  */
 public class PathExistsValidator implements ConstraintValidator<PathExists, CharSequence>
 {
+	/** Kind of path. */
 	private KindOfPath	kindOfPath	= KindOfPath.FILE_OR_DIRECTORY;
 
+	/** Validate the path parent directory. */
 	private boolean		parent		= false;
 
 	/*

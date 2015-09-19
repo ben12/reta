@@ -25,12 +25,12 @@ package com.ben12.reta.util;
 public class ConcatAggregator extends net.sf.jagg.ConcatAggregator
 {
 
-	public ConcatAggregator(String property, String separator)
+	public ConcatAggregator(final String property, final String separator)
 	{
 		super(property, separator);
 	}
 
-	public ConcatAggregator(String property)
+	public ConcatAggregator(final String property)
 	{
 		super(property);
 		setProperty(property);

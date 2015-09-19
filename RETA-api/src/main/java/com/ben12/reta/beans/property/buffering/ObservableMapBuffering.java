@@ -22,8 +22,6 @@ package com.ben12.reta.beans.property.buffering;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import com.ben12.reta.beans.property.validation.BeanPropertyValidation;
-
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -35,39 +33,66 @@ import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
 import javafx.collections.WeakMapChangeListener;
 
+import com.ben12.reta.beans.property.validation.BeanPropertyValidation;
+
 /**
+ * Observable map buffering.
+ * 
+ * @param <K>
+ *            map key type
+ * @param <E>
+ *            map value type
  * @author Benoît Moreau (ben.12)
  */
 public class ObservableMapBuffering<K, E> extends SimpleMapProperty<K, E> implements Buffering<ObservableMap<K, E>>,
 		BeanPropertyValidation<ObservableMap<K, E>>
 {
+	/** Bean type (used for validation). */
 	private final Class<?>					beanType;
 
+	/** Bean property name (used for validation). */
 	private final String					propertyName;
 
+	/** Buffered map. */
 	private final ObservableMap<K, E>		subject;
 
+	/** Map is buffering. */
 	private final BooleanProperty			buffering		= new SimpleBooleanProperty(false);
 
+	/** Map validity. */
 	private final BooleanProperty			validity		= new SimpleBooleanProperty(true);
 
+	/** Map validity info. */
 	private final StringProperty			infoValidity	= new SimpleStringProperty(null);
 
+	/** Use equals method for check buffering. */
 	private boolean							equalsBuffering	= true;
 
+	/** Listener for buffered map. */
 	private final MapChangeListener<K, E>	thisListener;
 
+	/** Listener for subject map. */
 	private final MapChangeListener<K, E>	subjectListener;
 
+	/** Weak listener wrapper of subject listener. */
 	private final MapChangeListener<K, E>	weakSubjectListener;
 
+	/**
+	 * @param newSubject
+	 *            subject map to buffer
+	 */
 	public ObservableMapBuffering(final ObservableMap<K, E> newSubject)
 	{
 		this(null, null, newSubject);
 	}
 
 	/**
-	 * 
+	 * @param newBeanType
+	 *            bean type
+	 * @param newPropertyName
+	 *            bean property name
+	 * @param newSubject
+	 *            property value
 	 */
 	public ObservableMapBuffering(final Class<?> newBeanType, final String newPropertyName,
 			final ObservableMap<K, E> newSubject)
@@ -117,7 +142,9 @@ public class ObservableMapBuffering<K, E> extends SimpleMapProperty<K, E> implem
 		};
 
 		addListener(thisListener);
-		subject.addListener(weakSubjectListener = new WeakMapChangeListener<K, E>(subjectListener));
+
+		weakSubjectListener = new WeakMapChangeListener<K, E>(subjectListener);
+		subject.addListener(weakSubjectListener);
 
 		validate();
 	}
@@ -125,7 +152,7 @@ public class ObservableMapBuffering<K, E> extends SimpleMapProperty<K, E> implem
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.ben12.reta.beans.property.buffering.PropertyValidation#getBeanType()
+	 * @see com.ben12.reta.beans.property.validation.BeanPropertyValidation#getBeanType()
 	 */
 	@Override
 	public Class<?> getBeanType()
@@ -136,7 +163,7 @@ public class ObservableMapBuffering<K, E> extends SimpleMapProperty<K, E> implem
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.ben12.reta.beans.property.buffering.PropertyValidation#getPropertyName()
+	 * @see com.ben12.reta.beans.property.validation.BeanPropertyValidation#getPropertyName()
 	 */
 	@Override
 	public String getPropertyName()
@@ -147,7 +174,7 @@ public class ObservableMapBuffering<K, E> extends SimpleMapProperty<K, E> implem
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.ben12.reta.beans.property.buffering.PropertyValidation#validityProperty()
+	 * @see com.ben12.reta.beans.property.validation.PropertyValidation#validityProperty()
 	 */
 	@Override
 	public BooleanProperty validityProperty()
@@ -158,7 +185,7 @@ public class ObservableMapBuffering<K, E> extends SimpleMapProperty<K, E> implem
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.ben12.reta.beans.property.buffering.PropertyValidation#infoValidityProperty()
+	 * @see com.ben12.reta.beans.property.validation.PropertyValidation#infoValidityProperty()
 	 */
 	@Override
 	public StringProperty infoValidityProperty()
@@ -248,8 +275,7 @@ public class ObservableMapBuffering<K, E> extends SimpleMapProperty<K, E> implem
 	}
 
 	/**
-	 * @param newSubject
-	 * @return
+	 * @return true if buffered value equals subject value
 	 */
 	private boolean equalsSubject()
 	{

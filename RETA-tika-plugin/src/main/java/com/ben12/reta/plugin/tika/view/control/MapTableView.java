@@ -36,22 +36,36 @@ import javafx.collections.ObservableMap;
 import javafx.scene.control.TableView;
 
 /**
+ * @param <K>
+ *            map key type
+ * @param <V>
+ *            map value type
  * @author Benoît Moreau (ben.12)
  */
 public class MapTableView<K, V> extends TableView<MapTableView<K, V>.Entry>
 {
+	/** Entry list of table view. */
 	private final ObservableList<Entry>		obsList;
 
+	/** Map change listener. */
 	private final MapChangeListener<K, V>	mapChange;
 
+	/** Map of map table view. */
 	private ObservableMap<K, V>				map;
 
+	/**
+	 * Constructor.
+	 */
 	public MapTableView()
 	{
 		this(FXCollections.observableHashMap());
 	}
 
-	public MapTableView(ObservableMap<K, V> theMap)
+	/**
+	 * @param theMap
+	 *            map for map table view
+	 */
+	public MapTableView(final ObservableMap<K, V> theMap)
 	{
 		map = theMap;
 		obsList = FXCollections.observableArrayList(map.entrySet()
@@ -60,15 +74,15 @@ public class MapTableView<K, V> extends TableView<MapTableView<K, V>.Entry>
 				.collect(Collectors.toList()));
 		setItems(obsList);
 
-		mapChange = (MapChangeListener.Change<? extends K, ? extends V> change) -> {
+		mapChange = (final MapChangeListener.Change<? extends K, ? extends V> change) -> {
 			if (!change.wasAdded() && change.wasRemoved())
 			{
 				obsList.removeIf(me -> me.getKey().equals(change.getKey()));
 			}
 			else if (change.wasAdded() && !change.wasRemoved())
 			{
-				AtomicInteger index = new AtomicInteger(-1);
-				Map.Entry<K, V> entry = map.entrySet().stream().filter(me -> {
+				final AtomicInteger index = new AtomicInteger(-1);
+				final Map.Entry<K, V> entry = map.entrySet().stream().filter(me -> {
 					index.getAndIncrement();
 					return me.getKey().equals(change.getKey());
 				}).findFirst().get();
@@ -84,10 +98,10 @@ public class MapTableView<K, V> extends TableView<MapTableView<K, V>.Entry>
 	}
 
 	/**
-	 * @param map
-	 *            the map to set
+	 * @param newMap
+	 *            the map for map table view
 	 */
-	public void setMapItems(ObservableMap<K, V> newMap)
+	public void setMapItems(final ObservableMap<K, V> newMap)
 	{
 		if (map != newMap)
 		{
@@ -102,12 +116,18 @@ public class MapTableView<K, V> extends TableView<MapTableView<K, V>.Entry>
 		}
 	}
 
+	/**
+	 * {@link Map.Entry} wrapper.
+	 */
 	public class Entry implements MapChangeListener<K, V>
 	{
+		/** Subject entry. */
 		private final Map.Entry<K, V>				entry;
 
+		/** Value property. */
 		private final Property<V>					value	= new SimpleObjectProperty<>();
 
+		/** Key property. */
 		private final ReadOnlyObjectPropertyBase<K>	key		= new ReadOnlyObjectPropertyBase<K>()
 															{
 																@Override
@@ -129,12 +149,14 @@ public class MapTableView<K, V> extends TableView<MapTableView<K, V>.Entry>
 																}
 															};
 
+		/** Value change listener. */
 		private final ChangeListener<V>				changeListener;
 
 		/**
-		 * 
+		 * @param mapEntry
+		 *            wrapped map entry
 		 */
-		public Entry(Map.Entry<K, V> mapEntry)
+		public Entry(final Map.Entry<K, V> mapEntry)
 		{
 			entry = mapEntry;
 			value.setValue(entry.getValue());
@@ -153,7 +175,7 @@ public class MapTableView<K, V> extends TableView<MapTableView<K, V>.Entry>
 		 * @see javafx.collections.MapChangeListener#onChanged(javafx.collections.MapChangeListener.Change)
 		 */
 		@Override
-		public void onChanged(javafx.collections.MapChangeListener.Change<? extends K, ? extends V> change)
+		public void onChanged(final javafx.collections.MapChangeListener.Change<? extends K, ? extends V> change)
 		{
 			if (change.getKey().equals(entry.getKey()) && change.wasAdded())
 			{
@@ -163,16 +185,25 @@ public class MapTableView<K, V> extends TableView<MapTableView<K, V>.Entry>
 			}
 		}
 
+		/**
+		 * @return key value
+		 */
 		public K getKey()
 		{
 			return entry.getKey();
 		}
 
+		/**
+		 * @return key property
+		 */
 		public ReadOnlyProperty<K> keyProperty()
 		{
 			return key;
 		}
 
+		/**
+		 * @return value property
+		 */
 		public Property<V> valueProperty()
 		{
 			return value;

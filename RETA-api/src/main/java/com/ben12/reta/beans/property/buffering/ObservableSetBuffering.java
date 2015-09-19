@@ -22,8 +22,6 @@ package com.ben12.reta.beans.property.buffering;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import com.ben12.reta.beans.property.validation.BeanPropertyValidation;
-
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -35,39 +33,64 @@ import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
 import javafx.collections.WeakSetChangeListener;
 
+import com.ben12.reta.beans.property.validation.BeanPropertyValidation;
+
 /**
+ * Observable set buffering.
+ * 
+ * @param <E>
+ *            set elements type
  * @author Benoît Moreau (ben.12)
  */
 public class ObservableSetBuffering<E> extends SimpleSetProperty<E> implements Buffering<ObservableSet<E>>,
 		BeanPropertyValidation<ObservableSet<E>>
 {
+	/** Bean type (used for validation). */
 	private final Class<?>				beanType;
 
+	/** Bean property name (used for validation). */
 	private final String				propertyName;
 
+	/** Buffered set. */
 	private final ObservableSet<E>		subject;
 
+	/** Set is buffering. */
 	private final BooleanProperty		buffering		= new SimpleBooleanProperty(false);
 
+	/** Set validity. */
 	private final BooleanProperty		validity		= new SimpleBooleanProperty(true);
 
+	/** Set validity info. */
 	private final StringProperty		infoValidity	= new SimpleStringProperty(null);
 
+	/** Use equals method for check buffering. */
 	private boolean						equalsBuffering	= true;
 
+	/** Listener for buffered set. */
 	private final SetChangeListener<E>	thisListener;
 
+	/** Listener for subject set. */
 	private final SetChangeListener<E>	subjectListener;
 
+	/** Weak listener wrapper of subject listener. */
 	private final SetChangeListener<E>	weakSubjectListener;
 
+	/**
+	 * @param newSubject
+	 *            subject set to buffer
+	 */
 	public ObservableSetBuffering(final ObservableSet<E> newSubject)
 	{
 		this(null, null, newSubject);
 	}
 
 	/**
-	 * 
+	 * @param newBeanType
+	 *            bean type
+	 * @param newPropertyName
+	 *            bean property name
+	 * @param newSubject
+	 *            property value
 	 */
 	public ObservableSetBuffering(final Class<?> newBeanType, final String newPropertyName,
 			final ObservableSet<E> newSubject)
@@ -117,7 +140,9 @@ public class ObservableSetBuffering<E> extends SimpleSetProperty<E> implements B
 		};
 
 		addListener(thisListener);
-		subject.addListener(weakSubjectListener = new WeakSetChangeListener<E>(subjectListener));
+
+		weakSubjectListener = new WeakSetChangeListener<E>(subjectListener);
+		subject.addListener(weakSubjectListener);
 
 		validate();
 	}
@@ -125,7 +150,7 @@ public class ObservableSetBuffering<E> extends SimpleSetProperty<E> implements B
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.ben12.reta.beans.property.buffering.PropertyValidation#getBeanType()
+	 * @see com.ben12.reta.beans.property.validation.BeanPropertyValidation#getBeanType()
 	 */
 	@Override
 	public Class<?> getBeanType()
@@ -136,7 +161,7 @@ public class ObservableSetBuffering<E> extends SimpleSetProperty<E> implements B
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.ben12.reta.beans.property.buffering.PropertyValidation#getPropertyName()
+	 * @see com.ben12.reta.beans.property.validation.BeanPropertyValidation#getPropertyName()
 	 */
 	@Override
 	public String getPropertyName()
@@ -147,7 +172,7 @@ public class ObservableSetBuffering<E> extends SimpleSetProperty<E> implements B
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.ben12.reta.beans.property.buffering.PropertyValidation#validityProperty()
+	 * @see com.ben12.reta.beans.property.validation.PropertyValidation#validityProperty()
 	 */
 	@Override
 	public BooleanProperty validityProperty()
@@ -158,7 +183,7 @@ public class ObservableSetBuffering<E> extends SimpleSetProperty<E> implements B
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.ben12.reta.beans.property.buffering.PropertyValidation#infoValidityProperty()
+	 * @see com.ben12.reta.beans.property.validation.PropertyValidation#infoValidityProperty()
 	 */
 	@Override
 	public StringProperty infoValidityProperty()
@@ -246,8 +271,7 @@ public class ObservableSetBuffering<E> extends SimpleSetProperty<E> implements B
 	}
 
 	/**
-	 * @param newSubject
-	 * @return
+	 * @return true if buffered value equals subject value
 	 */
 	private boolean equalsSubject()
 	{

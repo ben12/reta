@@ -59,25 +59,32 @@ import com.ben12.reta.view.validation.ValidationDecorator;
  */
 public class SourceConfigurationController
 {
+	/** Buffering manager. */
 	private BufferingManager											bufferingManager;
 
+	/** File chooser. */
 	private FileChooser													fileChooser			= null;
 
 	/** Keeps a reference on buffered properties. */
 	private final List<Buffering<?>>									bufferedProperties	= new ArrayList<>();
 
+	/** Source path text field. */
 	@FXML
 	private ValidationDecorator<TextField>								sourcePath;
 
+	/** Filter text field. */
 	@FXML
 	private ValidationDecorator<TextField>								filter;
 
+	/** Requirement start regex text field. */
 	@FXML
 	private ValidationDecorator<TextField>								reqStart;
 
+	/** Requirement end regex text field. */
 	@FXML
 	private ValidationDecorator<TextField>								reqEnd;
 
+	/** Reference regex text field. */
 	@FXML
 	private ValidationDecorator<TextField>								reqRef;
 

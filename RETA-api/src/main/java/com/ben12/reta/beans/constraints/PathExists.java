@@ -44,29 +44,31 @@ import com.ben12.reta.beans.constraints.validator.PathExistsValidator;
 @Constraint(validatedBy = PathExistsValidator.class)
 public @interface PathExists
 {
+	/** Error message to display. */
 	String message() default "{com.ben12.reta.beans.constraints.PathExists.message}";
 
+	/** Validating groups. */
 	Class<?>[] groups() default {};
 
+	/** Validate the path parent directory. */
 	boolean parent() default false;
 
+	/** Check if path is of this kind. */
 	KindOfPath kind() default KindOfPath.FILE_OR_DIRECTORY;
 
+	/** Custom payload. */
 	Class<? extends Payload>[] payload() default {};
 
 	/**
-	 * Defines several {@code @Regex} annotations on the same element.
+	 * Kinds of path.
 	 */
-	@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
-	@Retention(RUNTIME)
-	@Documented
-	public @interface List
-	{
-		PathExists[] value();
-	}
-
 	public static enum KindOfPath
 	{
-		FILE, DIRECTORY, FILE_OR_DIRECTORY;
+		/** File path. */
+		FILE,
+		/** Directory path. */
+		DIRECTORY,
+		/** File or directory path. */
+		FILE_OR_DIRECTORY;
 	}
 }
