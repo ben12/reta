@@ -22,6 +22,7 @@ package com.ben12.reta.model;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -183,6 +184,32 @@ public class Requirement implements com.ben12.reta.api.Requirement, Comparable<R
 			break;
 		}
 		return att;
+	}
+
+	public Set<String> getReqAttributeNames()
+	{
+		final Set<String> attributeNames = new HashSet<>();
+		if (attributes != null)
+		{
+			attributeNames.addAll(attributes.keySet());
+		}
+		attributeNames.add(SourceConfiguration.ATTRIBUTE_ID);
+		if (!version.isEmpty())
+		{
+			attributeNames.add(SourceConfiguration.ATTRIBUTE_VERSION);
+		}
+		if (!text.isEmpty())
+		{
+			attributeNames.add(SourceConfiguration.ATTRIBUTE_TEXT);
+		}
+		return attributeNames;
+	}
+
+	public Set<String> getRefAttributeNames()
+	{
+		return (references != null ? references.stream()
+				.flatMap(r -> r.getReqAttributeNames().stream())
+				.collect(Collectors.toSet()) : new HashSet<>());
 	}
 
 	/**

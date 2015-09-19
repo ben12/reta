@@ -355,6 +355,7 @@ public final class RETAAnalysis
 						requirementSource -> {
 							try
 							{
+								requirementSource.clear();
 								requirementSource.getConfiguration().parseSource(requirementSource);
 								synchronized (progress)
 								{
@@ -458,22 +459,12 @@ public final class RETAAnalysis
 			values.put("line", "\n");
 
 			final Set<String> attributes = new LinkedHashSet<>();
-			attributes.add(SourceConfiguration.ATTRIBUTE_ID);
-			if (source.getAllAttributes().contains(SourceConfiguration.ATTRIBUTE_VERSION))
-			{
-				attributes.add(SourceConfiguration.ATTRIBUTE_VERSION);
-			}
-			attributes.addAll(source.getAllAttributes());
+			attributes.addAll(source.getAllReqAttributes());
 			attributes.remove(SourceConfiguration.ATTRIBUTE_TEXT);
 			values.put("attributes", attributes);
 
 			final Set<String> refAttributes = new LinkedHashSet<>();
-			refAttributes.add(SourceConfiguration.ATTRIBUTE_ID);
-			if (source.getAllAttributes().contains(SourceConfiguration.ATTRIBUTE_VERSION))
-			{
-				refAttributes.add(SourceConfiguration.ATTRIBUTE_VERSION);
-			}
-			refAttributes.addAll(source.getAllAttributes());
+			refAttributes.addAll(source.getAllRefAttributes());
 			refAttributes.remove(SourceConfiguration.ATTRIBUTE_TEXT);
 			values.put("refAttributes", refAttributes);
 

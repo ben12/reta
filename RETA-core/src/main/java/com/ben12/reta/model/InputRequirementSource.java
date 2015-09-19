@@ -22,7 +22,6 @@ package com.ben12.reta.model;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -77,8 +76,6 @@ public class InputRequirementSource implements RequirementSourceManager
 	 */
 	private final SourceConfiguration					configuration;
 
-	private final Set<String>							allAttributes	= new LinkedHashSet<>();
-
 	/**
 	 * @param theName
 	 *            document source name
@@ -100,7 +97,6 @@ public class InputRequirementSource implements RequirementSourceManager
 	{
 		requirements.clear();
 		coversBy.clear();
-		allAttributes.clear();
 	}
 
 	/*
@@ -182,9 +178,17 @@ public class InputRequirementSource implements RequirementSourceManager
 	/**
 	 * @return all attributes set
 	 */
-	public Set<String> getAllAttributes()
+	public Set<String> getAllReqAttributes()
 	{
-		return allAttributes;
+		return requirements.stream().flatMap(r -> r.getReqAttributeNames().stream()).collect(Collectors.toSet());
+	}
+
+	/**
+	 * @return all attributes set
+	 */
+	public Set<String> getAllRefAttributes()
+	{
+		return requirements.stream().flatMap(r -> r.getRefAttributeNames().stream()).collect(Collectors.toSet());
 	}
 
 	/*
@@ -204,7 +208,6 @@ public class InputRequirementSource implements RequirementSourceManager
 		for (final Map.Entry<String, String> att : attributes.entrySet())
 		{
 			requirement.putAttribute(att.getKey(), att.getValue());
-			allAttributes.add(att.getKey());
 		}
 		if (!requirements.add(requirement))
 		{
