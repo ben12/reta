@@ -44,8 +44,8 @@ import com.ben12.reta.beans.property.validation.BeanPropertyValidation;
  *            map value type
  * @author Benoît Moreau (ben.12)
  */
-public class ObservableMapBuffering<K, E> extends SimpleMapProperty<K, E> implements Buffering<ObservableMap<K, E>>,
-		BeanPropertyValidation<ObservableMap<K, E>>
+public class ObservableMapBuffering<K, E> extends SimpleMapProperty<K, E>
+		implements Buffering<ObservableMap<K, E>>, BeanPropertyValidation<ObservableMap<K, E>>
 {
 	/** Bean type (used for validation). */
 	private final Class<?>					beanType;
@@ -76,6 +76,12 @@ public class ObservableMapBuffering<K, E> extends SimpleMapProperty<K, E> implem
 
 	/** Weak listener wrapper of subject listener. */
 	private final MapChangeListener<K, E>	weakSubjectListener;
+
+	/** Revert in progress. */
+	private boolean							reverting		= false;
+
+	/** Revert in progress. */
+	private boolean							committing		= false;
 
 	/**
 	 * @param newSubject
@@ -123,21 +129,29 @@ public class ObservableMapBuffering<K, E> extends SimpleMapProperty<K, E> implem
 		putAll(subject);
 
 		thisListener = c -> {
-			if (equalsBuffering)
+			// TODO: Workaround for https://bugs.openjdk.java.net/browse/JDK-8136465
+			if (!reverting)
 			{
-				buffering.setValue(!equalsSubject());
+				if (equalsBuffering)
+				{
+					buffering.setValue(!equalsSubject());
+				}
+				else
+				{
+					buffering.setValue(true);
+				}
+				validate();
 			}
-			else
-			{
-				buffering.setValue(true);
-			}
-			validate();
 		};
 
 		subjectListener = c -> {
-			if (!buffering.getValue())
+			// TODO: Workaround for https://bugs.openjdk.java.net/browse/JDK-8136465
+			if (!committing)
 			{
-				revert();
+				if (!buffering.getValue())
+				{
+					revert();
+				}
 			}
 		};
 
@@ -249,12 +263,24 @@ public class ObservableMapBuffering<K, E> extends SimpleMapProperty<K, E> implem
 	@Override
 	public void commit()
 	{
-		subject.removeListener(weakSubjectListener);
-		buffering.setValue(false);
-		entrySet().stream().forEachOrdered(e -> subject.put(e.getKey(), e.getValue()));
-		subject.entrySet().removeAll(
-				subject.entrySet().parallelStream().filter(e -> !containsKey(e.getKey())).collect(Collectors.toSet()));
-		subject.addListener(weakSubjectListener);
+		// TODO: Workaround for https://bugs.openjdk.java.net/browse/JDK-8136465
+		// Use committing flag instead of removeListener + addListener
+		committing = true;
+		// subject.removeListener(weakSubjectListener);
+		try
+		{
+			buffering.setValue(false);
+			entrySet().stream().forEachOrdered(e -> subject.put(e.getKey(), e.getValue()));
+			subject.entrySet().removeAll(subject.entrySet()
+					.parallelStream()
+					.filter(e -> !containsKey(e.getKey()))
+					.collect(Collectors.toSet()));
+		}
+		finally
+		{
+			committing = false;
+		}
+		// subject.addListener(weakSubjectListener);
 	}
 
 	/*
@@ -265,12 +291,23 @@ public class ObservableMapBuffering<K, E> extends SimpleMapProperty<K, E> implem
 	@Override
 	public void revert()
 	{
-		removeListener(thisListener);
-		buffering.setValue(false);
-		subject.entrySet().stream().forEachOrdered(e -> put(e.getKey(), e.getValue()));
-		entrySet().removeAll(
-				entrySet().parallelStream().filter(e -> !subject.containsKey(e.getKey())).collect(Collectors.toSet()));
-		addListener(thisListener);
+		// TODO: Workaround for https://bugs.openjdk.java.net/browse/JDK-8136465
+		// Use reverting flag instead of removeListener + addListener
+		reverting = true;
+		// removeListener(thisListener);
+		try
+		{
+			buffering.setValue(false);
+			subject.entrySet().stream().forEachOrdered(e -> put(e.getKey(), e.getValue()));
+			entrySet().removeAll(entrySet().parallelStream()
+					.filter(e -> !subject.containsKey(e.getKey()))
+					.collect(Collectors.toSet()));
+		}
+		finally
+		{
+			reverting = false;
+		}
+		// addListener(thisListener);
 		validate();
 	}
 

@@ -37,7 +37,8 @@ import com.ben12.reta.plugin.tika.view.SourceConfigurationController;
  */
 public class TikaDirectorySourceProviderPlugin extends TikaSourceProviderPlugin
 {
-	private static final Logger		LOGGER			= Logger.getLogger(TikaDirectorySourceProviderPlugin.class.getName());
+	private static final Logger		LOGGER			= Logger
+			.getLogger(TikaDirectorySourceProviderPlugin.class.getName());
 
 	private static final String		PROVIDER_NAME	= "tika.dir.provider";
 
@@ -78,7 +79,7 @@ public class TikaDirectorySourceProviderPlugin extends TikaSourceProviderPlugin
 
 				controller.bind(bufferingManager, (TikaSourceConfiguration) sourceConfiguration);
 			}
-			catch (final IOException | NoSuchMethodException e)
+			catch (final IOException e)
 			{
 				LOGGER.log(Level.SEVERE, "Loading Tika FXML", e);
 			}

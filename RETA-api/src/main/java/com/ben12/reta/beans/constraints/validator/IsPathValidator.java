@@ -25,15 +25,15 @@ import java.nio.file.Paths;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
-import com.ben12.reta.beans.constraints.Path;
+import com.ben12.reta.beans.constraints.IsPath;
 import com.google.common.base.Strings;
 
 /**
- * {@link Path} validator.
+ * {@link IsPath} validator.
  * 
  * @author Benoît Moreau (ben.12)
  */
-public class PathValidator implements ConstraintValidator<Path, CharSequence>
+public class IsPathValidator implements ConstraintValidator<IsPath, CharSequence>
 {
 	/*
 	 * (non-Javadoc)
@@ -41,7 +41,7 @@ public class PathValidator implements ConstraintValidator<Path, CharSequence>
 	 * @see javax.validation.ConstraintValidator#initialize(java.lang.annotation.Annotation)
 	 */
 	@Override
-	public void initialize(final Path parameters)
+	public void initialize(final IsPath parameters)
 	{
 	}
 

@@ -35,6 +35,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeSet;
@@ -44,30 +46,37 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.stage.Window;
 
 import javax.validation.constraints.NotNull;
-
-import net.sf.jett.transform.ExcelTransformer;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.hibernate.validator.valuehandling.UnwrapValidatedValue;
 import org.ini4j.Profile.Section;
 import org.ini4j.Wini;
 
-import com.ben12.reta.api.RETAParseException;
-import com.ben12.reta.api.SourceConfiguration;
-import com.ben12.reta.beans.constraints.PathExists;
-import com.ben12.reta.beans.constraints.PathExists.KindOfPath;
-import com.ben12.reta.model.InputRequirementSource;
-import com.ben12.reta.model.Requirement;
-import com.ben12.reta.plugin.SourceProviderPlugin;
-import com.ben12.reta.view.control.MessageDialog;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
+
+import net.sf.jett.transform.ExcelTransformer;
+
+import com.ben12.reta.api.RETAParseException;
+import com.ben12.reta.api.SourceConfiguration;
+import com.ben12.reta.beans.constraints.IsPath;
+import com.ben12.reta.beans.constraints.PathExists;
+import com.ben12.reta.beans.constraints.PathExists.KindOfPath;
+import com.ben12.reta.model.InputRequirementSource;
+import com.ben12.reta.model.RequirementImpl;
+import com.ben12.reta.plugin.SourceProviderPlugin;
+import com.ben12.reta.view.control.MessageDialog;
 
 // TODO : think of a better implementation
 /**
@@ -76,23 +85,29 @@ import com.google.common.io.Files;
 public final class RETAAnalysis
 {
 	/** {@link RETAAnalysis} logger. */
-	private static final Logger							LOGGER				= Logger.getLogger(RETAAnalysis.class.getName());
+	private static final Logger								LOGGER				= Logger
+			.getLogger(RETAAnalysis.class.getName());
 
 	/** {@link #requirementSources} property name. */
-	public static final String							REQUIREMENT_SOURCES	= "requirementSources";
+	public static final String								REQUIREMENT_SOURCES	= "requirementSources";
 
-	private static RETAAnalysis							instance			= null;
+	/** {@link #output} property name. */
+	public static final String								OUTPUT				= "output";
 
-	private final Map<String, InputRequirementSource>	requirementSources	= new LinkedHashMap<>();
+	private static RETAAnalysis								instance			= null;
 
-	private final Map<String, SourceProviderPlugin>		plugins				= new HashMap<>();
+	private final ObservableList<InputRequirementSource>	requirementSources	= FXCollections.observableArrayList();
 
-	private File										config				= null;
+	private final Map<String, SourceProviderPlugin>			plugins				= new HashMap<>();
+
+	private File											config				= null;
 
 	@NotNull(message = "invalid.path")
-	@com.ben12.reta.beans.constraints.Path
+	@IsPath
 	@PathExists(kind = KindOfPath.DIRECTORY, parent = true)
-	private String										output				= null;
+	@UnwrapValidatedValue
+	private final StringProperty							output				= new SimpleStringProperty(this,
+			OUTPUT);
 
 	// TODO maybe useful to see unknown references and mismatch versions
 	// private final Comparator<Requirement> reqCompId = (req1, req2) -> req1.getId().compareTo(req2.getId());
@@ -133,9 +148,16 @@ public final class RETAAnalysis
 	/**
 	 * @return the requirementSources
 	 */
-	public Map<String, InputRequirementSource> getRequirementSources()
+	public ObservableList<InputRequirementSource> requirementSourcesProperty()
 	{
 		return requirementSources;
+	}
+
+	public Optional<InputRequirementSource> getRequirementSource(final String sourceName)
+	{
+		return requirementSourcesProperty().parallelStream()
+				.filter((r) -> Objects.equals(r.getName(), sourceName))
+				.findAny();
 	}
 
 	/**
@@ -149,18 +171,9 @@ public final class RETAAnalysis
 	/**
 	 * @return the output
 	 */
-	public String getOutput()
+	public StringProperty outputProperty()
 	{
 		return output;
-	}
-
-	/**
-	 * @param newOutput
-	 *            the output to set
-	 */
-	public void setOutput(final String newOutput)
-	{
-		output = newOutput;
 	}
 
 	public void configure(final File iniFile)
@@ -188,7 +201,6 @@ public final class RETAAnalysis
 			if (outputFile != null)
 			{
 				final Path outPath = Paths.get(outputFile);
-				output = outPath.normalize().toString();
 				final String fileName = outPath.getFileName().toString();
 				if (!"xlsx".equals(Files.getFileExtension(fileName)))
 				{
@@ -196,18 +208,22 @@ public final class RETAAnalysis
 					final Path parent = outPath.getParent();
 					if (parent == null)
 					{
-						output = Files.getNameWithoutExtension(fileName) + ".xlsx";
+						output.set(Files.getNameWithoutExtension(fileName) + ".xlsx");
 					}
 					else
 					{
-						output = parent.resolve(Files.getNameWithoutExtension(fileName) + ".xlsx").toString();
+						output.set(parent.resolve(Files.getNameWithoutExtension(fileName) + ".xlsx").toString());
 					}
+				}
+				else
+				{
+					output.set(outPath.normalize().toString());
 				}
 			}
 			else
 			{
-				output = Paths.get(iniFile.getParent(), Files.getNameWithoutExtension(iniFile.getName()) + ".xlsx")
-						.toString();
+				output.set(Paths.get(iniFile.getParent(), Files.getNameWithoutExtension(iniFile.getName()) + ".xlsx")
+						.toString());
 			}
 
 			final Map<InputRequirementSource, List<String>> coversMap = new LinkedHashMap<>();
@@ -255,7 +271,7 @@ public final class RETAAnalysis
 								.splitToList(coversStr);
 						coversMap.put(requirementSource, covers);
 
-						requirementSources.put(doc, requirementSource);
+						requirementSources.add(requirementSource);
 					}
 					else
 					{
@@ -268,10 +284,10 @@ public final class RETAAnalysis
 				coversMap.entrySet().stream().forEach(entry -> {
 					final InputRequirementSource requirementSource = entry.getKey();
 					entry.getValue().stream().forEach(cover -> {
-						final InputRequirementSource coverRequirementSource = requirementSources.get(cover);
-						if (coverRequirementSource != null)
+						final Optional<InputRequirementSource> coverRequirementSource = getRequirementSource(cover);
+						if (coverRequirementSource.isPresent())
 						{
-							requirementSource.getCovers().add(coverRequirementSource);
+							requirementSource.getCovers().add(coverRequirementSource.get());
 						}
 						else
 						{
@@ -314,7 +330,7 @@ public final class RETAAnalysis
 
 			final List<String> inputs = new ArrayList<>();
 
-			for (final InputRequirementSource requirementSource : requirementSources.values())
+			for (final InputRequirementSource requirementSource : requirementSources)
 			{
 				final String name = requirementSource.getName();
 				inputs.add(name);
@@ -349,25 +365,22 @@ public final class RETAAnalysis
 		final RETAParseException[] ex = { null };
 		final AtomicInteger count = new AtomicInteger(0);
 
-		requirementSources.values()
-				.parallelStream()
-				.forEach(
-						requirementSource -> {
-							try
-							{
-								requirementSource.clear();
-								requirementSource.getConfiguration().parseSource(requirementSource);
-								synchronized (progress)
-								{
-									progress.set((double) count.incrementAndGet() / requirementSources.size());
-								}
-							}
-							catch (final RETAParseException e)
-							{
-								ex[0] = new RETAParseException("Parsing source \"" + requirementSource.getName()
-										+ "\": " + e.getLocalizedMessage(), e);
-							}
-						});
+		requirementSources.parallelStream().forEach(requirementSource -> {
+			try
+			{
+				requirementSource.clear();
+				requirementSource.getConfiguration().parseSource(requirementSource);
+				synchronized (progress)
+				{
+					progress.set((double) count.incrementAndGet() / requirementSources.size());
+				}
+			}
+			catch (final RETAParseException e)
+			{
+				ex[0] = new RETAParseException(
+						"Parsing source \"" + requirementSource.getName() + "\": " + e.getLocalizedMessage(), e);
+			}
+		});
 
 		if (ex[0] != null)
 		{
@@ -389,23 +402,23 @@ public final class RETAAnalysis
 
 	public void analyse() throws IOException
 	{
-		for (final InputRequirementSource source : requirementSources.values())
+		for (final InputRequirementSource source : requirementSources)
 		{
 			LOGGER.info("Start analyse " + source.getName());
 
 			final List<InputRequirementSource> covers = source.getCovers();
-			final TreeSet<Requirement> reqSource = source.getRequirements();
+			final TreeSet<RequirementImpl> reqSource = source.getRequirements();
 			for (final InputRequirementSource coverSource : covers)
 			{
-				final TreeSet<Requirement> reqCover = coverSource.getRequirements();
-				final TreeSet<Requirement> reqCoverred = new TreeSet<>(reqCover);
-				for (final Requirement req : reqSource)
+				final TreeSet<RequirementImpl> reqCover = coverSource.getRequirements();
+				final TreeSet<RequirementImpl> reqCoverred = new TreeSet<>(reqCover);
+				for (final RequirementImpl req : reqSource)
 				{
-					final Set<Requirement> realReqCovers = new TreeSet<>();
-					final Iterable<Requirement> refs = req.getReferences();
-					for (final Requirement reqRef : refs)
+					final Set<RequirementImpl> realReqCovers = new TreeSet<>();
+					final Iterable<RequirementImpl> refs = req.getReferences();
+					for (final RequirementImpl reqRef : refs)
 					{
-						final Requirement found = reqCover.ceiling(reqRef);
+						final RequirementImpl found = reqCover.ceiling(reqRef);
 						if (found != null && found.equals(reqRef))
 						{
 							reqCoverred.remove(found);
@@ -413,7 +426,7 @@ public final class RETAAnalysis
 							found.addReferredBy(req);
 						}
 					}
-					for (final Requirement realReqCover : realReqCovers)
+					for (final RequirementImpl realReqCover : realReqCovers)
 					{
 						req.addReference(realReqCover);
 					}
@@ -430,7 +443,7 @@ public final class RETAAnalysis
 	{
 		LOGGER.info("Start write excel output");
 
-		Path outputFile = Paths.get(output);
+		Path outputFile = Paths.get(output.get());
 		if (!outputFile.isAbsolute())
 		{
 			final Path root = config.getAbsoluteFile().getParentFile().toPath();
@@ -442,7 +455,7 @@ public final class RETAAnalysis
 		final ExcelTransformer transformer = new ExcelTransformer();
 		final List<String> sheetNames = new ArrayList<>();
 		final List<String> sheetTemplateNames = new ArrayList<>();
-		for (final InputRequirementSource requirementSource : requirementSources.values())
+		for (final InputRequirementSource requirementSource : requirementSources)
 		{
 			sheetTemplateNames.add("DOCUMENT");
 			sheetTemplateNames.add("COVERAGE");
@@ -451,7 +464,7 @@ public final class RETAAnalysis
 		}
 
 		final List<Map<String, Object>> sheetValues = new ArrayList<>();
-		for (final InputRequirementSource source : requirementSources.values())
+		for (final InputRequirementSource source : requirementSources)
 		{
 			final Map<String, Object> values = new HashMap<>();
 			values.put("source", source);
@@ -459,22 +472,28 @@ public final class RETAAnalysis
 			values.put("line", "\n");
 
 			final Set<String> attributes = new LinkedHashSet<>();
+			// ID in first
 			attributes.add(SourceConfiguration.ATTRIBUTE_ID);
+			// Version in second if defined
 			if (source.getRequirementAttributes().contains(SourceConfiguration.ATTRIBUTE_VERSION))
 			{
 				attributes.add(SourceConfiguration.ATTRIBUTE_VERSION);
 			}
 			attributes.addAll(source.getRequirementAttributes());
+			// Text is a special case
 			attributes.remove(SourceConfiguration.ATTRIBUTE_TEXT);
 			values.put("attributes", attributes);
 
 			final Set<String> refAttributes = new LinkedHashSet<>();
+			// ID in first
 			refAttributes.add(SourceConfiguration.ATTRIBUTE_ID);
+			// Version in second if defined
 			if (source.getReferenceAttributes().contains(SourceConfiguration.ATTRIBUTE_VERSION))
 			{
 				refAttributes.add(SourceConfiguration.ATTRIBUTE_VERSION);
 			}
 			refAttributes.addAll(source.getReferenceAttributes());
+			// Text is a special case
 			refAttributes.remove(SourceConfiguration.ATTRIBUTE_TEXT);
 			values.put("refAttributes", refAttributes);
 
@@ -509,9 +528,7 @@ public final class RETAAnalysis
 		}
 		catch (final FileNotFoundException e)
 		{
-			final int confirm = MessageDialog.showQuestionMessage(null, "Excel output file must be closed.");
-
-			if (confirm == MessageDialog.OK_OPTION)
+			if (MessageDialog.showQuestionMessage(null, "Excel output file must be closed."))
 			{
 				try (FileOutputStream fos = new FileOutputStream(outputFile.toFile()))
 				{
@@ -535,7 +552,7 @@ public final class RETAAnalysis
 	public String toString()
 	{
 		final StringBuilder builder = new StringBuilder();
-		for (final InputRequirementSource reqSource : requirementSources.values())
+		for (final InputRequirementSource reqSource : requirementSources)
 		{
 			builder.append(reqSource.toString());
 			builder.append('\n');

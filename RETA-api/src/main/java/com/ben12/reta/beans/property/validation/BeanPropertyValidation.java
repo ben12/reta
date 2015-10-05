@@ -40,7 +40,7 @@ import com.google.common.base.Strings;
 public interface BeanPropertyValidation<T> extends PropertyValidation
 {
 	/** Default {@link Validator}. */
-	Validator	DEFAULT_VALIDATOR	= Validation.buildDefaultValidatorFactory().getValidator();
+	Validator DEFAULT_VALIDATOR = Validation.buildDefaultValidatorFactory().getValidator();
 
 	/**
 	 * @return value to validate
@@ -69,11 +69,11 @@ public interface BeanPropertyValidation<T> extends PropertyValidation
 		Set<ConstraintViolation<Object>> violations;
 		if (beanType != null && !Strings.isNullOrEmpty(propertyName))
 		{
-			violations = DEFAULT_VALIDATOR.validateValue(beanType, propertyName, get());
+			violations = DEFAULT_VALIDATOR.validateValue(beanType, propertyName, this);
 		}
 		else
 		{
-			violations = DEFAULT_VALIDATOR.validate(get());
+			violations = DEFAULT_VALIDATOR.validate(this);
 		}
 
 		if (violations.isEmpty())

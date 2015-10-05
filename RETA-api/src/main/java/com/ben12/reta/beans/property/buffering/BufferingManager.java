@@ -25,8 +25,10 @@ import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -38,16 +40,14 @@ import javafx.beans.binding.BooleanExpression;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.adapter.JavaBeanIntegerPropertyBuilder;
-import javafx.beans.property.adapter.JavaBeanObjectPropertyBuilder;
-import javafx.beans.property.adapter.JavaBeanStringPropertyBuilder;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 import javafx.collections.ObservableSet;
 
-import com.ben12.reta.beans.property.validation.PropertyValidation;
 import com.google.common.collect.Iterables;
+
+import com.ben12.reta.beans.property.validation.PropertyValidation;
 
 /**
  * Buffering manager.
@@ -193,66 +193,13 @@ public class BufferingManager
 	}
 
 	/**
-	 * @param bean
-	 *            bean instance
-	 * @param propertyName
-	 *            bean string property name
-	 * @return string {@link Buffering} for the bean property
-	 * @throws NoSuchMethodException
-	 *             if cannot found getter and setter of the Java Bean property
-	 */
-	public SimpleObjectPropertyBuffering<String> bufferingString(final Object bean, final String propertyName)
-			throws NoSuchMethodException
-	{
-		return buffering(JavaBeanStringPropertyBuilder.create().bean(bean).name(propertyName).build(), bean.getClass(),
-				propertyName);
-	}
-
-	/**
-	 * @param bean
-	 *            bean instance
-	 * @param propertyName
-	 *            bean integer property name
-	 * @return integer {@link Buffering} for the bean property
-	 * @throws NoSuchMethodException
-	 *             if cannot found getter and setter of the Java Bean property
-	 */
-	public SimpleObjectPropertyBuffering<Number> bufferingInteger(final Object bean, final String propertyName)
-			throws NoSuchMethodException
-	{
-		return buffering(JavaBeanIntegerPropertyBuilder.create().bean(bean).name(propertyName).build(),
-				bean.getClass(), propertyName);
-	}
-
-	/**
-	 * @param bean
-	 *            bean instance
-	 * @param propertyName
-	 *            bean property name
-	 * @return {@link Buffering} for the bean property
-	 * @param <T>
-	 *            bean property type
-	 * @throws NoSuchMethodException
-	 *             if cannot found getter and setter of the Java Bean property
-	 */
-	public <T extends Object> SimpleObjectPropertyBuffering<T> bufferingObject(final Object bean,
-			final String propertyName) throws NoSuchMethodException
-	{
-		// suppress unchecked conversion (do not use create(), and call bean() and name() separately)
-		final JavaBeanObjectPropertyBuilder<T> builder = new JavaBeanObjectPropertyBuilder<>();
-		builder.bean(bean).name(propertyName);
-		final Property<T> property = builder.build();
-		return buffering(property, bean.getClass(), propertyName);
-	}
-
-	/**
 	 * @param p
 	 *            property to buffer
 	 * @return {@link PropertyBuffering} for the property
 	 * @param <T>
 	 *            buffered value type
 	 */
-	public <T> PropertyBuffering<T> buffering(final Property<T> p)
+	public <T> SimpleObjectPropertyBuffering<T> buffering(final Property<T> p)
 	{
 		return buffering(p, null, null);
 	}
@@ -272,6 +219,31 @@ public class BufferingManager
 			final String propertyName)
 	{
 		final SimpleObjectPropertyBuffering<T> pb = new SimpleObjectPropertyBuffering<>(beanType, propertyName, p);
+		add(pb);
+		return pb;
+	}
+
+	/**
+	 * @param bean
+	 *            bean instance
+	 * @param propertyName
+	 *            bean property name (property value class must inherit of {@link Property})
+	 * @return {@link SimpleObjectPropertyBuffering} for the property
+	 * @param <T>
+	 *            buffered value type
+	 * @throws NoSuchMethodException
+	 *             if cannot found getter of the property
+	 * @throws InvocationTargetException
+	 *             if the underlying getter method throws an exception.
+	 * @throws IllegalAccessException
+	 *             if the underlying getter method is inaccessible.
+	 */
+	public <T> SimpleObjectPropertyBuffering<T> buffering(final Object bean, final String propertyName)
+			throws NoSuchMethodException, IllegalAccessException, InvocationTargetException
+	{
+		final Property<T> p = getPropertyValue(bean, propertyName);
+		final SimpleObjectPropertyBuffering<T> pb = new SimpleObjectPropertyBuffering<>(bean.getClass(), propertyName,
+				p);
 		add(pb);
 		return pb;
 	}
@@ -492,6 +464,34 @@ public class BufferingManager
 	}
 
 	/**
+	 * @param bean
+	 *            bean instance
+	 * @param propertyName
+	 *            bean set property name
+	 * @return {@link ObservableMapBuffering} for the property
+	 * @param <K>
+	 *            map key type
+	 * @param <E>
+	 *            map value type
+	 */
+	public <K, E> ObservableMapBuffering<K, E> bufferingMap(final Object bean, final String propertyName)
+	{
+		ObservableMapBuffering<K, E> lb = null;
+		@SuppressWarnings("unchecked")
+		final Map<K, E> value = getPropertyValue(bean, propertyName, Map.class);
+		if (value instanceof ObservableMap<?, ?>)
+		{
+			lb = new ObservableMapBuffering<>(bean.getClass(), propertyName, (ObservableMap<K, E>) value);
+		}
+		else
+		{
+			lb = new ObservableMapBuffering<>(bean.getClass(), propertyName, FXCollections.observableMap(value));
+		}
+		add(lb);
+		return lb;
+	}
+
+	/**
 	 * @param map
 	 *            observable map to buffer
 	 * @return {@link ObservableMapBuffering} for the map
@@ -530,10 +530,36 @@ public class BufferingManager
 					.get();
 			value = descriptor.getReadMethod().invoke(bean);
 		}
-		catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | IntrospectionException e)
+		catch (final IllegalAccessException | IllegalArgumentException | InvocationTargetException
+				| IntrospectionException e)
 		{
 			Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", e);
 		}
 		return expectedClass.cast(value);
+	}
+
+	/**
+	 * @param bean
+	 *            bean instance
+	 * @param propertyName
+	 *            property name
+	 * @return bean property value
+	 * @param <T>
+	 *            bean property value type
+	 * @throws NoSuchMethodException
+	 *             if cannot found getter of the property
+	 * @throws InvocationTargetException
+	 *             if the underlying getter method throws an exception.
+	 * @throws IllegalAccessException
+	 *             if the underlying getter method is inaccessible.
+	 */
+	@SuppressWarnings("unchecked")
+	private <T> Property<T> getPropertyValue(final Object bean, final String propertyName)
+			throws NoSuchMethodException, IllegalAccessException, InvocationTargetException
+	{
+		final String propertyGetterName = propertyName + "Property";
+		final Method m = bean.getClass().getMethod(propertyGetterName);
+		final Object value = m.invoke(bean);
+		return Property.class.cast(value);
 	}
 }

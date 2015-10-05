@@ -29,7 +29,6 @@ import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -41,13 +40,11 @@ import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.util.Callback;
-import javafx.util.StringConverter;
 import javafx.util.converter.IntegerStringConverter;
 
 import com.ben12.reta.api.SourceConfiguration;
 import com.ben12.reta.beans.property.buffering.Buffering;
 import com.ben12.reta.beans.property.buffering.BufferingManager;
-import com.ben12.reta.beans.property.buffering.ObservableListBuffering;
 import com.ben12.reta.beans.property.buffering.ObservableMapBuffering;
 import com.ben12.reta.beans.property.buffering.SimpleObjectPropertyBuffering;
 import com.ben12.reta.plugin.tika.model.TikaSourceConfiguration;
@@ -136,42 +133,29 @@ public class SourceConfigurationController
 		input.bindValidation(property);
 	}
 
-	private <T, N extends TextInputControl> void initializeLabeled(final ValidationDecorator<N> input,
-			final ObservableListBuffering<T> property, final StringConverter<ObservableList<T>> converter)
-	{
-		bufferedProperties.add(property);
-		input.getChild().textProperty().bindBidirectional(property, converter);
-		input.bindValidation(property);
-	}
-
 	public void bind(final BufferingManager newBufferingManager, final TikaSourceConfiguration newSourceConfiguration)
-			throws NoSuchMethodException
 	{
 		bufferingManager = newBufferingManager;
 
-		final SimpleObjectPropertyBuffering<String> sourcePathBuffered = bufferingManager.bufferingString(
-				newSourceConfiguration, TikaSourceConfiguration.SOURCE_PATH);
+		final SimpleObjectPropertyBuffering<String> sourcePathBuffered = bufferingManager
+				.buffering(newSourceConfiguration.sourcePathProperty());
 		initializeLabeled(sourcePath, sourcePathBuffered);
 
 		// Input requirement source path filter
 		if (filter != null)
 		{
-			initializeLabeled(filter,
-					bufferingManager.bufferingString(newSourceConfiguration, TikaSourceConfiguration.FILTER));
+			initializeLabeled(filter, bufferingManager.buffering(newSourceConfiguration.filterProperty()));
 		}
 
 		// Input requirement source requirement start regex
-		initializeLabeled(reqStart,
-				bufferingManager.bufferingString(newSourceConfiguration, TikaSourceConfiguration.REQ_START));
+		initializeLabeled(reqStart, bufferingManager.buffering(newSourceConfiguration.reqStartProperty()));
 
 		// Input requirement source requirement end regex
-		initializeLabeled(reqEnd,
-				bufferingManager.bufferingString(newSourceConfiguration, TikaSourceConfiguration.REQ_END));
+		initializeLabeled(reqEnd, bufferingManager.buffering(newSourceConfiguration.reqEndProperty()));
 		reqEnd.disableProperty().bind(reqStart.getChild().textProperty().isEqualTo(""));
 
 		// Input requirement source requirement reference regex
-		initializeLabeled(reqRef,
-				bufferingManager.bufferingString(newSourceConfiguration, TikaSourceConfiguration.REQ_REF));
+		initializeLabeled(reqRef, bufferingManager.buffering(newSourceConfiguration.reqRefProperty()));
 
 		final Callback<CellDataFeatures<MapTableView<String, Integer>.Entry, String>, ObservableValue<String>> cvpKey = (
 				cdf) -> new ReadOnlyStringWrapper(cdf.getValue().getKey());
@@ -181,7 +165,8 @@ public class SourceConfigurationController
 			return cdf.getValue().valueProperty();
 		};
 
-		attributeMap = bufferingManager.buffering(FXCollections.observableMap(newSourceConfiguration.getAttributesGroup()));
+		attributeMap = bufferingManager
+				.buffering(FXCollections.observableMap(newSourceConfiguration.getAttributesGroup()));
 		bufferedProperties.add(attributeMap);
 		attributesTable.getChild().setMapItems(attributeMap);
 		attributesTable.bindValidation(attributeMap);
@@ -190,7 +175,8 @@ public class SourceConfigurationController
 		reqAttGroupColumn.setCellValueFactory(cvpValue);
 		reqAttGroupColumn.setCellFactory(TextFieldTableCell.forTableColumn(new IntegerStringConverter()));
 
-		referenceMap = bufferingManager.buffering(FXCollections.observableMap(newSourceConfiguration.getRefAttributesGroup()));
+		referenceMap = bufferingManager
+				.buffering(FXCollections.observableMap(newSourceConfiguration.getRefAttributesGroup()));
 		bufferedProperties.add(referenceMap);
 		referencesTable.setMapItems(referenceMap);
 
@@ -204,11 +190,9 @@ public class SourceConfigurationController
 		final ReadOnlyObjectProperty<MapTableView<String, Integer>.Entry> selectedAttribute = attributesTable.getChild()
 				.getSelectionModel()
 				.selectedItemProperty();
-		deleteAttribute.disableProperty()
-				.bind(selectedAttribute.isNull()
-						.or(Bindings.selectString(selectedAttribute, "key").isEqualTo(SourceConfiguration.ATTRIBUTE_ID))
-						.or(Bindings.selectString(selectedAttribute, "key").isEqualTo(
-								SourceConfiguration.ATTRIBUTE_TEXT)));
+		deleteAttribute.disableProperty().bind(selectedAttribute.isNull()
+				.or(Bindings.selectString(selectedAttribute, "key").isEqualTo(SourceConfiguration.ATTRIBUTE_ID))
+				.or(Bindings.selectString(selectedAttribute, "key").isEqualTo(SourceConfiguration.ATTRIBUTE_TEXT)));
 		deleteReference.disableProperty().bind(referencesTable.getSelectionModel().selectedItemProperty().isNull());
 	}
 
@@ -229,7 +213,7 @@ public class SourceConfigurationController
 					file = null;
 				}
 				return file;
-			}, sourcePath.getChild().textProperty());
+			} , sourcePath.getChild().textProperty());
 			final ObjectBinding<String> currentFileName = Bindings.createObjectBinding(() -> {
 				final File file = new File(sourcePath.getChild().getText());
 				String fileName = null;
@@ -238,7 +222,7 @@ public class SourceConfigurationController
 					fileName = file.getName();
 				}
 				return fileName;
-			}, sourcePath.getChild().textProperty());
+			} , sourcePath.getChild().textProperty());
 			fileChooser.initialDirectoryProperty().bind(currentDir);
 			fileChooser.initialFileNameProperty().bind(currentFileName);
 		}
@@ -264,7 +248,7 @@ public class SourceConfigurationController
 				file = null;
 			}
 			return file;
-		}, sourcePath.getChild().textProperty());
+		} , sourcePath.getChild().textProperty());
 		folderChooser.initialDirectoryProperty().bind(currentDir);
 		final File file = folderChooser.showDialog(null);
 		if (file != null)

@@ -26,17 +26,19 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javafx.beans.property.StringProperty;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 
 import org.ini4j.Profile.Section;
+
+import com.google.common.base.Strings;
 
 import com.ben12.reta.api.SourceConfiguration;
 import com.ben12.reta.beans.property.buffering.BufferingManager;
 import com.ben12.reta.plugin.SourceProviderPlugin;
 import com.ben12.reta.plugin.tika.model.TikaSourceConfiguration;
 import com.ben12.reta.plugin.tika.view.SourceConfigurationController;
-import com.google.common.base.Strings;
 
 /**
  * @author Benoît Moreau (ben.12)
@@ -71,15 +73,15 @@ public class TikaSourceProviderPlugin implements SourceProviderPlugin
 	{
 		final TikaSourceConfiguration tikaConfiguration = (TikaSourceConfiguration) sourceConfiguration;
 
-		section.put("path", tikaConfiguration.getSourcePath());
-		section.put("filter", Strings.nullToEmpty(tikaConfiguration.getFilter()));
+		section.put("path", tikaConfiguration.sourcePathProperty().get());
+		section.put("filter", Strings.nullToEmpty(tikaConfiguration.filterProperty().get()));
 
-		final String reqStart = tikaConfiguration.getReqStart();
-		if (!Strings.isNullOrEmpty(reqStart))
+		final StringProperty reqStart = tikaConfiguration.reqStartProperty();
+		if (reqStart.isNotEmpty().get())
 		{
 			final Map<String, Integer> reqAttributesGroup = tikaConfiguration.getAttributesGroup();
 
-			section.put("requirement.start.regex", reqStart);
+			section.put("requirement.start.regex", reqStart.get());
 
 			for (final Entry<String, Integer> reqAttributeGroup : reqAttributesGroup.entrySet())
 			{
@@ -90,19 +92,19 @@ public class TikaSourceProviderPlugin implements SourceProviderPlugin
 				}
 			}
 
-			final String reqEnd = tikaConfiguration.getReqEnd();
-			if (!Strings.isNullOrEmpty(reqEnd))
+			final StringProperty reqEnd = tikaConfiguration.reqEndProperty();
+			if (reqEnd.isNotEmpty().get())
 			{
-				section.put("requirement.end.regex", reqEnd);
+				section.put("requirement.end.regex", reqEnd.get());
 			}
 		}
 
-		final String reqRef = tikaConfiguration.getReqRef();
-		if (!Strings.isNullOrEmpty(reqRef))
+		final StringProperty reqRef = tikaConfiguration.reqRefProperty();
+		if (reqRef.isNotEmpty().get())
 		{
 			final Map<String, Integer> refAttributesGroup = tikaConfiguration.getRefAttributesGroup();
 
-			section.put("requirement.ref.regex", reqRef);
+			section.put("requirement.ref.regex", reqRef.get());
 
 			for (final Entry<String, Integer> refAttributeGroup : refAttributesGroup.entrySet())
 			{
@@ -129,19 +131,19 @@ public class TikaSourceProviderPlugin implements SourceProviderPlugin
 		if (!source.isEmpty())
 		{
 			configuration = new TikaSourceConfiguration();
-			configuration.setSourcePath(source);
-			configuration.setFilter(filter);
+			configuration.sourcePathProperty().set(source);
+			configuration.filterProperty().set(filter);
 
 			try
 			{
 				final String startRegex = section.get("requirement.start.regex", "");
 				final String endRegex = section.get("requirement.end.regex", "");
-				final Integer textIndex = section.get("requirement.start." + SourceConfiguration.ATTRIBUTE_TEXT
-						+ ".index", Integer.class, 0);
+				final Integer textIndex = section
+						.get("requirement.start." + SourceConfiguration.ATTRIBUTE_TEXT + ".index", Integer.class, 0);
 				Integer idIndex = section.get("requirement.start." + SourceConfiguration.ATTRIBUTE_ID + ".index",
 						Integer.class, null);
-				final Integer versionIndex = section.get("requirement.start." + SourceConfiguration.ATTRIBUTE_VERSION
-						+ ".index", Integer.class, null);
+				final Integer versionIndex = section.get(
+						"requirement.start." + SourceConfiguration.ATTRIBUTE_VERSION + ".index", Integer.class, null);
 
 				if (startRegex.isEmpty())
 				{
@@ -156,8 +158,8 @@ public class TikaSourceProviderPlugin implements SourceProviderPlugin
 					idIndex = 0;
 				}
 
-				configuration.setReqStart(startRegex);
-				configuration.setReqEnd(endRegex);
+				configuration.reqStartProperty().set(startRegex);
+				configuration.reqEndProperty().set(endRegex);
 				configuration.getAttributesGroup().put(SourceConfiguration.ATTRIBUTE_TEXT, textIndex);
 				configuration.getAttributesGroup().put(SourceConfiguration.ATTRIBUTE_ID, idIndex);
 				if (versionIndex != null)
@@ -171,8 +173,8 @@ public class TikaSourceProviderPlugin implements SourceProviderPlugin
 				{
 					if (key.startsWith(reqStartIndexPrefix) && key.endsWith(reqStartIndexSuffix))
 					{
-						final String att = key.substring(reqStartIndexPrefix.length(), key.length()
-								- reqStartIndexSuffix.length());
+						final String att = key.substring(reqStartIndexPrefix.length(),
+								key.length() - reqStartIndexSuffix.length());
 						final Integer attIndex = section.get(key, Integer.class, null);
 						if (attIndex != null)
 						{
@@ -184,10 +186,10 @@ public class TikaSourceProviderPlugin implements SourceProviderPlugin
 				final String refRegex = section.get("requirement.ref.regex", "");
 				if (!refRegex.isEmpty())
 				{
-					final Integer refIdIndex = section.get("requirement.ref." + SourceConfiguration.ATTRIBUTE_ID
-							+ ".index", Integer.class, null);
-					final Integer refVersionIndex = section.get("requirement.ref."
-							+ SourceConfiguration.ATTRIBUTE_VERSION + ".index", Integer.class, null);
+					final Integer refIdIndex = section
+							.get("requirement.ref." + SourceConfiguration.ATTRIBUTE_ID + ".index", Integer.class, null);
+					final Integer refVersionIndex = section.get(
+							"requirement.ref." + SourceConfiguration.ATTRIBUTE_VERSION + ".index", Integer.class, null);
 
 					if (refIdIndex == null)
 					{
@@ -195,7 +197,7 @@ public class TikaSourceProviderPlugin implements SourceProviderPlugin
 						throw new IllegalArgumentException();
 					}
 
-					configuration.setReqRef(refRegex);
+					configuration.reqRefProperty().set(refRegex);
 					configuration.getRefAttributesGroup().put(SourceConfiguration.ATTRIBUTE_ID, refIdIndex);
 					if (refVersionIndex != null)
 					{
@@ -209,8 +211,8 @@ public class TikaSourceProviderPlugin implements SourceProviderPlugin
 					{
 						if (key.startsWith(refStartIndexPrefix) && key.endsWith(refStartIndexSuffix))
 						{
-							final String att = key.substring(refStartIndexPrefix.length(), key.length()
-									- refStartIndexSuffix.length());
+							final String att = key.substring(refStartIndexPrefix.length(),
+									key.length() - refStartIndexSuffix.length());
 							final Integer attIndex = section.get(key, Integer.class, null);
 							if (attIndex != null)
 							{
@@ -264,7 +266,7 @@ public class TikaSourceProviderPlugin implements SourceProviderPlugin
 
 				controller.bind(bufferingManager, (TikaSourceConfiguration) sourceConfiguration);
 			}
-			catch (final IOException | NoSuchMethodException e)
+			catch (final IOException e)
 			{
 				LOGGER.log(Level.SEVERE, "Loading Tika FXML", e);
 			}

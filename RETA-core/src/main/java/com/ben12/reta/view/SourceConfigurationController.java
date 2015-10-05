@@ -34,15 +34,17 @@ import java.util.stream.Collectors;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.adapter.JavaBeanStringPropertyBuilder;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.Spinner;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.control.TitledPane;
@@ -52,6 +54,9 @@ import javafx.scene.layout.Priority;
 import javafx.stage.Window;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
+import javafx.util.converter.IntegerStringConverter;
+
+import com.google.common.base.Splitter;
 
 import com.ben12.reta.api.RETAParseException;
 import com.ben12.reta.beans.property.buffering.Buffering;
@@ -62,7 +67,6 @@ import com.ben12.reta.model.InputRequirementSource;
 import com.ben12.reta.util.RETAAnalysis;
 import com.ben12.reta.view.control.MessageDialog;
 import com.ben12.reta.view.validation.ValidationDecorator;
-import com.google.common.base.Splitter;
 
 /**
  * @author Benoît Moreau (ben.12)
@@ -80,7 +84,8 @@ public class SourceConfigurationController
 
 	private ObservableList<ObjectProperty<String>>	sourcesName			= null;
 
-	private final ResourceBundle					errors				= ResourceBundle.getBundle("ValidationMessages");
+	private final ResourceBundle					errors				= ResourceBundle
+			.getBundle("ValidationMessages");
 
 	@FXML
 	private TitledPane								titledPane;
@@ -95,7 +100,10 @@ public class SourceConfigurationController
 	private HBox									parserPane;
 
 	@FXML
-	private TextField								previewLimit;
+	private CheckBox								useLimit;
+
+	@FXML
+	private Spinner<Integer>						previewLimit;
 
 	@FXML
 	private Button									preview;
@@ -129,10 +137,7 @@ public class SourceConfigurationController
 
 		// Input requirement source name
 		final SimpleObjectPropertyBuffering<String> nameProperty = new SimpleObjectPropertyBuffering<String>(
-				JavaBeanStringPropertyBuilder.create()
-						.bean(requirementSource)
-						.name(InputRequirementSource.NAME)
-						.build())
+				requirementSource.nameProperty())
 		{
 			/*
 			 * (non-Javadoc)
@@ -183,11 +188,43 @@ public class SourceConfigurationController
 			return null;
 		});
 
-		preview.disableProperty().bind(
-				bufferingManager.bufferingProperty().or(Bindings.not(bufferingManager.validProperty())));
+		previewLimit.disableProperty().bind(useLimit.selectedProperty().not());
+		previewLimit.getValueFactory().setConverter(new IntegerStringConverter()
+		{
+			@Override
+			public Integer fromString(final String stringValue)
+			{
+				Integer value = null;
+				try
+				{
+					value = super.fromString(stringValue);
+				}
+				catch (final NumberFormatException e)
+				{
+					if (previewLimit.getEditor().isUndoable())
+					{
+						previewLimit.getEditor().undo();
+						value = fromString(previewLimit.getEditor().getText());
+						if (value == null)
+						{
+							throw e;
+						}
+					}
+				}
+				return value;
+			}
+		});
+		previewLimit.getEditor().focusedProperty().addListener((e, oldValue, newValue) -> {
+			if (!newValue)
+			{
+				previewLimit.getEditor().fireEvent(new ActionEvent());
+			}
+		});
+		preview.disableProperty()
+				.bind(bufferingManager.bufferingProperty().or(Bindings.not(bufferingManager.validProperty())));
 
-		final Node pluginNode = requirementSource.getProvider().createSourceConfigurationEditor(
-				requirementSource.getConfiguration(), bufferingManager);
+		final Node pluginNode = requirementSource.getProvider()
+				.createSourceConfigurationEditor(requirementSource.getConfiguration(), bufferingManager);
 		HBox.setHgrow(pluginNode, Priority.ALWAYS);
 		parserPane.getChildren().add(pluginNode);
 
@@ -199,16 +236,13 @@ public class SourceConfigurationController
 	{
 		try
 		{
-			final String limitStr = previewLimit.getText();
-
-			int limit;
-			try
+			final int limit;
+			if (useLimit.isSelected())
 			{
-				limit = Integer.parseInt(limitStr);
+				limit = previewLimit.getValue();
 			}
-			catch (final NumberFormatException e)
+			else
 			{
-				// limitStr empty or not a number
 				limit = Integer.MAX_VALUE;
 			}
 
@@ -216,10 +250,14 @@ public class SourceConfigurationController
 
 			RETAAnalysis.getInstance().parse(requirementSource, sourceText, limit);
 
-			final Window parent = titledPane.getScene().getWindow();
-			final MessageDialog previewStage = new MessageDialog(parent);
-
 			final ResourceBundle labels = ResourceBundle.getBundle("com/ben12/reta/view/Labels");
+
+			final Window parent = titledPane.getScene().getWindow();
+			final Dialog<Void> previewDialog = new Dialog<>();
+			previewDialog.initOwner(parent);
+			previewDialog.setTitle(labels.getString("preview.title"));
+			previewDialog.setHeaderText(null);
+			previewDialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
 
 			final FXMLLoader loader = new FXMLLoader();
 			loader.setLocation(getClass().getResource("SourcePreviewUI.fxml"));
@@ -230,16 +268,15 @@ public class SourceConfigurationController
 			previewController.analysedTextProperty().setValue(sourceText.toString());
 			previewController.resultTextProperty().setValue(requirementSource.toString());
 
-			previewStage.setScene(new Scene(root));
-			previewStage.setTitle(labels.getString("preview.title"));
-			previewStage.setResizable(true);
+			previewDialog.getDialogPane().setContent(root);
+			previewDialog.setResizable(true);
 
-			previewStage.showDialog();
+			previewDialog.show();
 		}
 		catch (final RETAParseException | IOException e)
 		{
 			Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", e);
-			MessageDialog.showErrorMessage(titledPane.getScene().getWindow(), e.getMessage());
+			MessageDialog.showErrorMessage(null, e.getMessage(), e);
 		}
 	}
 
@@ -255,7 +292,7 @@ public class SourceConfigurationController
 
 	public static final class EntryWrapper implements Entry<String, Integer>
 	{
-		private final Entry<String, Integer>	entry;
+		private final Entry<String, Integer> entry;
 
 		/**
 		 * @param newEntry
@@ -299,8 +336,8 @@ public class SourceConfigurationController
 		}
 	}
 
-	public final class InputRequirementSourceStringConverter extends
-			StringConverter<ObservableList<InputRequirementSource>>
+	public final class InputRequirementSourceStringConverter
+			extends StringConverter<ObservableList<InputRequirementSource>>
 	{
 		/*
 		 * (non-Javadoc)
@@ -338,7 +375,7 @@ public class SourceConfigurationController
 		public String toString(final ObservableList<InputRequirementSource> sourceList)
 		{
 			return sourceList.stream()
-					.filter(s -> s != null)
+					.filter(Objects::nonNull)
 					.map(InputRequirementSource::getName)
 					.collect(Collectors.joining(", "));
 		}

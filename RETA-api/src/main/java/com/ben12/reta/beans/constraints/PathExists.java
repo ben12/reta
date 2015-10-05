@@ -62,7 +62,7 @@ public @interface PathExists
 	/**
 	 * Kinds of path.
 	 */
-	public static enum KindOfPath
+	enum KindOfPath
 	{
 		/** File path. */
 		FILE,

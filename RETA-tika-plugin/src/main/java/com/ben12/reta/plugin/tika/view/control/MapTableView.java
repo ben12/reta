@@ -68,13 +68,11 @@ public class MapTableView<K, V> extends TableView<MapTableView<K, V>.Entry>
 	public MapTableView(final ObservableMap<K, V> theMap)
 	{
 		map = theMap;
-		obsList = FXCollections.observableArrayList(map.entrySet()
-				.stream()
-				.map(me -> new Entry(me))
-				.collect(Collectors.toList()));
+		obsList = FXCollections
+				.observableArrayList(map.entrySet().stream().map(me -> new Entry(me)).collect(Collectors.toList()));
 		setItems(obsList);
 
-		mapChange = (final MapChangeListener.Change<? extends K, ? extends V> change) -> {
+		mapChange = (change) -> {
 			if (!change.wasAdded() && change.wasRemoved())
 			{
 				obsList.removeIf(me -> me.getKey().equals(change.getKey()));
@@ -125,32 +123,34 @@ public class MapTableView<K, V> extends TableView<MapTableView<K, V>.Entry>
 		private final Map.Entry<K, V>				entry;
 
 		/** Value property. */
-		private final Property<V>					value	= new SimpleObjectProperty<>();
+		private final Property<V>					value			= new SimpleObjectProperty<>();
 
 		/** Key property. */
-		private final ReadOnlyObjectPropertyBase<K>	key		= new ReadOnlyObjectPropertyBase<K>()
-															{
-																@Override
-																public Object getBean()
-																{
-																	return Entry.this;
-																}
+		private final ReadOnlyObjectPropertyBase<K>	key				= new ReadOnlyObjectPropertyBase<K>()
+																	{
+																		@Override
+																		public Object getBean()
+																		{
+																			return Entry.this;
+																		}
 
-																@Override
-																public String getName()
-																{
-																	return "key";
-																}
+																		@Override
+																		public String getName()
+																		{
+																			return "key";
+																		}
 
-																@Override
-																public K get()
-																{
-																	return entry.getKey();
-																}
-															};
+																		@Override
+																		public K get()
+																		{
+																			return entry.getKey();
+																		}
+																	};
 
 		/** Value change listener. */
 		private final ChangeListener<V>				changeListener;
+
+		private boolean								changingSubject	= false;
 
 		/**
 		 * @param mapEntry
@@ -161,9 +161,18 @@ public class MapTableView<K, V> extends TableView<MapTableView<K, V>.Entry>
 			entry = mapEntry;
 			value.setValue(entry.getValue());
 			changeListener = (observable, oldValue, newValue) -> {
-				map.removeListener(Entry.this);
-				entry.setValue(newValue);
-				map.addListener(Entry.this);
+				// TODO: Workaround for https://bugs.openjdk.java.net/browse/JDK-8136465
+				// map.removeListener(Entry.this);
+				changingSubject = true;
+				try
+				{
+					entry.setValue(newValue);
+				}
+				finally
+				{
+					changingSubject = false;
+				}
+				// map.addListener(Entry.this);
 			};
 			value.addListener(changeListener);
 			map.addListener(this);
@@ -177,11 +186,15 @@ public class MapTableView<K, V> extends TableView<MapTableView<K, V>.Entry>
 		@Override
 		public void onChanged(final javafx.collections.MapChangeListener.Change<? extends K, ? extends V> change)
 		{
-			if (change.getKey().equals(entry.getKey()) && change.wasAdded())
+			// TODO: Workaround for https://bugs.openjdk.java.net/browse/JDK-8136465
+			if (!changingSubject)
 			{
-				value.removeListener(changeListener);
-				value.setValue(change.getValueAdded());
-				value.addListener(changeListener);
+				if (change.getKey().equals(entry.getKey()) && change.wasAdded())
+				{
+					value.removeListener(changeListener);
+					value.setValue(change.getValueAdded());
+					value.addListener(changeListener);
+				}
 			}
 		}
 

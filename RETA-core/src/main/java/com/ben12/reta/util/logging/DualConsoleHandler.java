@@ -34,7 +34,8 @@ import java.util.logging.StreamHandler;
  */
 public final class DualConsoleHandler extends ConsoleHandler
 {
-	private final StreamHandler	stdOutHandler	= new StreamHandler(System.out, new SimpleFormatter());
+	/** {@link System#out} {@link StreamHandler}. */
+	private final StreamHandler stdOutHandler = new StreamHandler(System.out, new SimpleFormatter());
 
 	/*
 	 * (non-Javadoc)
@@ -42,7 +43,7 @@ public final class DualConsoleHandler extends ConsoleHandler
 	 * @see java.util.logging.Handler#setLevel(java.util.logging.Level)
 	 */
 	@Override
-	public synchronized void setLevel(Level newLevel) throws SecurityException
+	public synchronized void setLevel(final Level newLevel) throws SecurityException
 	{
 		super.setLevel(newLevel);
 		if (stdOutHandler != null)
@@ -57,7 +58,7 @@ public final class DualConsoleHandler extends ConsoleHandler
 	 * @see java.util.logging.Handler#setFilter(java.util.logging.Filter)
 	 */
 	@Override
-	public synchronized void setFilter(Filter newFilter) throws SecurityException
+	public synchronized void setFilter(final Filter newFilter) throws SecurityException
 	{
 		super.setFilter(newFilter);
 		if (stdOutHandler != null)
@@ -72,7 +73,7 @@ public final class DualConsoleHandler extends ConsoleHandler
 	 * @see java.util.logging.StreamHandler#setEncoding(java.lang.String)
 	 */
 	@Override
-	public synchronized void setEncoding(String encoding) throws SecurityException, UnsupportedEncodingException
+	public synchronized void setEncoding(final String encoding) throws SecurityException, UnsupportedEncodingException
 	{
 		super.setEncoding(encoding);
 		if (stdOutHandler != null)
@@ -87,7 +88,7 @@ public final class DualConsoleHandler extends ConsoleHandler
 	 * @see java.util.logging.Handler#setFormatter(java.util.logging.Formatter)
 	 */
 	@Override
-	public synchronized void setFormatter(Formatter newFormatter) throws SecurityException
+	public synchronized void setFormatter(final Formatter newFormatter) throws SecurityException
 	{
 		super.setFormatter(newFormatter);
 		if (stdOutHandler != null)
@@ -102,7 +103,7 @@ public final class DualConsoleHandler extends ConsoleHandler
 	 * @see java.util.logging.Handler#setErrorManager(java.util.logging.ErrorManager)
 	 */
 	@Override
-	public synchronized void setErrorManager(ErrorManager em)
+	public synchronized void setErrorManager(final ErrorManager em)
 	{
 		super.setErrorManager(em);
 		if (stdOutHandler != null)
@@ -117,7 +118,7 @@ public final class DualConsoleHandler extends ConsoleHandler
 	 * @see java.util.logging.ConsoleHandler#publish(java.util.logging.LogRecord)
 	 */
 	@Override
-	public void publish(LogRecord record)
+	public void publish(final LogRecord record)
 	{
 		if (record.getLevel().intValue() < Level.WARNING.intValue())
 		{

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import java.lang.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.control.cell.*?>
 <?import javafx.scene.layout.*?>
@@ -47,8 +48,17 @@
 						<HBox alignment="CENTER_RIGHT" spacing="5" GridPane.columnIndex="0" GridPane.rowIndex="3"
 							GridPane.columnSpan="2">
 							<children>
-								<TextField fx:id="previewLimit" HBox.hgrow="ALWAYS" promptText="%preview.limit.help" />
-								<Button fx:id="preview" text="%preview.button" minWidth="50" onAction="#preview" />
+								<CheckBox fx:id="useLimit" text="%preview.limit" HBox.hgrow="NEVER" />
+								<Spinner fx:id="previewLimit" HBox.hgrow="ALWAYS" maxWidth="Infinity" editable="true">
+									<valueFactory>
+										<SpinnerValueFactory.IntegerSpinnerValueFactory min="1" initialValue="1000">
+											<max>
+												<Integer fx:constant="MAX_VALUE" />
+											</max>
+										</SpinnerValueFactory.IntegerSpinnerValueFactory>
+									</valueFactory>
+								</Spinner>
+								<Button fx:id="preview" text="%preview.button" minWidth="50" onAction="#preview" HBox.hgrow="NEVER" />
 							</children>
 						</HBox>
 					</children>

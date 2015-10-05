@@ -32,12 +32,13 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.common.base.Strings;
+
 import com.ben12.reta.api.Requirement;
 import com.ben12.reta.api.RequirementSourceManager;
 import com.ben12.reta.api.SourceConfiguration;
 import com.ben12.reta.plugin.tika.io.ConcatReader;
 import com.ben12.reta.plugin.tika.model.TikaSourceConfiguration;
-import com.google.common.base.Strings;
 
 /**
  * RETA parser using TIKA.
@@ -82,16 +83,16 @@ public class RetaTikaParser
 		Pattern patternStart = null;
 		Pattern patternEnd = null;
 		Pattern patternRef = null;
-		if (!Strings.isNullOrEmpty(configuration.getReqRef()))
+		if (!Strings.isNullOrEmpty(configuration.reqRefProperty().get()))
 		{
-			patternRef = Pattern.compile(configuration.getReqRef(), Pattern.MULTILINE);
+			patternRef = Pattern.compile(configuration.reqRefProperty().get(), Pattern.MULTILINE);
 		}
-		if (!Strings.isNullOrEmpty(configuration.getReqStart()))
+		if (!Strings.isNullOrEmpty(configuration.reqStartProperty().get()))
 		{
-			patternStart = Pattern.compile(configuration.getReqStart(), Pattern.MULTILINE);
-			if (!Strings.isNullOrEmpty(configuration.getReqEnd()))
+			patternStart = Pattern.compile(configuration.reqStartProperty().get(), Pattern.MULTILINE);
+			if (!Strings.isNullOrEmpty(configuration.reqEndProperty().get()))
 			{
-				patternEnd = Pattern.compile(configuration.getReqEnd(), Pattern.MULTILINE);
+				patternEnd = Pattern.compile(configuration.reqEndProperty().get(), Pattern.MULTILINE);
 			}
 
 			parseMultiRequirementByFile(requirementSource, patternStart, patternEnd, patternRef, sourceText, limit);
@@ -121,7 +122,7 @@ public class RetaTikaParser
 	{
 		int remLimit = limit;
 		final ConcatReader reader = getReader();
-		Path root = Paths.get(configuration.getSourcePath());
+		Path root = Paths.get(configuration.sourcePathProperty().get());
 		if (!root.isAbsolute())
 		{
 			root = Paths.get(System.getProperty("user.dir")).resolve(root);
@@ -395,7 +396,7 @@ public class RetaTikaParser
 	private ConcatReader getReader() throws IOException
 	{
 		final ConcatReader concatReader = new ConcatReader();
-		Path srcPath = Paths.get(configuration.getSourcePath());
+		Path srcPath = Paths.get(configuration.sourcePathProperty().get());
 		if (!srcPath.isAbsolute())
 		{
 			srcPath = Paths.get(System.getProperty("user.dir")).resolve(srcPath);
@@ -407,7 +408,7 @@ public class RetaTikaParser
 		else
 		{
 			Pattern patternfilter = null;
-			final String filter = configuration.getFilter();
+			final String filter = configuration.filterProperty().get();
 			if (!Strings.isNullOrEmpty(filter))
 			{
 				patternfilter = Pattern.compile(filter);

@@ -19,6 +19,7 @@
 // along with RETA.  If not, see <http://www.gnu.org/licenses/>.
 package com.ben12.reta.beans.property.buffering;
 
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -42,8 +43,8 @@ import com.ben12.reta.beans.property.validation.BeanPropertyValidation;
  *            set elements type
  * @author Benoît Moreau (ben.12)
  */
-public class ObservableSetBuffering<E> extends SimpleSetProperty<E> implements Buffering<ObservableSet<E>>,
-		BeanPropertyValidation<ObservableSet<E>>
+public class ObservableSetBuffering<E> extends SimpleSetProperty<E>
+		implements Buffering<ObservableSet<E>>, BeanPropertyValidation<ObservableSet<E>>
 {
 	/** Bean type (used for validation). */
 	private final Class<?>				beanType;
@@ -95,7 +96,7 @@ public class ObservableSetBuffering<E> extends SimpleSetProperty<E> implements B
 	public ObservableSetBuffering(final Class<?> newBeanType, final String newPropertyName,
 			final ObservableSet<E> newSubject)
 	{
-		super(FXCollections.observableSet());
+		super(FXCollections.observableSet(new HashSet<>(newSubject != null ? newSubject.size() : 0)));
 
 		if (newBeanType != null || !(newSubject instanceof ReadOnlyProperty<?>))
 		{

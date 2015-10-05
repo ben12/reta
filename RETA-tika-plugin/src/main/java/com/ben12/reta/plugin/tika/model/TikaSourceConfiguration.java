@@ -23,12 +23,17 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+
 import javax.validation.constraints.NotNull;
+
+import org.hibernate.validator.valuehandling.UnwrapValidatedValue;
 
 import com.ben12.reta.api.RETAParseException;
 import com.ben12.reta.api.RequirementSourceManager;
 import com.ben12.reta.api.SourceConfiguration;
-import com.ben12.reta.beans.constraints.Path;
+import com.ben12.reta.beans.constraints.IsPath;
 import com.ben12.reta.beans.constraints.PathExists;
 import com.ben12.reta.plugin.tika.beans.constraints.Regex;
 import com.ben12.reta.plugin.tika.parser.RetaTikaParser;
@@ -57,37 +62,42 @@ public class TikaSourceConfiguration implements SourceConfiguration
 	 * Source document path.
 	 */
 	@NotNull
-	@Path
+	@IsPath
 	@PathExists
-	private String						sourcePath			= "";
+	@UnwrapValidatedValue
+	private final StringProperty		sourcePath			= new SimpleStringProperty(this, SOURCE_PATH, "");
 
 	/**
 	 * Regular expression filtering files if {@link #sourcePath} is a folder.
 	 */
 	@NotNull
 	@Regex
-	private String						filter				= "";
+	@UnwrapValidatedValue
+	private final StringProperty		filter				= new SimpleStringProperty(this, FILTER, "");
 
 	/**
 	 * Regular expression for find the start of requirement.
 	 */
 	@NotNull
 	@Regex
-	private String						reqStart			= "";
+	@UnwrapValidatedValue
+	private final StringProperty		reqStart			= new SimpleStringProperty(this, REQ_START, "");
 
 	/**
 	 * Regular expression for find the end of requirement.
 	 */
 	@NotNull
 	@Regex
-	private String						reqEnd				= "";
+	@UnwrapValidatedValue
+	private final StringProperty		reqEnd				= new SimpleStringProperty(this, REQ_END, "");
 
 	/**
 	 * Regular expression for find the requirement references.
 	 */
 	@NotNull
 	@Regex
-	private String						reqRef				= "";
+	@UnwrapValidatedValue
+	private final StringProperty		reqRef				= new SimpleStringProperty(this, REQ_REF, "");
 
 	/**
 	 * Requirement attribute indexes in regular expression {@link #reqStart} captions.
@@ -116,86 +126,41 @@ public class TikaSourceConfiguration implements SourceConfiguration
 	/**
 	 * @return the document source path
 	 */
-	public String getSourcePath()
+	public StringProperty sourcePathProperty()
 	{
 		return sourcePath;
 	}
 
 	/**
-	 * @param newSourcePath
-	 *            the sourcePath to set
-	 */
-	public void setSourcePath(final String newSourcePath)
-	{
-		sourcePath = newSourcePath;
-	}
-
-	/**
 	 * @return regular expression filtering files if {@link #sourcePath} is a folder
 	 */
-	public String getFilter()
+	public StringProperty filterProperty()
 	{
 		return filter;
 	}
 
 	/**
-	 * @param newFilter
-	 *            the filter to set
-	 */
-	public void setFilter(final String newFilter)
-	{
-		filter = newFilter;
-	}
-
-	/**
 	 * @return regular expression of requirement start
 	 */
-	public String getReqStart()
+	public StringProperty reqStartProperty()
 	{
 		return reqStart;
 	}
 
 	/**
-	 * @param newReqStart
-	 *            regular expression of requirement start
-	 */
-	public void setReqStart(final String newReqStart)
-	{
-		this.reqStart = newReqStart;
-	}
-
-	/**
 	 * @return regular expression of requirement end
 	 */
-	public String getReqEnd()
+	public StringProperty reqEndProperty()
 	{
 		return reqEnd;
 	}
 
 	/**
-	 * @param newReqEnd
-	 *            regular expression of requirement end
-	 */
-	public void setReqEnd(final String newReqEnd)
-	{
-		this.reqEnd = newReqEnd;
-	}
-
-	/**
 	 * @return regular expression of requirement references
 	 */
-	public String getReqRef()
+	public StringProperty reqRefProperty()
 	{
 		return reqRef;
-	}
-
-	/**
-	 * @param newReqRef
-	 *            regular expression of requirement references
-	 */
-	public void setReqRef(final String newReqRef)
-	{
-		this.reqRef = newReqRef;
 	}
 
 	/**
@@ -269,6 +234,6 @@ public class TikaSourceConfiguration implements SourceConfiguration
 	@Override
 	public String toString()
 	{
-		return String.valueOf(sourcePath);
+		return String.valueOf(sourcePath.get());
 	}
 }

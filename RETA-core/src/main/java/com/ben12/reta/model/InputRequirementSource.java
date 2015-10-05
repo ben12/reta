@@ -29,10 +29,17 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+
 import javax.validation.constraints.Pattern;
 
 import org.hibernate.validator.constraints.NotEmpty;
+import org.hibernate.validator.valuehandling.UnwrapValidatedValue;
 
+import com.google.common.base.Strings;
+
+import com.ben12.reta.api.Requirement;
 import com.ben12.reta.api.RequirementSourceManager;
 import com.ben12.reta.api.SourceConfiguration;
 import com.ben12.reta.constraints.NotNullElement;
@@ -52,7 +59,8 @@ public class InputRequirementSource implements RequirementSourceManager
 	/** Source document name. */
 	@NotEmpty
 	@Pattern(regexp = "[^,]*")
-	private String										name;
+	@UnwrapValidatedValue
+	private final StringProperty						name					= new SimpleStringProperty(this, NAME);
 
 	/** Source provider plugin. */
 	private final SourceProviderPlugin					provider;
@@ -62,7 +70,7 @@ public class InputRequirementSource implements RequirementSourceManager
 	private final List<InputRequirementSource>			covers					= new ArrayList<>();
 
 	/** Set of requirement found in the document. */
-	private final TreeSet<Requirement>					requirements			= new TreeSet<>();
+	private final TreeSet<RequirementImpl>				requirements			= new TreeSet<>();
 
 	/** Coverage rate of this document by the other documents. */
 	private final Map<InputRequirementSource, Double>	coversBy				= new HashMap<>();
@@ -87,7 +95,7 @@ public class InputRequirementSource implements RequirementSourceManager
 	public InputRequirementSource(final String theName, final SourceProviderPlugin theProvider,
 			final SourceConfiguration theConfiguration)
 	{
-		name = theName;
+		name.set(theName);
 		provider = theProvider;
 		configuration = theConfiguration;
 	}
@@ -102,6 +110,14 @@ public class InputRequirementSource implements RequirementSourceManager
 		requirementAttributes.clear();
 	}
 
+	/**
+	 * @return requirement source name property
+	 */
+	public StringProperty nameProperty()
+	{
+		return name;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -110,16 +126,7 @@ public class InputRequirementSource implements RequirementSourceManager
 	@Override
 	public String getName()
 	{
-		return name;
-	}
-
-	/**
-	 * @param newName
-	 *            the name to set
-	 */
-	public void setName(final String newName)
-	{
-		name = newName;
+		return name.get();
 	}
 
 	/**
@@ -141,7 +148,7 @@ public class InputRequirementSource implements RequirementSourceManager
 	/**
 	 * @return the set of requirement found in the document
 	 */
-	public TreeSet<Requirement> getRequirements()
+	public TreeSet<RequirementImpl> getRequirements()
 	{
 		return requirements;
 	}
@@ -149,7 +156,7 @@ public class InputRequirementSource implements RequirementSourceManager
 	/**
 	 * @return the set of requirement found in the document
 	 */
-	public List<Requirement> getAllReferences()
+	public List<RequirementImpl> getAllReferences()
 	{
 		return requirements.stream().flatMap((r) -> r.getReferences().stream()).distinct().collect(Collectors.toList());
 	}
@@ -157,7 +164,7 @@ public class InputRequirementSource implements RequirementSourceManager
 	/**
 	 * @return the set of requirement found in the document
 	 */
-	public List<Requirement> getAllUknownReferences()
+	public List<RequirementImpl> getAllUknownReferences()
 	{
 		return getAllReferences().stream().filter((r) -> r.getSource() == null).collect(Collectors.toList());
 	}
@@ -187,6 +194,15 @@ public class InputRequirementSource implements RequirementSourceManager
 	}
 
 	/**
+	 * @param att
+	 *            requirement attribute name to add
+	 */
+	public void addRequirementAttribute(final String att)
+	{
+		requirementAttributes.add(att);
+	}
+
+	/**
 	 * @return all reference attributes set
 	 */
 	public Set<String> getReferenceAttributes()
@@ -209,10 +225,10 @@ public class InputRequirementSource implements RequirementSourceManager
 	 * @see com.ben12.reta.api.RequirementSourceManager#addRequirement(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.util.Map)
 	 */
 	@Override
-	public Requirement addRequirement(final String summary, final String id, final String version,
-			final String content, final Map<String, String> attributes)
+	public Requirement addRequirement(final String summary, final String id, final String version, final String content,
+			final Map<String, String> attributes)
 	{
-		Requirement requirement = new Requirement(this);
+		RequirementImpl requirement = new RequirementImpl(this);
 		requirement.setText(summary);
 		requirement.setId(id);
 		requirement.setVersion(version);
@@ -221,6 +237,11 @@ public class InputRequirementSource implements RequirementSourceManager
 		{
 			requirement.putAttribute(att.getKey(), att.getValue());
 			requirementAttributes.add(att.getKey());
+		}
+		// register Version attribute if exists
+		if (!Strings.isNullOrEmpty(version))
+		{
+			requirementAttributes.add(SourceConfiguration.ATTRIBUTE_VERSION);
 		}
 		if (!requirements.add(requirement))
 		{
@@ -240,7 +261,7 @@ public class InputRequirementSource implements RequirementSourceManager
 	{
 		final StringBuilder builder = new StringBuilder();
 		builder.append("Input ");
-		builder.append(name);
+		builder.append(name.get());
 		builder.append(" (");
 		builder.append(configuration.toString());
 		builder.append("):\n\n");

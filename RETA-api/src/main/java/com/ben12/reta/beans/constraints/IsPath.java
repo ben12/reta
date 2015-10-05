@@ -33,7 +33,7 @@ import java.lang.annotation.Target;
 import javax.validation.Constraint;
 import javax.validation.Payload;
 
-import com.ben12.reta.beans.constraints.validator.PathValidator;
+import com.ben12.reta.beans.constraints.validator.IsPathValidator;
 
 /**
  * @author Benoît Moreau (ben.12)
@@ -41,8 +41,8 @@ import com.ben12.reta.beans.constraints.validator.PathValidator;
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 @Documented
-@Constraint(validatedBy = PathValidator.class)
-public @interface Path
+@Constraint(validatedBy = IsPathValidator.class)
+public @interface IsPath
 {
 	/** Error message to display. */
 	String message() default "{com.ben12.reta.constraints.Path.message}";

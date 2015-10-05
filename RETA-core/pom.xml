@@ -33,7 +33,7 @@
 		<dependency>
 			<groupId>net.sf.jett</groupId>
 			<artifactId>jett-core</artifactId>
-			<version>0.8.0</version>
+			<version>0.9.1</version>
 		</dependency>
 	</dependencies>
 	<build>

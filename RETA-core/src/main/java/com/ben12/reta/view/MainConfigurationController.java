@@ -52,6 +52,9 @@ import javafx.scene.control.TitledPane;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.util.Callback;
+import javafx.util.Pair;
+
+import com.google.common.io.Files;
 
 import com.ben12.reta.beans.property.buffering.BufferingManager;
 import com.ben12.reta.beans.property.buffering.ObservableListBuffering;
@@ -61,7 +64,6 @@ import com.ben12.reta.plugin.SourceProviderPlugin;
 import com.ben12.reta.util.RETAAnalysis;
 import com.ben12.reta.view.control.MessageDialog;
 import com.ben12.reta.view.validation.ValidationDecorator;
-import com.google.common.io.Files;
 
 /**
  * @author Benoît Moreau (ben.12)
@@ -72,15 +74,18 @@ public class MainConfigurationController implements Initializable
 
 	private final SimpleObjectPropertyBuffering<String>						bufferedOutput;
 
-	private final ObservableList<InputRequirementSource>					sources				= FXCollections.observableArrayList();
+	private final ObservableList<InputRequirementSource>					sources				= FXCollections
+			.observableArrayList();
 
 	private final ObservableList<InputRequirementSource>					bufferedSources;
 
-	private final ObservableList<ObjectProperty<String>>					sourcesName			= FXCollections.observableArrayList();
+	private final ObservableList<ObjectProperty<String>>					sourcesName			= FXCollections
+			.observableArrayList();
 
 	private final ObservableList<ObjectProperty<String>>					bufferedSourcesName;
 
-	private final ObservableList<Callback<InputRequirementSource, Void>>	nameChangeCallBacks	= FXCollections.observableArrayList();
+	private final ObservableList<Callback<InputRequirementSource, Void>>	nameChangeCallBacks	= FXCollections
+			.observableArrayList();
 
 	private final Callback<InputRequirementSource, Void>					refreshAll;
 
@@ -116,9 +121,9 @@ public class MainConfigurationController implements Initializable
 	private ValidationDecorator<TextField>									outputFile;
 
 	/**
-	 * @throws NoSuchMethodException
+	 * 
 	 */
-	public MainConfigurationController() throws NoSuchMethodException
+	public MainConfigurationController()
 	{
 		refreshAll = (final InputRequirementSource e) -> {
 			nameChangeCallBacks.stream().forEach(c -> c.call(e));
@@ -130,7 +135,7 @@ public class MainConfigurationController implements Initializable
 		bufferingManager.add((ObservableListBuffering<InputRequirementSource>) bufferedSources);
 
 		bufferedSourcesName = bufferingManager.buffering(sourcesName);
-		bufferedOutput = bufferingManager.bufferingString(RETAAnalysis.getInstance(), "output");
+		bufferedOutput = bufferingManager.buffering(RETAAnalysis.getInstance().outputProperty());
 	}
 
 	/**
@@ -146,7 +151,7 @@ public class MainConfigurationController implements Initializable
 		try
 		{
 			sources.clear();
-			sources.addAll(RETAAnalysis.getInstance().getRequirementSources().values());
+			sources.addAll(RETAAnalysis.getInstance().requirementSourcesProperty());
 
 			for (final InputRequirementSource requirementSource : sources)
 			{
@@ -182,10 +187,9 @@ public class MainConfigurationController implements Initializable
 			outputFile.getChild().textProperty().bindBidirectional(bufferedOutput);
 			outputFile.bindValidation(bufferedOutput);
 
-			delete.disableProperty().bind(
-					sourceConfigurations.expandedPaneProperty()
-							.isNull()
-							.or(Bindings.size(sourceConfigurations.getPanes()).lessThan(2)));
+			delete.disableProperty().bind(sourceConfigurations.expandedPaneProperty()
+					.isNull()
+					.or(Bindings.size(sourceConfigurations.getPanes()).lessThan(2)));
 
 			final IntegerBinding indexOfExpendedPane = new IntegerBinding()
 			{
@@ -212,20 +216,16 @@ public class MainConfigurationController implements Initializable
 				}
 			};
 
-			upSource.disableProperty().bind(
-					sourceConfigurations.expandedPaneProperty().isNull().or(indexOfExpendedPane.lessThan(1)));
-			downSource.disableProperty().bind(
-					sourceConfigurations.expandedPaneProperty()
-							.isNull()
-							.or(indexOfExpendedPane.greaterThan(Bindings.size(sourceConfigurations.getPanes())
-									.subtract(2))));
+			upSource.disableProperty()
+					.bind(sourceConfigurations.expandedPaneProperty().isNull().or(indexOfExpendedPane.lessThan(1)));
+			downSource.disableProperty().bind(sourceConfigurations.expandedPaneProperty().isNull().or(
+					indexOfExpendedPane.greaterThan(Bindings.size(sourceConfigurations.getPanes()).subtract(2))));
 
-			save.disableProperty().bind(
-					Bindings.not(bufferingManager.bufferingProperty()).or(
-							Bindings.not(bufferingManager.validProperty())));
+			save.disableProperty().bind(Bindings.not(bufferingManager.bufferingProperty())
+					.or(Bindings.not(bufferingManager.validProperty())));
 			cancel.disableProperty().bind(Bindings.not(bufferingManager.bufferingProperty()));
-			run.disableProperty().bind(
-					bufferingManager.bufferingProperty().or(Bindings.not(bufferingManager.validProperty())));
+			run.disableProperty()
+					.bind(bufferingManager.bufferingProperty().or(Bindings.not(bufferingManager.validProperty())));
 		}
 		catch (final Exception e)
 		{
@@ -233,8 +233,8 @@ public class MainConfigurationController implements Initializable
 		}
 	}
 
-	private ObjectProperty<String> addSource(final InputRequirementSource requirementSource) throws IOException,
-			NoSuchMethodException
+	private ObjectProperty<String> addSource(final InputRequirementSource requirementSource)
+			throws IOException, NoSuchMethodException
 	{
 		final FXMLLoader loader = new FXMLLoader();
 		loader.setLocation(MainConfigurationController.class.getResource("SourceConfigurationUI.fxml"));
@@ -252,20 +252,19 @@ public class MainConfigurationController implements Initializable
 	@FXML
 	protected void newSource(final ActionEvent event) throws NoSuchMethodException, IOException
 	{
-		final List<SourceProviderPlugin> plugins = new ArrayList<SourceProviderPlugin>(RETAAnalysis.getInstance()
-				.getPluginList());
-		final List<String> pluginNames = plugins.stream()
-				.map(SourceProviderPlugin::getSourceName)
+		final List<SourceProviderPlugin> plugins = new ArrayList<SourceProviderPlugin>(
+				RETAAnalysis.getInstance().getPluginList());
+		final List<Pair<SourceProviderPlugin, String>> pluginChoices = plugins.stream()
+				.map((p) -> new Pair<>(p, p.getSourceName()))
 				.collect(Collectors.toList());
 
-		final Object pluginSelected = MessageDialog.showOptionsMessage(root.getScene().getWindow(), "Plugin to use",
-				pluginNames.toArray());
+		final SourceProviderPlugin pluginSelected = MessageDialog.showOptionsMessage(root.getScene().getWindow(),
+				labels.getString("new.input.type"), pluginChoices);
 
 		if (pluginSelected != null)
 		{
-			final SourceProviderPlugin plugin = plugins.get(pluginNames.indexOf(pluginSelected));
-			final InputRequirementSource requirementSource = new InputRequirementSource("NEW", plugin,
-					plugin.createNewSourceConfiguration());
+			final InputRequirementSource requirementSource = new InputRequirementSource("NEW", pluginSelected,
+					pluginSelected.createNewSourceConfiguration());
 
 			bufferedSourcesName.add(addSource(requirementSource));
 
@@ -298,8 +297,8 @@ public class MainConfigurationController implements Initializable
 		{
 			sourceConfigurations.setExpandedPane(sourceConfigurations.getPanes().get(index - 1));
 		}
-		final SourceConfigurationController controller = (SourceConfigurationController) pane.getProperties().get(
-				"reta.controller");
+		final SourceConfigurationController controller = (SourceConfigurationController) pane.getProperties()
+				.get("reta.controller");
 		controller.disconnect();
 		return requirementSource;
 	}
@@ -357,10 +356,10 @@ public class MainConfigurationController implements Initializable
 			bufferingManager.commit();
 			panes = new ArrayList<>(sourceConfigurations.getPanes());
 
-			retaAnalysis.getRequirementSources().clear();
+			retaAnalysis.requirementSourcesProperty().clear();
 			for (final InputRequirementSource requirementSource : bufferedSources)
 			{
-				retaAnalysis.getRequirementSources().put(requirementSource.getName(), requirementSource);
+				retaAnalysis.requirementSourcesProperty().add(requirementSource);
 			}
 
 			try
@@ -388,14 +387,14 @@ public class MainConfigurationController implements Initializable
 		toReconnect.removeAll(sourceConfigurations.getPanes());
 
 		// reconnect before revert (reverts disconnected properties)
-		toReconnect.stream().forEach(
-				p -> ((SourceConfigurationController) p.getProperties().get("reta.controller")).reconnect());
+		toReconnect.stream()
+				.forEach(p -> ((SourceConfigurationController) p.getProperties().get("reta.controller")).reconnect());
 
 		bufferingManager.revert();
 
 		// disconnect after revert (reverts to be disconnected properties)
-		toDisconnected.stream().forEach(
-				p -> ((SourceConfigurationController) p.getProperties().get("reta.controller")).disconnect());
+		toDisconnected.stream()
+				.forEach(p -> ((SourceConfigurationController) p.getProperties().get("reta.controller")).disconnect());
 
 		final TitledPane pane = sourceConfigurations.getExpandedPane();
 
