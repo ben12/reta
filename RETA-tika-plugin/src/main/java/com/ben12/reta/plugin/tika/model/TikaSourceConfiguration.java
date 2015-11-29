@@ -19,24 +19,19 @@
 // along with RETA.  If not, see <http://www.gnu.org/licenses/>.
 package com.ben12.reta.plugin.tika.model;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableMap;
 
 import javax.validation.constraints.NotNull;
 
 import org.hibernate.validator.valuehandling.UnwrapValidatedValue;
 
-import com.ben12.reta.api.RETAParseException;
-import com.ben12.reta.api.RequirementSourceManager;
 import com.ben12.reta.api.SourceConfiguration;
 import com.ben12.reta.beans.constraints.IsPath;
 import com.ben12.reta.beans.constraints.PathExists;
 import com.ben12.reta.plugin.tika.beans.constraints.Regex;
-import com.ben12.reta.plugin.tika.parser.RetaTikaParser;
 
 /**
  * @author Benoît Moreau (ben.12)
@@ -44,19 +39,25 @@ import com.ben12.reta.plugin.tika.parser.RetaTikaParser;
 public class TikaSourceConfiguration implements SourceConfiguration
 {
 	/** {@link #sourcePath} property name. */
-	public static final String			SOURCE_PATH			= "sourcePath";
+	public static final String						SOURCE_PATH				= "sourcePath";
 
 	/** {@link #filter} property name. */
-	public static final String			FILTER				= "filter";
+	public static final String						FILTER					= "filter";
 
 	/** {@link #reqStart} property name. */
-	public static final String			REQ_START			= "reqStart";
+	public static final String						REQ_START				= "reqStart";
 
 	/** {@link #reqEnd} property name. */
-	public static final String			REQ_END				= "reqEnd";
+	public static final String						REQ_END					= "reqEnd";
 
 	/** {@link #reqRef} property name. */
-	public static final String			REQ_REF				= "reqRef";
+	public static final String						REQ_REF					= "reqRef";
+
+	/** {@link #attributesGroup} property name. */
+	public static final String						ATTRIBUTES_GROUP		= "attributesGroup";
+
+	/** {@link #refAttributesGroup} property name. */
+	public static final String						REF_ATTRIBUTES_GROUP	= "refAttributesGroup";
 
 	/**
 	 * Source document path.
@@ -65,7 +66,8 @@ public class TikaSourceConfiguration implements SourceConfiguration
 	@IsPath
 	@PathExists
 	@UnwrapValidatedValue
-	private final StringProperty		sourcePath			= new SimpleStringProperty(this, SOURCE_PATH, "");
+	private final StringProperty					sourcePath				= new SimpleStringProperty(this,
+			SOURCE_PATH, "");
 
 	/**
 	 * Regular expression filtering files if {@link #sourcePath} is a folder.
@@ -73,7 +75,8 @@ public class TikaSourceConfiguration implements SourceConfiguration
 	@NotNull
 	@Regex
 	@UnwrapValidatedValue
-	private final StringProperty		filter				= new SimpleStringProperty(this, FILTER, "");
+	private final StringProperty					filter					= new SimpleStringProperty(this, FILTER,
+			"");
 
 	/**
 	 * Regular expression for find the start of requirement.
@@ -81,7 +84,8 @@ public class TikaSourceConfiguration implements SourceConfiguration
 	@NotNull
 	@Regex
 	@UnwrapValidatedValue
-	private final StringProperty		reqStart			= new SimpleStringProperty(this, REQ_START, "");
+	private final StringProperty					reqStart				= new SimpleStringProperty(this, REQ_START,
+			"");
 
 	/**
 	 * Regular expression for find the end of requirement.
@@ -89,7 +93,8 @@ public class TikaSourceConfiguration implements SourceConfiguration
 	@NotNull
 	@Regex
 	@UnwrapValidatedValue
-	private final StringProperty		reqEnd				= new SimpleStringProperty(this, REQ_END, "");
+	private final StringProperty					reqEnd					= new SimpleStringProperty(this, REQ_END,
+			"");
 
 	/**
 	 * Regular expression for find the requirement references.
@@ -97,22 +102,18 @@ public class TikaSourceConfiguration implements SourceConfiguration
 	@NotNull
 	@Regex
 	@UnwrapValidatedValue
-	private final StringProperty		reqRef				= new SimpleStringProperty(this, REQ_REF, "");
+	private final StringProperty					reqRef					= new SimpleStringProperty(this, REQ_REF,
+			"");
 
 	/**
 	 * Requirement attribute indexes in regular expression {@link #reqStart} captions.
 	 */
-	private final Map<String, Integer>	attributesGroup		= new HashMap<>();
+	private final ObservableMap<String, Integer>	attributesGroup			= FXCollections.observableHashMap();
 
 	/**
 	 * Reference attribute indexes in regular expression {@link #reqRef} captions.
 	 */
-	private final Map<String, Integer>	refAttributesGroup	= new HashMap<>();
-
-	/**
-	 * RETA parser using Tika.
-	 */
-	private RetaTikaParser				parser				= null;
+	private final ObservableMap<String, Integer>	refAttributesGroup		= FXCollections.observableHashMap();
 
 	/**
 	 * 
@@ -166,7 +167,7 @@ public class TikaSourceConfiguration implements SourceConfiguration
 	/**
 	 * @return attribute indexes in regular expression {@link #reqStart} captions
 	 */
-	public Map<String, Integer> getAttributesGroup()
+	public ObservableMap<String, Integer> getAttributesGroup()
 	{
 		return attributesGroup;
 	}
@@ -174,56 +175,9 @@ public class TikaSourceConfiguration implements SourceConfiguration
 	/**
 	 * @return attribute indexes in regular expression {@link #reqRef} captions
 	 */
-	public Map<String, Integer> getRefAttributesGroup()
+	public ObservableMap<String, Integer> getRefAttributesGroup()
 	{
 		return refAttributesGroup;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.ben12.reta.api.SourceConfiguration#parseSource(com.ben12.reta.api.RequirementSourceManager)
-	 */
-	@Override
-	public void parseSource(final RequirementSourceManager manager) throws RETAParseException
-	{
-		if (parser == null)
-		{
-			parser = new RetaTikaParser(this);
-		}
-
-		try
-		{
-			parser.parse(manager, null, Integer.MAX_VALUE);
-		}
-		catch (final IOException e)
-		{
-			throw new RETAParseException(e);
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.ben12.reta.api.SourceConfiguration#parseSourcePreview(com.ben12.reta.api.RequirementSourceManager, java.lang.StringBuilder, int)
-	 */
-	@Override
-	public void parseSourcePreview(final RequirementSourceManager manager, final StringBuilder output, final int limit)
-			throws RETAParseException
-	{
-		if (parser == null)
-		{
-			parser = new RetaTikaParser(this);
-		}
-
-		try
-		{
-			parser.parse(manager, output, limit);
-		}
-		catch (final IOException e)
-		{
-			throw new RETAParseException(e);
-		}
 	}
 
 	/*

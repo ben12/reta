@@ -19,12 +19,23 @@
 // along with RETA.  If not, see <http://www.gnu.org/licenses/>.
 package com.ben12.reta.beans.property.validation;
 
+import java.lang.annotation.Annotation;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.validation.ConstraintViolation;
+import javax.validation.MessageInterpolator;
 import javax.validation.Validation;
 import javax.validation.Validator;
+
+import org.hibernate.validator.messageinterpolation.AbstractMessageInterpolator;
+import org.hibernate.validator.messageinterpolation.ResourceBundleMessageInterpolator;
+import org.hibernate.validator.resourceloading.AggregateResourceBundleLocator;
 
 import com.google.common.base.Strings;
 
@@ -40,7 +51,52 @@ import com.google.common.base.Strings;
 public interface BeanPropertyValidation<T> extends PropertyValidation
 {
 	/** Default {@link Validator}. */
-	Validator DEFAULT_VALIDATOR = Validation.buildDefaultValidatorFactory().getValidator();
+	Validator DEFAULT_VALIDATOR = Validation.byDefaultProvider()
+			.configure()
+			.messageInterpolator(new MessageInterpolator()
+			{
+				private final Map<String, ResourceBundleMessageInterpolator> messageInterpolators = new HashMap<>();
+
+				private ResourceBundleMessageInterpolator getInterpolator(final Context context)
+				{
+					final Annotation annotation = context.getConstraintDescriptor().getAnnotation();
+					String packageName = annotation.annotationType().getPackage().getName();
+					packageName = packageName.replace('.', '/') + '/';
+
+					ResourceBundleMessageInterpolator interpolator = messageInterpolators.get(packageName);
+					if (interpolator == null)
+					{
+						final List<String> locations = new ArrayList<>();
+						int pos = -1;
+						do
+						{
+							locations.add(0, packageName.substring(0, pos + 1)
+									+ AbstractMessageInterpolator.USER_VALIDATION_MESSAGES);
+							pos = packageName.indexOf('/', pos + 1);
+						}
+						while (pos >= 0);
+
+						interpolator = new ResourceBundleMessageInterpolator(
+								new AggregateResourceBundleLocator(locations));
+						messageInterpolators.put(packageName, interpolator);
+					}
+					return interpolator;
+				}
+
+				@Override
+				public String interpolate(final String messageTemplate, final Context context, final Locale locale)
+				{
+					return getInterpolator(context).interpolate(messageTemplate, context, locale);
+				}
+
+				@Override
+				public String interpolate(final String messageTemplate, final Context context)
+				{
+					return getInterpolator(context).interpolate(messageTemplate, context);
+				}
+			})
+			.buildValidatorFactory()
+			.getValidator();
 
 	/**
 	 * @return value to validate

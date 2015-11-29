@@ -1,13 +1,32 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.ben12</groupId>
 	<artifactId>reta-core</artifactId>
-	<version>1.0.0</version>
-	<name>Requirement Engineering Traceability Analysis</name>
+	<name>Requirement Engineering Traceability Analysis (CORE)</name>
+	<url>https://github.com/ben12/reta</url>
+	<description>Core of RETA project</description>
+	<parent>
+		<groupId>com.ben12</groupId>
+		<artifactId>reta-parent</artifactId>
+		<version>1.0.0</version>
+	</parent>
 	<properties>
 		<project.build.sourceEncoding>cp1252</project.build.sourceEncoding>
 	</properties>
+	<contributors>
+		<contributor>
+			<name>ben.12</name>
+			<url>https://github.com/ben12</url>
+			<timezone>Europe/Paris</timezone>
+		</contributor>
+	</contributors>
+	<developers>
+		<developer>
+			<name>ben.12</name>
+			<url>https://github.com/ben12</url>
+			<timezone>Europe/Paris</timezone>
+		</developer>
+	</developers>
 	<dependencies>
 		<dependency>
 			<groupId>com.ben12</groupId>
@@ -15,25 +34,34 @@
 			<version>[1.0.0,1.1.0)</version>
 		</dependency>
 		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-			<version>18.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.ini4j</groupId>
-			<artifactId>ini4j</artifactId>
-			<version>0.5.2</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.tika</groupId>
-			<artifactId>tika-parsers</artifactId>
-			<!-- 1.5 does not work for code sources files (java,cpp,groovy). -->
-			<version>1.6</version>
-		</dependency>
-		<dependency>
 			<groupId>net.sf.jett</groupId>
 			<artifactId>jett-core</artifactId>
 			<version>0.9.1</version>
+		</dependency>
+
+		<!-- Add Tika dependencies for using reta-tika-plugin in Eclipse IDE -->
+		<dependency>
+			<groupId>com.ben12</groupId>
+			<artifactId>reta-tika-plugin</artifactId>
+			<version>[1.0.0,1.1.0)</version>
+			<scope>runtime</scope>
+		</dependency>
+
+		<!-- Use non beta POI version -->
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi</artifactId>
+			<version>3.13</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+			<version>3.13</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-scratchpad</artifactId>
+			<version>3.13</version>
 		</dependency>
 	</dependencies>
 	<build>
@@ -45,67 +73,32 @@
 				<directory>src/main/resources</directory>
 			</resource>
 		</resources>
-		<pluginManagement>
-			<plugins>
-				<plugin>
-					<artifactId>maven-compiler-plugin</artifactId>
-					<version>2.3.2</version>
-					<executions>
-						<execution>
-							<id>default-testCompile</id>
-							<phase>test-compile</phase>
-							<configuration>
-								<source>1.8</source>
-								<target>1.8</target>
-							</configuration>
-							<goals>
-								<goal>testCompile</goal>
-							</goals>
-						</execution>
-						<execution>
-							<id>default-compile</id>
-							<phase>compile</phase>
-							<configuration>
-								<source>1.8</source>
-								<target>1.8</target>
-							</configuration>
-							<goals>
-								<goal>compile</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-dependency-plugin</artifactId>
-					<version>2.8</version>
-					<configuration>
-						<outputDirectory>${project.build.directory}/libs</outputDirectory>
-					</configuration>
-				</plugin>
-				<plugin>
-					<artifactId>maven-jar-plugin</artifactId>
-					<version>2.3.2</version>
-					<executions>
-						<execution>
-							<id>default-jar</id>
-							<phase>package</phase>
-							<configuration>
-								<archive>
-									<manifest>
-										<addClasspath>true</addClasspath>
-										<classpathPrefix>libs/</classpathPrefix>
-										<mainClass>com.ben12.reta.Main</mainClass>
-									</manifest>
-								</archive>
-							</configuration>
-							<goals>
-								<goal>jar</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
-			</plugins>
-		</pluginManagement>
 	</build>
+	<reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>2.10.3</version>
+				<configuration>
+					<windowtitle>RETA CORE JavaDocs</windowtitle>
+				</configuration>
+			</plugin>
+		</plugins>
+	</reporting>
+	<issueManagement>
+		<system>GitHub</system>
+		<url>https://github.com/ben12/reta/issues</url>
+	</issueManagement>
+	<scm>
+		<url>https://github.com/ben12/reta/tree/master/RETA-core</url>
+		<connection>scm:git:git://github.com/ben12/reta.git/RETA-core</connection>
+		<developerConnection>scm:git:git@github.com:ben12/reta.git/RETA-core</developerConnection>
+	</scm>
+	<licenses>
+		<license>
+			<name>GNU General Public License (GPL)</name>
+			<url>http://www.gnu.org/licenses/gpl-3.0.txt</url>
+		</license>
+	</licenses>
 </project>

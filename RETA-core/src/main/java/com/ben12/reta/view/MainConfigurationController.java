@@ -19,8 +19,10 @@
 // along with RETA.  If not, see <http://www.gnu.org/licenses/>.
 package com.ben12.reta.view;
 
+import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -66,62 +68,87 @@ import com.ben12.reta.view.control.MessageDialog;
 import com.ben12.reta.view.validation.ValidationDecorator;
 
 /**
+ * Main configuration controller.
+ * 
  * @author Benoît Moreau (ben.12)
  */
 public class MainConfigurationController implements Initializable
 {
+	/** Class logger. */
+	private static final Logger												LOGGER				= Logger
+			.getLogger(MainConfigurationController.class.getName());
+
+	/** The {@link BufferingManager} instance. */
 	private final BufferingManager											bufferingManager	= new BufferingManager();
 
+	/** Output file buffered property. */
 	private final SimpleObjectPropertyBuffering<String>						bufferedOutput;
 
+	/** Requirement source list. */
 	private final ObservableList<InputRequirementSource>					sources				= FXCollections
 			.observableArrayList();
 
+	/** Buffered requirement source list. */
 	private final ObservableList<InputRequirementSource>					bufferedSources;
 
+	/** Requirement source name property list. */
 	private final ObservableList<ObjectProperty<String>>					sourcesName			= FXCollections
 			.observableArrayList();
 
+	/** Buffered requirement source name property list. */
 	private final ObservableList<ObjectProperty<String>>					bufferedSourcesName;
 
+	/** Callback list used when a source name is changed. */
 	private final ObservableList<Callback<InputRequirementSource, Void>>	nameChangeCallBacks	= FXCollections
 			.observableArrayList();
 
+	/** Callback used to call all {@link #nameChangeCallBacks}. */
 	private final Callback<InputRequirementSource, Void>					refreshAll;
 
+	/** Translations {@link ResourceBundle}. */
 	private ResourceBundle													labels				= null;
 
+	/** Requirement source {@link TitledPane} list. */
 	private List<TitledPane>												panes				= new ArrayList<>();
 
+	/** Root pane. */
 	@FXML
 	private Parent															root;
 
+	/** Requirement source {@link Accordion}. */
 	@FXML
 	private Accordion														sourceConfigurations;
 
+	/** Save configuration button. */
 	@FXML
 	private Button															save;
 
+	/** Cancel modifications button. */
 	@FXML
 	private Button															cancel;
 
+	/** Run analysis button. */
 	@FXML
 	private Button															run;
 
+	/** Delete selected requirement source button. */
 	@FXML
 	private Button															delete;
 
+	/** Up the selected requirement source button. */
 	@FXML
 	private Button															upSource;
 
+	/** Down the selected requirement source button. */
 	@FXML
 	private Button															downSource;
 
+	/** Output file {@link TextField}. */
 	@FXML
 	private ValidationDecorator<TextField>									outputFile;
 
 	/**
-	 * 
+	 * Constructor.
 	 */
 	public MainConfigurationController()
 	{
@@ -139,7 +166,7 @@ public class MainConfigurationController implements Initializable
 	}
 
 	/**
-	 * 
+	 * Re-build the view current loaded configuration.
 	 */
 	private void rebuild()
 	{
@@ -233,6 +260,17 @@ public class MainConfigurationController implements Initializable
 		}
 	}
 
+	/**
+	 * Add the requirement source in the view.
+	 * 
+	 * @param requirementSource
+	 *            requirement source to add
+	 * @return the requirement source name property
+	 * @throws IOException
+	 *             I/O exception
+	 * @throws NoSuchMethodException
+	 *             No such method exception
+	 */
 	private ObjectProperty<String> addSource(final InputRequirementSource requirementSource)
 			throws IOException, NoSuchMethodException
 	{
@@ -249,6 +287,16 @@ public class MainConfigurationController implements Initializable
 		return sourceName;
 	}
 
+	/**
+	 * Action event to add a new requirement source.
+	 * 
+	 * @param event
+	 *            the {@link ActionEvent}
+	 * @throws IOException
+	 *             I/O exception
+	 * @throws NoSuchMethodException
+	 *             No such method exception
+	 */
 	@FXML
 	protected void newSource(final ActionEvent event) throws NoSuchMethodException, IOException
 	{
@@ -273,6 +321,12 @@ public class MainConfigurationController implements Initializable
 		}
 	}
 
+	/**
+	 * Action event to remove the selected requirement source.
+	 * 
+	 * @param event
+	 *            the {@link ActionEvent}
+	 */
 	@FXML
 	protected void deleteSource(final ActionEvent event)
 	{
@@ -284,6 +338,13 @@ public class MainConfigurationController implements Initializable
 		}
 	}
 
+	/**
+	 * Remove a requirement source.
+	 * 
+	 * @param index
+	 *            the requirement source index
+	 * @return the requirement source removed
+	 */
 	private InputRequirementSource removeSource(final int index)
 	{
 		final TitledPane pane = sourceConfigurations.getPanes().remove(index);
@@ -303,6 +364,12 @@ public class MainConfigurationController implements Initializable
 		return requirementSource;
 	}
 
+	/**
+	 * Action event to move up the selected requirement source.
+	 * 
+	 * @param event
+	 *            the {@link ActionEvent}
+	 */
 	@FXML
 	protected void upSource(final ActionEvent event)
 	{
@@ -319,6 +386,12 @@ public class MainConfigurationController implements Initializable
 		}
 	}
 
+	/**
+	 * Action event to move down the selected requirement source.
+	 * 
+	 * @param event
+	 *            the {@link ActionEvent}
+	 */
 	@FXML
 	protected void downSource(final ActionEvent event)
 	{
@@ -335,6 +408,12 @@ public class MainConfigurationController implements Initializable
 		}
 	}
 
+	/**
+	 * Action event to save the configuration.
+	 * 
+	 * @param event
+	 *            the {@link ActionEvent}
+	 */
 	@FXML
 	protected void save(final ActionEvent event)
 	{
@@ -377,6 +456,12 @@ public class MainConfigurationController implements Initializable
 		}
 	}
 
+	/**
+	 * Action event to cancel the buffered modifications.
+	 * 
+	 * @param event
+	 *            the {@link ActionEvent}
+	 */
 	@FXML
 	protected void cancel(final ActionEvent event)
 	{
@@ -410,6 +495,12 @@ public class MainConfigurationController implements Initializable
 		}
 	}
 
+	/**
+	 * Action event to run the requirements analysis.
+	 * 
+	 * @param event
+	 *            the {@link ActionEvent}
+	 */
 	@FXML
 	protected void run(final ActionEvent event)
 	{
@@ -432,7 +523,7 @@ public class MainConfigurationController implements Initializable
 				RETAAnalysis.getInstance().analyse();
 				progress.set(0.80);
 				stepMessage.set(labels.getString("progress.writing"));
-				RETAAnalysis.getInstance().writeExcel(root.getScene().getWindow());
+				RETAAnalysis.getInstance().writeExcel();
 				stepMessage.set(labels.getString("progress.complete"));
 			}
 			catch (final Exception e)
@@ -448,8 +539,14 @@ public class MainConfigurationController implements Initializable
 		}).start();
 	}
 
+	/**
+	 * Action event to select the output file.
+	 * 
+	 * @param event
+	 *            the {@link ActionEvent}
+	 */
 	@FXML
-	protected void selectOutputFile(final ActionEvent e)
+	protected void selectOutputFile(final ActionEvent event)
 	{
 		final Path currentFile = Paths.get(bufferedOutput.get());
 		final FileChooser fileChooser = new FileChooser();
@@ -468,8 +565,14 @@ public class MainConfigurationController implements Initializable
 		}
 	}
 
+	/**
+	 * Action event to open a new configuration file.
+	 * 
+	 * @param event
+	 *            the {@link ActionEvent}
+	 */
 	@FXML
-	protected void open(final ActionEvent e)
+	protected void open(final ActionEvent event)
 	{
 		final FileChooser fileChooser = new FileChooser();
 		fileChooser.getExtensionFilters().add(new ExtensionFilter(labels.getString("reta.file.desc"), "*.reta"));
@@ -478,6 +581,12 @@ public class MainConfigurationController implements Initializable
 		open(file);
 	}
 
+	/**
+	 * Open a configuration file.
+	 * 
+	 * @param file
+	 *            the configuration file to open
+	 */
 	public void open(final File file)
 	{
 		if (file != null && file.isFile())
@@ -485,5 +594,59 @@ public class MainConfigurationController implements Initializable
 			RETAAnalysis.getInstance().configure(file);
 			rebuild();
 		}
+	}
+
+	/**
+	 * Action event to open an URL.
+	 * 
+	 * @param url
+	 *            the URL to open
+	 */
+	protected void openURL(final String url)
+	{
+		try
+		{
+			Desktop.getDesktop().browse(URI.create(url));
+		}
+		catch (final IOException e)
+		{
+			LOGGER.log(Level.SEVERE, "Cannot open URL \"" + url + "\".", e);
+		}
+	}
+
+	/**
+	 * Action event to open the support URL.
+	 * 
+	 * @param event
+	 *            the {@link ActionEvent}
+	 */
+	@FXML
+	protected void openSupport(final ActionEvent event)
+	{
+		openURL("http://stackoverflow.com/questions/ask?tags=reta");
+	}
+
+	/**
+	 * Action event to open the support URL.
+	 * 
+	 * @param event
+	 *            the {@link ActionEvent}
+	 */
+	@FXML
+	protected void openWiki(final ActionEvent event)
+	{
+		openURL("http://github.com/ben12/reta/wiki");
+	}
+
+	/**
+	 * Action event to open the support URL.
+	 * 
+	 * @param event
+	 *            the {@link ActionEvent}
+	 */
+	@FXML
+	protected void openProject(final ActionEvent event)
+	{
+		openURL("http://github.com/ben12/reta");
 	}
 }

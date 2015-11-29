@@ -115,7 +115,7 @@ public class MapTableView<K, V> extends TableView<MapTableView<K, V>.Entry>
 	}
 
 	/**
-	 * {@link Map.Entry} wrapper.
+	 * {@link java.util.Map.Entry} wrapper.
 	 */
 	public class Entry implements MapChangeListener<K, V>
 	{
@@ -150,6 +150,7 @@ public class MapTableView<K, V> extends TableView<MapTableView<K, V>.Entry>
 		/** Value change listener. */
 		private final ChangeListener<V>				changeListener;
 
+		/** TODO: Used in the workaround for https://bugs.openjdk.java.net/browse/JDK-8136465. */
 		private boolean								changingSubject	= false;
 
 		/**

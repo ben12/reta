@@ -129,7 +129,7 @@ public final class MessageDialog
 	 *            dialog parent, if null default parent is used
 	 * @param message
 	 *            Confirmation message to show
-	 * @return option selected ({@link #YES_OPTION} or {@link #NO_OPTION})
+	 * @return true if confirmed by "yes" option, false otherwise
 	 */
 	public static boolean showConfirmationMessage(final Window parent, final String message)
 	{
@@ -145,7 +145,7 @@ public final class MessageDialog
 	 *            dialog parent, if null default parent is used
 	 * @param message
 	 *            Question message to show
-	 * @return option selected ({@link #OK_OPTION} or {@link #CANCEL_OPTION})
+	 * @return true if confirmed by "ok" option, false otherwise
 	 */
 	public static boolean showQuestionMessage(final Window parent, final String message)
 	{

@@ -78,7 +78,6 @@
     <module name="ClassTypeParameterName"/>
     <module name="MethodTypeParameterName"/>
     <module name="InterfaceTypeParameterName"/>
-    <module name="AnonInnerLength"/>
     <module name="RegexpSinglelineJava">
       <property name="format" value="^\s+$"/>
       <property name="message" value="Line has trailing spaces."/>

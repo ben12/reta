@@ -83,6 +83,7 @@ public class Main extends Application
 
 	/**
 	 * @param args
+	 *            application arguments
 	 */
 	public static void main(final String[] args)
 	{

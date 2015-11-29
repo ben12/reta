@@ -20,6 +20,8 @@
 package com.ben12.reta.api;
 
 /**
+ * Requirement source configuration interface to implement.
+ * 
  * @author Benoît Moreau (ben.12)
  */
 public interface SourceConfiguration
@@ -32,29 +34,4 @@ public interface SourceConfiguration
 
 	/** Name of requirement attribute "Version". */
 	String	ATTRIBUTE_VERSION	= "Version";
-
-	/**
-	 * Parse the source and use {@code manager} for add requirements found.
-	 * 
-	 * @param manager
-	 *            requirement source manager
-	 * @throws RETAParseException
-	 *             Parsing exception
-	 */
-	void parseSource(RequirementSourceManager manager) throws RETAParseException;
-
-	/**
-	 * Parse the source and use {@code manager} for add requirements found.
-	 * 
-	 * @param manager
-	 *            requirement source manager
-	 * @param output
-	 *            source content parsed
-	 * @param limit
-	 *            source limit size to parse
-	 * @throws RETAParseException
-	 *             Parsing exception
-	 */
-	void parseSourcePreview(RequirementSourceManager manager, StringBuilder output, int limit)
-			throws RETAParseException;
 }

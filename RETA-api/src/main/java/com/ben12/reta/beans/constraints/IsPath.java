@@ -45,7 +45,7 @@ import com.ben12.reta.beans.constraints.validator.IsPathValidator;
 public @interface IsPath
 {
 	/** Error message to display. */
-	String message() default "{com.ben12.reta.constraints.Path.message}";
+	String message() default "";
 
 	/** Validating groups. */
 	Class<?>[] groups() default {};

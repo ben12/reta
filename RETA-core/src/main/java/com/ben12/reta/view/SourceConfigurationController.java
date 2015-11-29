@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -56,6 +55,8 @@ import javafx.util.Callback;
 import javafx.util.StringConverter;
 import javafx.util.converter.IntegerStringConverter;
 
+import org.hibernate.validator.messageinterpolation.ResourceBundleMessageInterpolator;
+
 import com.google.common.base.Splitter;
 
 import com.ben12.reta.api.RETAParseException;
@@ -69,46 +70,70 @@ import com.ben12.reta.view.control.MessageDialog;
 import com.ben12.reta.view.validation.ValidationDecorator;
 
 /**
+ * Requirement source configuration controller.
+ * 
  * @author Benoît Moreau (ben.12)
  */
 public class SourceConfigurationController
 {
+	/** the {@link BufferingManager} instance. */
 	private BufferingManager						bufferingManager;
 
 	/** Keeps a reference on buffered properties. */
 	private final List<Buffering<?>>				bufferedProperties	= new ArrayList<>();
 
+	/** Input requirement source. */
 	private InputRequirementSource					requirementSource	= null;
 
+	/** Input requirement source list. */
 	private ObservableList<InputRequirementSource>	sources				= null;
 
+	/** Input requirement source buffered name list. */
 	private ObservableList<ObjectProperty<String>>	sourcesName			= null;
 
+	/** Error translation {@link ResourceBundle}. */
 	private final ResourceBundle					errors				= ResourceBundle
-			.getBundle("ValidationMessages");
+			.getBundle("com/ben12/reta/constraints/" + ResourceBundleMessageInterpolator.USER_VALIDATION_MESSAGES);
 
+	/** The input requirement source {@link TitledPane}. */
 	@FXML
 	private TitledPane								titledPane;
 
+	/** Input requirement source name field. */
 	@FXML
 	private ValidationDecorator<TextField>			name;
 
+	/** Input requirement source covered field. */
 	@FXML
 	private ValidationDecorator<TextField>			covers;
 
+	/** Plug-in configuration pane. */
 	@FXML
-	private HBox									parserPane;
+	private HBox									pluginPane;
 
+	/** Use limit in preview check-box. */
 	@FXML
 	private CheckBox								useLimit;
 
+	/** Preview limit field. */
 	@FXML
 	private Spinner<Integer>						previewLimit;
 
+	/** Preview button. */
 	@FXML
 	private Button									preview;
 
-	private <N extends TextInputControl> void initializeLabeled(final ValidationDecorator<N> input,
+	/**
+	 * Bind simple {@link TextInputControl}.
+	 * 
+	 * @param input
+	 *            {@link ValidationDecorator} of {@link TextInputControl}
+	 * @param property
+	 *            {@link SimpleObjectPropertyBuffering} to bind to the <code>input</code>
+	 * @param <N>
+	 *            {@link TextInputControl} implementation type
+	 */
+	private <N extends TextInputControl> void bindTextInputControl(final ValidationDecorator<N> input,
 			final SimpleObjectPropertyBuffering<String> property)
 	{
 		bufferedProperties.add(property);
@@ -116,7 +141,21 @@ public class SourceConfigurationController
 		input.bindValidation(property);
 	}
 
-	private <T, N extends TextInputControl> void initializeLabeled(final ValidationDecorator<N> input,
+	/**
+	 * Bind {@link ObservableListBuffering} to {@link TextInputControl} using {@link StringConverter}.
+	 * 
+	 * @param input
+	 *            {@link ValidationDecorator} of {@link TextInputControl}
+	 * @param property
+	 *            {@link ObservableListBuffering} to bind to the <code>input</code>
+	 * @param converter
+	 *            {@link StringConverter} to use
+	 * @param <T>
+	 *            {@link ObservableListBuffering} element type
+	 * @param <N>
+	 *            {@link TextInputControl} implementation type
+	 */
+	private <T, N extends TextInputControl> void bindTextInputControl(final ValidationDecorator<N> input,
 			final ObservableListBuffering<T> property, final StringConverter<ObservableList<T>> converter)
 	{
 		bufferedProperties.add(property);
@@ -124,6 +163,25 @@ public class SourceConfigurationController
 		input.bindValidation(property);
 	}
 
+	/**
+	 * Bind the view to the model.
+	 * 
+	 * @param newBufferingManager
+	 *            the {@link BufferingManager} to use
+	 * @param newRequirementSource
+	 *            the {@link InputRequirementSource} to configure
+	 * @param newSources
+	 *            the input requirement source buffered list
+	 * @param newSourcesName
+	 *            the input requirement source buffered name list
+	 * @param callBacks
+	 *            {@link Callback} list where add own {@link Callback}
+	 * @param mainCallBack
+	 *            the main {@link Callback} to use when source name is modified
+	 * @return the source name property
+	 * @throws NoSuchMethodException
+	 *             No such method exception
+	 */
 	public ObjectProperty<String> bind(final BufferingManager newBufferingManager,
 			final InputRequirementSource newRequirementSource, final ObservableList<InputRequirementSource> newSources,
 			final ObservableList<ObjectProperty<String>> newSourcesName,
@@ -150,9 +208,7 @@ public class SourceConfigurationController
 				super.validate();
 
 				// must be unique
-				final boolean unique = (sources.stream()
-						.filter(s -> s != requirementSource && Objects.equals(s.getName(), get()))
-						.count() == 0);
+				final boolean unique = (sourcesName.stream().filter(s -> Objects.equals(s.get(), get())).count() == 1);
 				if (!unique)
 				{
 					if (infoValidityProperty().isNull().get())
@@ -170,21 +226,21 @@ public class SourceConfigurationController
 		};
 		bufferingManager.add(nameProperty);
 		titledPane.textProperty().bind(nameProperty);
-		initializeLabeled(name, nameProperty);
+		bindTextInputControl(name, nameProperty);
 
 		nameProperty.addListener(e -> mainCallBack.call(requirementSource));
 
-		initializeLabeled(covers, bufferingManager.bufferingList(requirementSource, InputRequirementSource.COVERS),
-				new InputRequirementSourceStringConverter());
+		final ObservableListBuffering<InputRequirementSource> coversProperty = bufferingManager
+				.bufferingList(requirementSource, InputRequirementSource.COVERS);
+		bindTextInputControl(covers, coversProperty, new InputRequirementSourceStringConverter());
 
 		callBacks.add(c -> {
-			if (c != requirementSource)
-			{
-				// force to refresh validation
-				final String value = covers.getChild().getText();
-				covers.getChild().setText("");
-				covers.getChild().setText(value);
-			}
+			// force to refresh validation using InputRequirementSourceStringConverter
+			final String value = covers.getChild().getText();
+			covers.getChild().setText("");
+			covers.getChild().setText(value);
+
+			nameProperty.validate();
 			return null;
 		});
 
@@ -226,11 +282,17 @@ public class SourceConfigurationController
 		final Node pluginNode = requirementSource.getProvider()
 				.createSourceConfigurationEditor(requirementSource.getConfiguration(), bufferingManager);
 		HBox.setHgrow(pluginNode, Priority.ALWAYS);
-		parserPane.getChildren().add(pluginNode);
+		pluginPane.getChildren().add(pluginNode);
 
 		return nameProperty;
 	}
 
+	/**
+	 * Action event to preview requirement parsing.
+	 * 
+	 * @param event
+	 *            the {@link ActionEvent}
+	 */
 	@FXML
 	protected void preview(final ActionEvent event)
 	{
@@ -280,62 +342,27 @@ public class SourceConfigurationController
 		}
 	}
 
+	/**
+	 * Disconnect the input requirement configuration from the {@link BufferingManager}.
+	 */
 	public void disconnect()
 	{
 		bufferingManager.removeAll(bufferedProperties);
 	}
 
+	/**
+	 * Reconnect the input requirement configuration to the {@link BufferingManager}.
+	 */
 	public void reconnect()
 	{
 		bufferingManager.addAll(bufferedProperties);
 	}
 
-	public static final class EntryWrapper implements Entry<String, Integer>
-	{
-		private final Entry<String, Integer> entry;
-
-		/**
-		 * @param newEntry
-		 */
-		public EntryWrapper(final Entry<String, Integer> newEntry)
-		{
-			entry = newEntry;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see java.util.Map.Entry#getKey()
-		 */
-		@Override
-		public String getKey()
-		{
-			return entry.getKey();
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see java.util.Map.Entry#getValue()
-		 */
-		@Override
-		public Integer getValue()
-		{
-			return entry.getValue();
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see java.util.Map.Entry#setValue(java.lang.Object)
-		 */
-		@Override
-		public Integer setValue(final Integer newValue)
-		{
-			return entry.setValue(newValue);
-		}
-	}
-
+	/**
+	 * Convert comma separated source name to {@link InputRequirementSource} list.
+	 * 
+	 * @author Benoît Moreau (ben.12)
+	 */
 	public final class InputRequirementSourceStringConverter
 			extends StringConverter<ObservableList<InputRequirementSource>>
 	{

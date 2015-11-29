@@ -33,15 +33,20 @@ import com.ben12.reta.plugin.tika.model.TikaSourceConfiguration;
 import com.ben12.reta.plugin.tika.view.SourceConfigurationController;
 
 /**
+ * Tika directory requirement source provider plug-in.
+ * 
  * @author Benoît Moreau (ben.12)
  */
 public class TikaDirectorySourceProviderPlugin extends TikaSourceProviderPlugin
 {
+	/** {@link TikaDirectorySourceProviderPlugin} {@link Logger}. */
 	private static final Logger		LOGGER			= Logger
 			.getLogger(TikaDirectorySourceProviderPlugin.class.getName());
 
+	/** Directory requirement source provider plug-in name translation key. */
 	private static final String		PROVIDER_NAME	= "tika.dir.provider";
 
+	/** Translations {@link ResourceBundle}. */
 	private final ResourceBundle	labels			= ResourceBundle.getBundle("com/ben12/reta/plugin/tika/Labels");
 
 	/*

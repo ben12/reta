@@ -50,7 +50,6 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.stage.Window;
 
 import javax.validation.constraints.NotNull;
 
@@ -69,6 +68,7 @@ import com.google.common.io.Files;
 import net.sf.jett.transform.ExcelTransformer;
 
 import com.ben12.reta.api.RETAParseException;
+import com.ben12.reta.api.RETAParser;
 import com.ben12.reta.api.SourceConfiguration;
 import com.ben12.reta.beans.constraints.IsPath;
 import com.ben12.reta.beans.constraints.PathExists;
@@ -78,7 +78,6 @@ import com.ben12.reta.model.RequirementImpl;
 import com.ben12.reta.plugin.SourceProviderPlugin;
 import com.ben12.reta.view.control.MessageDialog;
 
-// TODO : think of a better implementation
 /**
  * @author Benoît Moreau (ben.12)
  */
@@ -94,14 +93,19 @@ public final class RETAAnalysis
 	/** {@link #output} property name. */
 	public static final String								OUTPUT				= "output";
 
+	/** Singleton instance. */
 	private static RETAAnalysis								instance			= null;
 
+	/** Input requirement source list. */
 	private final ObservableList<InputRequirementSource>	requirementSources	= FXCollections.observableArrayList();
 
+	/** Available plug-ins. */
 	private final Map<String, SourceProviderPlugin>			plugins				= new HashMap<>();
 
+	/** Configuration file opened. */
 	private File											config				= null;
 
+	/** Output Excel file path. */
 	@NotNull(message = "invalid.path")
 	@IsPath
 	@PathExists(kind = KindOfPath.DIRECTORY, parent = true)
@@ -112,12 +116,18 @@ public final class RETAAnalysis
 	// TODO maybe useful to see unknown references and mismatch versions
 	// private final Comparator<Requirement> reqCompId = (req1, req2) -> req1.getId().compareTo(req2.getId());
 
+	/**
+	 * Constructor.
+	 */
 	private RETAAnalysis()
 	{
 		final ServiceLoader<SourceProviderPlugin> serviceLoader = ServiceLoader.load(SourceProviderPlugin.class);
 		serviceLoader.forEach(p -> plugins.put(p.getClass().getName(), p));
 	}
 
+	/**
+	 * @return the singleton instance.
+	 */
 	public static RETAAnalysis getInstance()
 	{
 		if (instance == null)
@@ -153,6 +163,11 @@ public final class RETAAnalysis
 		return requirementSources;
 	}
 
+	/**
+	 * @param sourceName
+	 *            input requirement source name
+	 * @return the {@link InputRequirementSource} with same name
+	 */
 	public Optional<InputRequirementSource> getRequirementSource(final String sourceName)
 	{
 		return requirementSourcesProperty().parallelStream()
@@ -176,6 +191,10 @@ public final class RETAAnalysis
 		return output;
 	}
 
+	/**
+	 * @param iniFile
+	 *            RETA INI file
+	 */
 	public void configure(final File iniFile)
 	{
 		config = iniFile;
@@ -360,6 +379,14 @@ public final class RETAAnalysis
 		}
 	}
 
+	/**
+	 * Parallel parsing of input requirement sources.
+	 * 
+	 * @param progress
+	 *            progression in percent
+	 * @throws RETAParseException
+	 *             RETA Parser exception
+	 */
 	public void parse(final DoubleProperty progress) throws RETAParseException
 	{
 		final RETAParseException[] ex = { null };
@@ -369,7 +396,9 @@ public final class RETAAnalysis
 			try
 			{
 				requirementSource.clear();
-				requirementSource.getConfiguration().parseSource(requirementSource);
+				final RETAParser parser = requirementSource.getProvider()
+						.createParser(requirementSource.getConfiguration());
+				parser.parseSource(requirementSource);
 				synchronized (progress)
 				{
 					progress.set((double) count.incrementAndGet() / requirementSources.size());
@@ -390,56 +419,82 @@ public final class RETAAnalysis
 
 	/**
 	 * @param requirementSource
+	 *            input requirement source
 	 * @param sourceText
+	 *            source content parsed
 	 * @param limit
+	 *            source limit size to parse
+	 * @throws RETAParseException
+	 *             Parsing exception
 	 */
 	public void parse(final InputRequirementSource requirementSource, final StringBuilder sourceText, final int limit)
 			throws RETAParseException
 	{
 		requirementSource.clear();
-		requirementSource.getConfiguration().parseSourcePreview(requirementSource, sourceText, limit);
+		final RETAParser parser = requirementSource.getProvider().createParser(requirementSource.getConfiguration());
+		parser.parseSourcePreview(requirementSource, sourceText, limit);
 	}
 
-	public void analyse() throws IOException
+	/**
+	 * Analyze the parsing result.
+	 * Search requirement references in requirements.
+	 */
+	public void analyse()
 	{
-		for (final InputRequirementSource source : requirementSources)
-		{
+		requirementSources.parallelStream().forEach(source -> {
 			LOGGER.info("Start analyse " + source.getName());
 
 			final List<InputRequirementSource> covers = source.getCovers();
 			final TreeSet<RequirementImpl> reqSource = source.getRequirements();
 			for (final InputRequirementSource coverSource : covers)
 			{
-				final TreeSet<RequirementImpl> reqCover = coverSource.getRequirements();
-				final TreeSet<RequirementImpl> reqCoverred = new TreeSet<>(reqCover);
+				final TreeSet<RequirementImpl> reqToCover = coverSource.getRequirements();
+				final TreeSet<RequirementImpl> reqNotCoverred = new TreeSet<>(reqToCover);
 				for (final RequirementImpl req : reqSource)
 				{
 					final Set<RequirementImpl> realReqCovers = new TreeSet<>();
 					final Iterable<RequirementImpl> refs = req.getReferences();
 					for (final RequirementImpl reqRef : refs)
 					{
-						final RequirementImpl found = reqCover.ceiling(reqRef);
+						final RequirementImpl found = reqToCover.ceiling(reqRef);
 						if (found != null && found.equals(reqRef))
 						{
-							reqCoverred.remove(found);
+							reqNotCoverred.remove(found);
 							realReqCovers.add(found);
-							found.addReferredBy(req);
+							synchronized (RETAAnalysis.this)
+							{
+								found.addReferredBy(req);
+							}
 						}
 					}
 					for (final RequirementImpl realReqCover : realReqCovers)
 					{
-						req.addReference(realReqCover);
+						synchronized (RETAAnalysis.this)
+						{
+							req.addReference(realReqCover);
+						}
 					}
 				}
-				final double coverage = (double) (reqCover.size() - reqCoverred.size()) / reqCover.size();
-				coverSource.getCoversBy().put(source, coverage);
+				final double coverage = (double) (reqToCover.size() - reqNotCoverred.size()) / reqToCover.size();
+				synchronized (RETAAnalysis.this)
+				{
+					coverSource.getCoversBy().put(source, coverage);
+				}
 			}
 
 			LOGGER.info("End analyse " + source.getName());
-		}
+		});
 	}
 
-	public void writeExcel(final Window parent) throws IOException, InvalidFormatException
+	/**
+	 * Write Excel file result of requirement traceability analysis.
+	 * 
+	 * @throws IOException
+	 *             I/O exception
+	 * @throws InvalidFormatException
+	 *             Invalid Excel format exception
+	 */
+	public void writeExcel() throws IOException, InvalidFormatException
 	{
 		LOGGER.info("Start write excel output");
 
@@ -522,30 +577,36 @@ public final class RETAAnalysis
 			}
 		}
 
+		writeExcel(wb, outputFile);
+
+		LOGGER.info("End write excel output");
+	}
+
+	/**
+	 * @param workbook
+	 *            {@link Workbook} to write
+	 * @param outputFile
+	 *            output file path
+	 * @throws IOException
+	 *             I/O exception
+	 */
+	public void writeExcel(final Workbook workbook, final Path outputFile) throws IOException
+	{
 		try (FileOutputStream fos = new FileOutputStream(outputFile.toFile()))
 		{
-			wb.write(fos);
+			workbook.write(fos);
 		}
 		catch (final FileNotFoundException e)
 		{
 			if (MessageDialog.showQuestionMessage(null, "Excel output file must be closed."))
 			{
-				try (FileOutputStream fos = new FileOutputStream(outputFile.toFile()))
-				{
-					wb.write(fos);
-				}
-				catch (final IOException e2)
-				{
-					throw e2;
-				}
+				writeExcel(workbook, outputFile);
 			}
 			else
 			{
 				throw e;
 			}
 		}
-
-		LOGGER.info("End write excel output");
 	}
 
 	@Override

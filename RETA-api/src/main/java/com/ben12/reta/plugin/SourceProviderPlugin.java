@@ -23,10 +23,13 @@ import javafx.scene.Node;
 
 import org.ini4j.Profile.Section;
 
+import com.ben12.reta.api.RETAParser;
 import com.ben12.reta.api.SourceConfiguration;
 import com.ben12.reta.beans.property.buffering.BufferingManager;
 
 /**
+ * Plug-in interface to implement.
+ * 
  * @author Benoît Moreau (ben.12)
  */
 public interface SourceProviderPlugin
@@ -37,6 +40,8 @@ public interface SourceProviderPlugin
 	String getSourceName();
 
 	/**
+	 * Save the {@link SourceConfiguration} of this plug-in in the dedicated INI section.
+	 * 
 	 * @param sourceConfiguration
 	 *            source configuration to save
 	 * @param iniSection
@@ -45,6 +50,8 @@ public interface SourceProviderPlugin
 	void saveSourceConfiguration(SourceConfiguration sourceConfiguration, Section iniSection);
 
 	/**
+	 * Load the {@link SourceConfiguration} of this plug-in from the dedicated INI section.
+	 * 
 	 * @param iniSection
 	 *            INI section where source configuration must be read
 	 * @return source configuration read
@@ -52,11 +59,15 @@ public interface SourceProviderPlugin
 	SourceConfiguration loadSourceConfiguration(Section iniSection);
 
 	/**
+	 * Creation of an empty or default {@link SourceConfiguration} for this plug-in.
+	 * 
 	 * @return new source configuration
 	 */
 	SourceConfiguration createNewSourceConfiguration();
 
 	/**
+	 * Create a new JavaFX GUI for the edition of the {@link SourceConfiguration} of this plug-in.
+	 * 
 	 * @param sourceConfiguration
 	 *            source configuration to edit
 	 * @param bufferingManager
@@ -64,4 +75,13 @@ public interface SourceProviderPlugin
 	 * @return JavaFX GUI for source configuration edition
 	 */
 	Node createSourceConfigurationEditor(SourceConfiguration sourceConfiguration, BufferingManager bufferingManager);
+
+	/**
+	 * Create a new parser for the requirement source configuration.
+	 * 
+	 * @param configuration
+	 *            source configuration to use
+	 * @return the parser to use for the requirement source configuration
+	 */
+	RETAParser createParser(SourceConfiguration configuration);
 }

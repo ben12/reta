@@ -22,11 +22,15 @@ package com.ben12.reta.api;
 import java.util.Map;
 
 /**
+ * Requirement interface used for adding references to other requirements.
+ * 
  * @author Benoît Moreau (ben.12)
  */
 public interface Requirement
 {
 	/**
+	 * Add a new covered requirement reference to this requirement.
+	 * 
 	 * @param summary
 	 *            reference summary
 	 * @param id

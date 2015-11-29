@@ -1,7 +1,7 @@
 // Package : com.ben12.reta.beans.property.buffering
 // File : PropertyBufferingValidation.java
 // 
-// Copyright (C) 2014 Benoît
+// Copyright (C) 2015 Benoît Moreau (ben.12)
 //
 // This file is part of RETA (Requirement Engineering Traceability Analysis).
 //
@@ -26,7 +26,7 @@ import com.ben12.reta.beans.property.validation.BeanPropertyValidation;
  * 
  * @param <T>
  *            {@link PropertyBuffering} value type
- * @author Benoît
+ * @author Benoît Moreau (ben.12)
  */
 public interface PropertyBufferingValidation<T> extends PropertyBuffering<T>, BeanPropertyValidation<T>
 {

@@ -42,7 +42,7 @@
 							</TextField>
 						</ValidationDecorator>
 
-						<HBox fx:id="parserPane" fillHeight="true" GridPane.columnIndex="0" GridPane.rowIndex="2" GridPane.columnSpan="2">
+						<HBox fx:id="pluginPane" fillHeight="true" GridPane.columnIndex="0" GridPane.rowIndex="2" GridPane.columnSpan="2">
 						</HBox>
 
 						<HBox alignment="CENTER_RIGHT" spacing="5" GridPane.columnIndex="0" GridPane.rowIndex="3"

@@ -34,22 +34,28 @@ import org.ini4j.Profile.Section;
 
 import com.google.common.base.Strings;
 
+import com.ben12.reta.api.RETAParser;
 import com.ben12.reta.api.SourceConfiguration;
 import com.ben12.reta.beans.property.buffering.BufferingManager;
 import com.ben12.reta.plugin.SourceProviderPlugin;
 import com.ben12.reta.plugin.tika.model.TikaSourceConfiguration;
+import com.ben12.reta.plugin.tika.parser.RetaTikaParser;
 import com.ben12.reta.plugin.tika.view.SourceConfigurationController;
 
 /**
+ * Tika requirement source provider plug-in.
+ * 
  * @author Benoît Moreau (ben.12)
  */
 public class TikaSourceProviderPlugin implements SourceProviderPlugin
 {
-
+	/** {@link TikaSourceProviderPlugin} {@link Logger}. */
 	private static final Logger		LOGGER			= Logger.getLogger(TikaSourceProviderPlugin.class.getName());
 
+	/** File requirement source provider plug-in name translation key. */
 	private static final String		PROVIDER_NAME	= "tika.file.provider";
 
+	/** Translations {@link ResourceBundle}. */
 	private final ResourceBundle	labels			= ResourceBundle.getBundle("com/ben12/reta/plugin/tika/Labels");
 
 	/*
@@ -275,4 +281,19 @@ public class TikaSourceProviderPlugin implements SourceProviderPlugin
 		return node;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.ben12.reta.plugin.SourceProviderPlugin#createParser(com.ben12.reta.api.SourceConfiguration)
+	 */
+	@Override
+	public RETAParser createParser(final SourceConfiguration sourceConfiguration)
+	{
+		RETAParser parser = null;
+		if (sourceConfiguration instanceof TikaSourceConfiguration)
+		{
+			parser = new RetaTikaParser((TikaSourceConfiguration) sourceConfiguration);
+		}
+		return parser;
+	}
 }

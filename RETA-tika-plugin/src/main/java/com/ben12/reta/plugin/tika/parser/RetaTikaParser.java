@@ -34,6 +34,8 @@ import java.util.regex.Pattern;
 
 import com.google.common.base.Strings;
 
+import com.ben12.reta.api.RETAParseException;
+import com.ben12.reta.api.RETAParser;
 import com.ben12.reta.api.Requirement;
 import com.ben12.reta.api.RequirementSourceManager;
 import com.ben12.reta.api.SourceConfiguration;
@@ -45,7 +47,7 @@ import com.ben12.reta.plugin.tika.model.TikaSourceConfiguration;
  * 
  * @author Benoît Moreau (ben.12)
  */
-public class RetaTikaParser
+public class RetaTikaParser implements RETAParser
 {
 	/** Buffer size (2 Mo). */
 	private static final int				BUFFER_SIZE	= 2 * 1024 * 1024;
@@ -63,6 +65,43 @@ public class RetaTikaParser
 	public RetaTikaParser(final TikaSourceConfiguration theConfiguration)
 	{
 		configuration = theConfiguration;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.ben12.reta.api.SourceConfiguration#parseSource(com.ben12.reta.api.RequirementSourceManager)
+	 */
+	@Override
+	public void parseSource(final RequirementSourceManager manager) throws RETAParseException
+	{
+		try
+		{
+			parse(manager, null, Integer.MAX_VALUE);
+		}
+		catch (final IOException e)
+		{
+			throw new RETAParseException(e);
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.ben12.reta.api.SourceConfiguration#parseSourcePreview(com.ben12.reta.api.RequirementSourceManager, java.lang.StringBuilder, int)
+	 */
+	@Override
+	public void parseSourcePreview(final RequirementSourceManager manager, final StringBuilder output, final int limit)
+			throws RETAParseException
+	{
+		try
+		{
+			parse(manager, output, limit);
+		}
+		catch (final IOException e)
+		{
+			throw new RETAParseException(e);
+		}
 	}
 
 	/**
@@ -225,7 +264,7 @@ public class RetaTikaParser
 				// find start is at the end of buffer and we are not at the eof.
 				if (matcherStart.end() == builder.length() && r >= 0 && path.equals(newPath))
 				{
-					// requirement could be partial
+					// requirement could be truncated
 					break;
 				}
 

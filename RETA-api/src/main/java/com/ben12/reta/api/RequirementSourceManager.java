@@ -22,6 +22,8 @@ package com.ben12.reta.api;
 import java.util.Map;
 
 /**
+ * Requirement manager interface for a requirement source. Used for adding requirement.
+ * 
  * @author Benoît Moreau (ben.12)
  */
 public interface RequirementSourceManager
@@ -32,6 +34,9 @@ public interface RequirementSourceManager
 	String getName();
 
 	/**
+	 * Add and return the new {@link Requirement}.<br>
+	 * Use the returned {@link Requirement} for add the covered references ({@link Requirement#addReference(String, String, String, Map)}).
+	 * 
 	 * @param summary
 	 *            requirement summary
 	 * @param id
@@ -44,5 +49,6 @@ public interface RequirementSourceManager
 	 *            requirement additional attributes
 	 * @return requirement added, null if requirement (id, version) already exists
 	 */
-	Requirement addRequirement(String summary, String id, String version, String content, Map<String, String> attributes);
+	Requirement addRequirement(String summary, String id, String version, String content,
+			Map<String, String> attributes);
 }
