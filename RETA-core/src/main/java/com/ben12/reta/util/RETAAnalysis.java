@@ -51,12 +51,11 @@ import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
-import javax.validation.constraints.NotNull;
-
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.hibernate.validator.constraints.NotEmpty;
 import org.hibernate.validator.valuehandling.UnwrapValidatedValue;
 import org.ini4j.Profile.Section;
 import org.ini4j.Wini;
@@ -106,7 +105,7 @@ public final class RETAAnalysis
 	private File											config				= null;
 
 	/** Output Excel file path. */
-	@NotNull(message = "invalid.path")
+	@NotEmpty
 	@IsPath
 	@PathExists(kind = KindOfPath.DIRECTORY, parent = true)
 	@UnwrapValidatedValue

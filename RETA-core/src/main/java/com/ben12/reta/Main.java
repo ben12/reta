@@ -32,6 +32,7 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 import com.ben12.reta.view.MainConfigurationController;
@@ -63,6 +64,8 @@ public class Main extends Application
 
 			stage.setScene(new Scene(root));
 			stage.setTitle(labels.getString("title"));
+			stage.getIcons()
+					.add(new Image(Main.class.getResourceAsStream("/com/ben12/reta/resources/images/reta.png")));
 			stage.sizeToScene();
 			stage.show();
 
