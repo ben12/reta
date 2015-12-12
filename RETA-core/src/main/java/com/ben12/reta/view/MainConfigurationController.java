@@ -248,8 +248,7 @@ public class MainConfigurationController implements Initializable
 			downSource.disableProperty().bind(sourceConfigurations.expandedPaneProperty().isNull().or(
 					indexOfExpendedPane.greaterThan(Bindings.size(sourceConfigurations.getPanes()).subtract(2))));
 
-			save.disableProperty().bind(Bindings.not(bufferingManager.bufferingProperty())
-					.or(Bindings.not(bufferingManager.validProperty())));
+			save.disableProperty().bind(Bindings.not(bufferingManager.validProperty()));
 			cancel.disableProperty().bind(Bindings.not(bufferingManager.bufferingProperty()));
 			run.disableProperty()
 					.bind(bufferingManager.bufferingProperty().or(Bindings.not(bufferingManager.validProperty())));
