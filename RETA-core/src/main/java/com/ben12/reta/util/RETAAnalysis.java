@@ -344,7 +344,7 @@ public final class RETAAnalysis
 		{
 			final Section generalSection = ini.add("GENERAL");
 
-			generalSection.add("output", output.toString());
+			generalSection.add("output", output.get());
 
 			final List<String> inputs = new ArrayList<>();
 
