@@ -10,9 +10,6 @@
 		<artifactId>reta-parent</artifactId>
 		<version>1.0.0</version>
 	</parent>
-	<properties>
-		<project.build.sourceEncoding>cp1252</project.build.sourceEncoding>
-	</properties>
 	<contributors>
 		<contributor>
 			<name>ben.12</name>

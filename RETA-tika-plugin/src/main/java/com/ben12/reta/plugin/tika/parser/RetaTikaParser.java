@@ -350,7 +350,7 @@ public class RetaTikaParser implements RETAParser
 			final StringBuilder builder, final Path path, final Matcher matcherStart, final Matcher matcherEnd,
 			final Pattern patternRef)
 	{
-		Requirement requirement;
+		final Requirement requirement;
 		int endPos = matcherStart.end();
 		int endEndPos = matcherStart.end();
 		if (matcherEnd != null)
@@ -472,21 +472,23 @@ public class RetaTikaParser implements RETAParser
 	private void fillReaders(final ConcatReader concatReader, final Path base, final Path root, final Pattern filter)
 			throws IOException
 	{
-		final DirectoryStream<Path> stream = java.nio.file.Files.newDirectoryStream(root);
-		final Iterator<Path> iterator = stream.iterator();
-		while (iterator.hasNext())
+		try (DirectoryStream<Path> stream = java.nio.file.Files.newDirectoryStream(root))
 		{
-			final Path path = iterator.next();
-			if (path.toFile().isFile())
+			final Iterator<Path> iterator = stream.iterator();
+			while (iterator.hasNext())
 			{
-				if (filter == null || filter.matcher(base.relativize(path).toString()).find())
+				final Path path = iterator.next();
+				if (path.toFile().isFile())
 				{
-					concatReader.add(path);
+					if (filter == null || filter.matcher(base.relativize(path).toString()).find())
+					{
+						concatReader.add(path);
+					}
 				}
-			}
-			else if (path.startsWith(root) && !path.equals(root))
-			{
-				fillReaders(concatReader, base, path, filter);
+				else if (path.startsWith(root) && !path.equals(root))
+				{
+					fillReaders(concatReader, base, path, filter);
+				}
 			}
 		}
 	}

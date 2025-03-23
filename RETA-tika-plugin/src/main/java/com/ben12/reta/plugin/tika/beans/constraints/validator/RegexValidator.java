@@ -21,11 +21,12 @@ package com.ben12.reta.plugin.tika.beans.constraints.validator;
 
 import java.util.regex.Pattern;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import com.google.common.base.Strings;
+
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 import com.ben12.reta.plugin.tika.beans.constraints.Regex;
-import com.google.common.base.Strings;
 
 /**
  * @author Benoît Moreau (ben.12)

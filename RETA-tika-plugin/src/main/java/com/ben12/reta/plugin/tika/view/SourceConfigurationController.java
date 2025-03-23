@@ -214,7 +214,7 @@ public class SourceConfigurationController
 			return cdf.getValue().valueProperty();
 		};
 
-		attributeMap = new ObservableMapBuffering<String, Integer>(TikaSourceConfiguration.class,
+		attributeMap = new ObservableMapBuffering<>(TikaSourceConfiguration.class,
 				TikaSourceConfiguration.ATTRIBUTES_GROUP, newSourceConfiguration.getAttributesGroup())
 		{
 			@Override
@@ -266,7 +266,7 @@ public class SourceConfigurationController
 		reqAttGroupColumn.setCellValueFactory(cvpValue);
 		reqAttGroupColumn.setCellFactory(TextFieldTableCell.forTableColumn(new IntegerStringConverter()));
 
-		referenceMap = new ObservableMapBuffering<String, Integer>(TikaSourceConfiguration.class,
+		referenceMap = new ObservableMapBuffering<>(TikaSourceConfiguration.class,
 				TikaSourceConfiguration.REF_ATTRIBUTES_GROUP, newSourceConfiguration.getRefAttributesGroup())
 		{
 			@Override
@@ -326,9 +326,11 @@ public class SourceConfigurationController
 		final ReadOnlyObjectProperty<MapTableView<String, Integer>.Entry> selectedAttribute = attributesTable.getChild()
 				.getSelectionModel()
 				.selectedItemProperty();
-		deleteAttribute.disableProperty().bind(selectedAttribute.isNull()
-				.or(Bindings.selectString(selectedAttribute, "key").isEqualTo(SourceConfiguration.ATTRIBUTE_ID))
-				.or(Bindings.selectString(selectedAttribute, "key").isEqualTo(SourceConfiguration.ATTRIBUTE_TEXT)));
+		deleteAttribute.disableProperty()
+				.bind(selectedAttribute.isNull()
+						.or(Bindings.selectString(selectedAttribute, "key").isEqualTo(SourceConfiguration.ATTRIBUTE_ID))
+						.or(Bindings.selectString(selectedAttribute, "key")
+								.isEqualTo(SourceConfiguration.ATTRIBUTE_TEXT)));
 		deleteReference.disableProperty()
 				.bind(referencesTable.getChild().getSelectionModel().selectedItemProperty().isNull());
 	}
@@ -356,7 +358,7 @@ public class SourceConfigurationController
 					file = null;
 				}
 				return file;
-			} , sourcePath.getChild().textProperty());
+			}, sourcePath.getChild().textProperty());
 			final ObjectBinding<String> currentFileName = Bindings.createObjectBinding(() -> {
 				final File file = new File(sourcePath.getChild().getText());
 				String fileName = null;
@@ -365,7 +367,7 @@ public class SourceConfigurationController
 					fileName = file.getName();
 				}
 				return fileName;
-			} , sourcePath.getChild().textProperty());
+			}, sourcePath.getChild().textProperty());
 			fileChooser.initialDirectoryProperty().bind(currentDir);
 			fileChooser.initialFileNameProperty().bind(currentFileName);
 		}
@@ -397,7 +399,7 @@ public class SourceConfigurationController
 				file = null;
 			}
 			return file;
-		} , sourcePath.getChild().textProperty());
+		}, sourcePath.getChild().textProperty());
 		folderChooser.initialDirectoryProperty().bind(currentDir);
 		final File file = folderChooser.showDialog(null);
 		if (file != null)

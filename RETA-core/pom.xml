@@ -11,7 +11,7 @@
 		<version>1.0.0</version>
 	</parent>
 	<properties>
-		<project.build.sourceEncoding>cp1252</project.build.sourceEncoding>
+		<poi.version>5.4.0</poi.version>
 	</properties>
 	<contributors>
 		<contributor>
@@ -33,11 +33,6 @@
 			<artifactId>reta-api</artifactId>
 			<version>[1.0.0,1.1.0)</version>
 		</dependency>
-		<dependency>
-			<groupId>net.sf.jett</groupId>
-			<artifactId>jett-core</artifactId>
-			<version>0.9.1</version>
-		</dependency>
 
 		<!-- Add Tika dependencies for using reta-tika-plugin in Eclipse IDE -->
 		<dependency>
@@ -51,17 +46,17 @@
 		<dependency>
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi</artifactId>
-			<version>3.13</version>
+			<version>${poi.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi-ooxml</artifactId>
-			<version>3.13</version>
+			<version>${poi.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi-scratchpad</artifactId>
-			<version>3.13</version>
+			<version>${poi.version}</version>
 		</dependency>
 	</dependencies>
 	<build>

@@ -80,7 +80,7 @@ public class Main extends Application
 		catch (final Exception e)
 		{
 			Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", e);
-			System.exit(0);
+			System.exit(1);
 		}
 	}
 
@@ -92,8 +92,9 @@ public class Main extends Application
 	{
 		try
 		{
-			LogManager.getLogManager().readConfiguration(
-					Main.class.getResourceAsStream("/com/ben12/reta/resources/logging/logging.properties"));
+			LogManager.getLogManager()
+					.readConfiguration(
+							Main.class.getResourceAsStream("/com/ben12/reta/resources/logging/logging.properties"));
 		}
 		catch (final IOException e)
 		{
