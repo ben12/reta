@@ -27,9 +27,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import javafx.application.Platform;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.StringProperty;
-import javafx.beans.value.ObservableValue;
+import javafx.concurrent.Task;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -194,8 +192,7 @@ public final class MessageDialog
 				.map((c) -> new ChoiceWrapper<T>(c.getKey(), c.getValue()))
 				.collect(Collectors.toList());
 
-		final ChoiceDialog<ChoiceWrapper<T>> dialog = new ChoiceDialog<ChoiceWrapper<T>>(choiceWrapper.get(0),
-				choiceWrapper);
+		final ChoiceDialog<ChoiceWrapper<T>> dialog = new ChoiceDialog<>(choiceWrapper.get(0), choiceWrapper);
 		initDialog(parent, dialog);
 		dialog.setContentText(message);
 		dialog.showAndWait();
@@ -210,19 +207,14 @@ public final class MessageDialog
 	 *            dialog parent, if null default parent is used
 	 * @param title
 	 *            dialog title
-	 * @param message
-	 *            dialog message property
-	 * @param progress
-	 *            progress bar value
+	 * @param task
+	 *            progress task
 	 */
-	public static void showProgressBar(final Window parent, final String title, final StringProperty message,
-			final DoubleProperty progress)
+	public static void showProgressBar(final Window parent, final String title, final Task<?> task)
 	{
 		if (!Platform.isFxApplicationThread())
 		{
-			Platform.runLater(() -> {
-				showProgressBar(parent, title, message, progress);
-			});
+			Platform.runLater(() -> showProgressBar(parent, title, task));
 			Thread.yield();
 			return;
 		}
@@ -236,33 +228,31 @@ public final class MessageDialog
 		pane.setPrefWidth(500);
 
 		// Info message
-		final Label messagePane = new Label(message.get());
+		final Label messagePane = new Label();
 		messagePane.setWrapText(true);
 		messagePane.setMaxHeight(Integer.MAX_VALUE);
 		messagePane.setMaxWidth(500);
-		message.addListener((observable, oldValue, newValue) -> Platform.runLater(() -> {
-			messagePane.setText(newValue);
-		}));
+		messagePane.textProperty().bind(task.messageProperty());
 		VBox.setVgrow(messagePane, Priority.ALWAYS);
 
 		// Progress bar
-		final ProgressBar progressBar = new ProgressBar(progress.get());
-		progress.addListener((final ObservableValue<? extends Number> observable, final Number oldValue,
-				final Number newValue) -> Platform.runLater(() -> progressBar.setProgress(newValue.doubleValue())));
+		final ProgressBar progressBar = new ProgressBar();
+		progressBar.progressProperty().bind(task.progressProperty());
 		progressBar.setMaxWidth(Integer.MAX_VALUE);
 
 		// OK button
 		dialog.getDialogPane().getButtonTypes().add(ButtonType.OK);
-		progress.addListener((observable, oldValue, newValue) -> Platform.runLater(
-				() -> dialog.getDialogPane().lookupButton(ButtonType.OK).setDisable(newValue.doubleValue() < 1.0)));
-		dialog.getDialogPane().lookupButton(ButtonType.OK).setDisable(progress.get() < 1.0);
+		dialog.getDialogPane()
+				.lookupButton(ButtonType.OK)
+				.disableProperty()
+				.bind(task.progressProperty().map(p -> p.doubleValue() < 1.0));
 
 		pane.getChildren().addAll(messagePane, progressBar);
 		dialog.getDialogPane().setContent(pane);
 
 		// Close only for ended progression
 		final EventHandler<Event> onCloseRequest = (e) -> {
-			if (progress.get() < 1.0)
+			if (task.getProgress() < 1.0)
 			{
 				e.consume();
 			}

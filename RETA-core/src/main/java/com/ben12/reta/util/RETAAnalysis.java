@@ -39,11 +39,11 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -381,7 +381,7 @@ public final class RETAAnalysis
 	 * @throws RETAParseException
 	 *             RETA Parser exception
 	 */
-	public void parse(final DoubleProperty progress) throws RETAParseException
+	public void parse(final Consumer<Double> progress) throws RETAParseException
 	{
 		final RETAParseException[] ex = { null };
 		final AtomicInteger count = new AtomicInteger(0);
@@ -395,7 +395,7 @@ public final class RETAAnalysis
 				parser.parseSource(requirementSource);
 				synchronized (progress)
 				{
-					progress.set((double) count.incrementAndGet() / requirementSources.size());
+					progress.accept((double) count.incrementAndGet() / requirementSources.size());
 				}
 			}
 			catch (final RETAParseException e)
