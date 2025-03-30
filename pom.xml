@@ -32,6 +32,7 @@
 		<module>RETA-api</module>
 		<module>RETA-core</module>
 		<module>RETA-tika-plugin</module>
+		<module>RETA-packaging</module>
 	</modules>
 	<dependencies>
 		<dependency>
@@ -42,21 +43,6 @@
 		<dependency>
 			<groupId>org.openjfx</groupId>
 			<artifactId>javafx-fxml</artifactId>
-			<version>${javafx.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.openjfx</groupId>
-			<artifactId>javafx-media</artifactId>
-			<version>${javafx.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.openjfx</groupId>
-			<artifactId>javafx-swing</artifactId>
-			<version>${javafx.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.openjfx</groupId>
-			<artifactId>javafx-web</artifactId>
 			<version>${javafx.version}</version>
 		</dependency>
 		<dependency>
@@ -95,6 +81,25 @@
 			<version>2.24.3</version>
 		</dependency>
 	</dependencies>
+	<dependencyManagement>
+		<dependencies>
+		    <dependency>
+		      <groupId>com.ben12</groupId>
+		      <artifactId>reta-api</artifactId>
+		      <version>${project.version}</version>
+		    </dependency>
+		    <dependency>
+		      <groupId>com.ben12</groupId>
+		      <artifactId>reta-core</artifactId>
+		      <version>${project.version}</version>
+		    </dependency>
+		    <dependency>
+		      <groupId>com.ben12</groupId>
+		      <artifactId>reta-tika-plugin</artifactId>
+		      <version>${project.version}</version>
+		    </dependency>
+		</dependencies>
+	</dependencyManagement>
 	<distributionManagement>
 		<site>
 			<id>RETA</id>
@@ -108,14 +113,6 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
 					<version>3.14.0</version>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-dependency-plugin</artifactId>
-					<version>3.8.1</version>
-					<configuration>
-						<outputDirectory>${project.build.directory}/libs</outputDirectory>
-					</configuration>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>

@@ -176,6 +176,7 @@ public class MainConfigurationController implements Initializable
 			sources.clear();
 			sources.addAll(RETAAnalysis.getInstance().requirementSourcesProperty());
 
+			sourcesName.clear();
 			for (final InputRequirementSource requirementSource : sources)
 			{
 				sourcesName.add(addSource(requirementSource));
@@ -526,7 +527,7 @@ public class MainConfigurationController implements Initializable
 				}
 				catch (final Exception e)
 				{
-					Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", e);
+					Logger.getLogger(getClass().getName()).log(Level.SEVERE, "Analysis error", e);
 					updateMessage(labels.getString("progress.error") + e.getLocalizedMessage());
 				}
 				finally

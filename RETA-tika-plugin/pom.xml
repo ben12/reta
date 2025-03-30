@@ -32,7 +32,6 @@
 		<dependency>
 			<groupId>com.ben12</groupId>
 			<artifactId>reta-api</artifactId>
-			<version>[1.0.0,1.1.0)</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.tika</groupId>

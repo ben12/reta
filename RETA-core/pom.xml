@@ -31,14 +31,12 @@
 		<dependency>
 			<groupId>com.ben12</groupId>
 			<artifactId>reta-api</artifactId>
-			<version>[1.0.0,1.1.0)</version>
 		</dependency>
 
 		<!-- Add Tika dependencies for using reta-tika-plugin in Eclipse IDE -->
 		<dependency>
 			<groupId>com.ben12</groupId>
 			<artifactId>reta-tika-plugin</artifactId>
-			<version>[1.0.0,1.1.0)</version>
 			<scope>runtime</scope>
 		</dependency>
 
@@ -71,6 +69,21 @@
 				<directory>src/main/resources</directory>
 			</resource>
 		</resources>
+		<plugins>
+	      	<plugin>
+	        	<groupId>org.apache.maven.plugins</groupId>
+	        	<artifactId>maven-jar-plugin</artifactId>
+		        <configuration>
+		          <archive>
+		            <manifest>
+		              <addClasspath>true</addClasspath>
+                      <classpathPrefix>libs/</classpathPrefix>
+                      <mainClass>com.ben12.reta.Launcher</mainClass>
+		            </manifest>
+		          </archive>
+		        </configuration>
+	        </plugin>
+		</plugins>
 	</build>
 	<reporting>
 		<plugins>
