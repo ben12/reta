@@ -14,12 +14,15 @@ jobs:
         include:
           - os: ubuntu-latest
             mvn: ./mvnw
+            type: deb
             jpackage-cfg: jpackage-linux.cfg
           - os: centos-latest
-            mvn: ./mvnw 
+            mvn: ./mvnw
+            type: rpm
             jpackage-cfg: jpackage-linux.cfg
           - os: windows-latest
             mvn: mvnw
+            type: msi
             jpackage-cfg: jpackage-windows.cfg
 
     steps:
@@ -36,7 +39,7 @@ jobs:
           distribution: 'temurin'
           java-version: ${{ matrix.java-version }}
       - name: Build Packages
-        run: ${{ matrix.mvn }} -B clean package -DskipTests=true -Dskip.jpackage=false "-Djpackage-cfg=${{ matrix.jpackage-cfg }}"
+        run: ${{ matrix.mvn }} -B clean package -DskipTests=true -Dskip.jpackage=false -Djpackage-cfg=${{ matrix.jpackage-cfg }} -Djpackage.type=${{ matrix.type }}
       - name: Add generated binaries to artifact
         uses: actions/upload-artifact@v4
         with:

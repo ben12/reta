@@ -13,6 +13,7 @@
 		<maven.compiler.source>21</maven.compiler.source>
 		<maven.compiler.target>21</maven.compiler.target>
 		<jpackage-cfg>jpackage-windows.cfg</jpackage-cfg>
+		<jpackage.type>msi</jpackage.type>
 		<skip.dependencies>true</skip.dependencies>
 		<skip.jpackage>true</skip.jpackage>
 		<skip.assembly>true</skip.assembly>
@@ -112,6 +113,8 @@
 							<executable>jpackage</executable>
 							<skip>${skip.jpackage}</skip>
 							<arguments>
+								<argument>--type</argument>
+								<argument>${jpackage.type}</argument>
 								<argument>--app-version</argument>
 								<argument>${project.version}</argument>
 								<argument>--dest</argument>
