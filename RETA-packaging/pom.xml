@@ -90,7 +90,7 @@
 						<phase>package</phase>
 						<configuration>
 							<skipAssembly>${skip.assembly}</skipAssembly>
-							<finalName>RETA-${project.version}</finalName>
+							<finalName>reta-${project.version}</finalName>
 							<descriptors>
 								<descriptor>assembly.xml</descriptor>
 							</descriptors>
