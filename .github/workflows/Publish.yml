@@ -15,6 +15,9 @@ jobs:
           - os: ubuntu-latest
             type: deb
             jpackage-cfg: jpackage-linux.cfg
+          - os: ubuntu-latest
+            type: rpm
+            jpackage-cfg: jpackage-linux.cfg
           - os: windows-latest
             type: msi
             jpackage-cfg: jpackage-windows.cfg
@@ -74,6 +77,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: >-
+          cd ./RETA-packaging/target && 
           gh release upload ${{ github.event.release.tag_name }}
-            $(ls reta-*.msi reta*.deb reta-*.zip 2>/dev/null)
+            $(ls reta-*.msi reta*.deb reta*.rpm reta-*.zip 2>/dev/null)
     
