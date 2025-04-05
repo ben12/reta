@@ -9,14 +9,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-latest, centos-latest, windows-latest ]
+        os: [ ubuntu-latest, windows-latest ]
         java-version: [ 21 ]
         include:
           - os: ubuntu-latest
             type: deb
-            jpackage-cfg: jpackage-linux.cfg
-          - os: centos-latest
-            type: rpm
             jpackage-cfg: jpackage-linux.cfg
           - os: windows-latest
             type: msi
@@ -71,5 +68,5 @@ jobs:
         run: >-
           cd ./RETA-packaging/target && 
           gh release upload ${{ github.event.release.tag_name }}
-            $(ls reta-*.msi reta*.deb reta*.rpm reta-*.zip 2>/dev/null)
+            $(ls reta-*.msi reta*.deb reta-*.zip 2>/dev/null)
     
