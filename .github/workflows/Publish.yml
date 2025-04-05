@@ -48,6 +48,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 21
       - name: build RETA
         run: ./mvnw -B clean package -DskipTests=true -Dskip.assembly=false
       - name: Add generated binaries to artifact
