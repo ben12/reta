@@ -16,7 +16,7 @@ jobs:
             mvn: ./mvnw
             jpackage-cfg: jpackage-linux.cfg
           - os: centos-latest
-            mvn: ./mvnw
+            mvn: ./mvnw 
             jpackage-cfg: jpackage-linux.cfg
           - os: windows-latest
             mvn: mvnw
@@ -36,7 +36,7 @@ jobs:
           distribution: 'temurin'
           java-version: ${{ matrix.java-version }}
       - name: Build Packages
-        run: ${{ matrix.mvn }} clean package -DskipTests=true -Dskip.jpackage=false "-Djpackage-cfg=${{ matrix.jpackage-cfg }}"
+        run: ${{ matrix.mvn }} -B clean package -DskipTests=true -Dskip.jpackage=false "-Djpackage-cfg=${{ matrix.jpackage-cfg }}"
       - name: Add generated binaries to artifact
         uses: actions/upload-artifact@v4
         with:
@@ -52,7 +52,7 @@ jobs:
     needs: package-installers
     steps:
       - name: build RETA
-        run: ./mvnw clean package -DskipTests=true -Dskip.assembly=false
+        run: ./mvnw -B clean package -DskipTests=true -Dskip.assembly=false
       - name: Add generated binaries to artifact
         uses: actions/upload-artifact@v4
         with:
