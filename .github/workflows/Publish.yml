@@ -4,50 +4,57 @@ on:
     types: [released]
 
 jobs:
-  package-installers:
+  package-linux:
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ ubuntu-latest, windows-latest ]
-        java-version: [ 21 ]
-        include:
-          - os: ubuntu-latest
-            type: deb
-            jpackage-cfg: jpackage-linux.cfg
-          - os: ubuntu-latest
-            type: rpm
-            jpackage-cfg: jpackage-linux.cfg
-          - os: windows-latest
-            type: msi
-            jpackage-cfg: jpackage-windows.cfg
+        type: [ deb, rpm ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 21
+      - name: Build Packages
+        run: ./mvnw -B clean package "-DskipTests=true" "-Dskip.jpackage=false" "-Djpackage-cfg=jpackage-linux.cfg" "-Djpackage.type=${{ matrix.type }}"
+      - name: Add generated binaries to artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: reta-${{ matrix.type }}
+          path: ./RETA-packaging/target/reta*.${{ matrix.type }}
+          if-no-files-found: error
+
+  package-windows:
+
+    runs-on: windows-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install DOTNET
         uses: actions/setup-dotnet@v1
-        if: runner.os == 'Windows'
       - name: Install WiX
         run: dotnet tool install --global wix
-        if: runner.os == 'Windows'
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: ${{ matrix.java-version }}
+          java-version: 21
       - name: Build Packages
-        run: ./mvnw -B clean package "-DskipTests=true" "-Dskip.jpackage=false" "-Djpackage-cfg=${{ matrix.jpackage-cfg }}" "-Djpackage.type=${{ matrix.type }}"
+        run: ./mvnw -B clean package "-DskipTests=true" "-Dskip.jpackage=false" "-Djpackage-cfg=jpackage-windows.cfg" "-Djpackage.type=msi"
       - name: Add generated binaries to artifact
         uses: actions/upload-artifact@v4
         with:
-          name: reta-${{ matrix.os }}
-          path: ./RETA-packaging/target/reta*.${{ matrix.type }}
+          name: reta-msi
+          path: ./RETA-packaging/target/reta*.msi
           if-no-files-found: error
 
   package-archive:
     runs-on: ubuntu-latest
-    needs: package-installers
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -67,7 +74,7 @@ jobs:
 
   upload:
     runs-on: ubuntu-latest
-    needs: [ package-installers, package-archive ]
+    needs: [ package-linux, package-windows, package-archive ]
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
