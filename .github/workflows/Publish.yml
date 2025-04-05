@@ -13,15 +13,12 @@ jobs:
         java-version: [ 21 ]
         include:
           - os: ubuntu-latest
-            mvn: ./mvnw
             type: deb
             jpackage-cfg: jpackage-linux.cfg
           - os: centos-latest
-            mvn: ./mvnw
             type: rpm
             jpackage-cfg: jpackage-linux.cfg
           - os: windows-latest
-            mvn: mvnw
             type: msi
             jpackage-cfg: jpackage-windows.cfg
 
@@ -39,15 +36,12 @@ jobs:
           distribution: 'temurin'
           java-version: ${{ matrix.java-version }}
       - name: Build Packages
-        run: ${{ matrix.mvn }} -B clean package -DskipTests=true -Dskip.jpackage=false -Djpackage-cfg=${{ matrix.jpackage-cfg }} -Djpackage.type=${{ matrix.type }}
+        run: ./mvnw -B clean package -DskipTests=true -Dskip.jpackage=false -Djpackage-cfg=${{ matrix.jpackage-cfg }} -Djpackage.type=${{ matrix.type }}
       - name: Add generated binaries to artifact
         uses: actions/upload-artifact@v4
         with:
           name: reta-${{ matrix.os }}
-          path: |
-            RETA-packaging/target/RETA-*.msi
-            RETA-packaging/target/RETA-*.deb
-            RETA-packaging/target/RETA-*.rpm
+          path: ./RETA-packaging/target/RETA-*.${{ matrix.type }}
           if-no-files-found: error
 
   package-archive:
@@ -60,8 +54,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: reta-assembly
-          path: |
-            RETA-packaging/target/RETA-*.zip
+          path: ./RETA-packaging/target/RETA-*.zip
           if-no-files-found: error
 
   upload:
@@ -76,7 +69,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: >-
-          cd RETA-packaging/target && 
+          cd ./RETA-packaging/target && 
           gh release upload ${{ github.event.release.tag_name }}
             $(ls RETA-*.msi RETA-*.deb RETA-*.rpm RETA-*.zip 2>/dev/null)
     
