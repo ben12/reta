@@ -1,0 +1,79 @@
+name: Publish
+on:
+  release:
+    types: [released]
+
+jobs:
+  package-installers:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, centos-latest, windows-latest ]
+        java-version: [ 21 ]
+        include:
+          - os: ubuntu-latest
+            mvn: ./mvnw
+            jpackage-cfg: jpackage-linux.cfg
+          - os: centos-latest
+            mvn: ./mvnw
+            jpackage-cfg: jpackage-linux.cfg
+          - os: windows-latest
+            mvn: mvnw
+            jpackage-cfg: jpackage-windows.cfg
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install DOTNET
+        uses: actions/setup-dotnet@v1
+        if: runner.os == 'Windows'
+      - name: Install WiX
+        run: dotnet tool install --global wix
+        if: runner.os == 'Windows'
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ matrix.java-version }}
+      - name: Build Packages
+        run: ${{ matrix.mvn }} clean package -DskipTests=true -Dskip.jpackage=false "-Djpackage-cfg=${{ matrix.jpackage-cfg }}"
+      - name: Add generated binaries to artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: reta-${{ matrix.os }}
+          path: |
+            RETA-packaging/target/RETA-*.msi
+            RETA-packaging/target/RETA-*.deb
+            RETA-packaging/target/RETA-*.rpm
+          if-no-files-found: error
+
+  package-archive:
+    runs-on: ubuntu-latest
+    needs: package-installers
+    steps:
+      - name: build RETA
+        run: ./mvnw clean package -DskipTests=true -Dskip.assembly=false
+      - name: Add generated binaries to artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: reta-assembly
+          path: |
+            RETA-packaging/target/RETA-*.zip
+          if-no-files-found: error
+
+  upload:
+    runs-on: ubuntu-latest
+    needs: [ package-installers, package-archive ]
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - name: Upload to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >-
+          cd RETA-packaging/target && 
+          gh release upload ${{ github.event.release.tag_name }}
+            $(ls RETA-*.msi RETA-*.deb RETA-*.rpm RETA-*.zip 2>/dev/null)
+    

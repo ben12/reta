@@ -4,14 +4,45 @@
 	<parent>
 		<groupId>com.ben12</groupId>
 		<artifactId>reta-parent</artifactId>
-		<version>1.0.0</version>
+		<version>1.1.0</version>
 	</parent>
+	<name>Requirement Engineering Traceability Analysis (packaging)</name>
 	<artifactId>reta-packaging</artifactId>
 	<packaging>pom</packaging>
 	<properties>
 		<maven.compiler.source>21</maven.compiler.source>
 		<maven.compiler.target>21</maven.compiler.target>
+		<jpackage-cfg>jpackage-windows.cfg</jpackage-cfg>
+		<skip.dependencies>true</skip.dependencies>
+		<skip.jpackage>true</skip.jpackage>
+		<skip.assembly>true</skip.assembly>
 	</properties>
+	<profiles>
+		<profile>
+			<id>copy-dependencies-from-jpackage</id>
+			<activation>
+				<property>
+					<name>skip.jpackage</name>
+					<value>false</value>
+				</property>
+			</activation>
+			<properties>
+				<skip.dependencies>false</skip.dependencies>
+			</properties>
+		</profile>
+		<profile>
+			<id>copy-dependencies-from-assembly</id>
+			<activation>
+				<property>
+					<name>skip.assembly</name>
+					<value>false</value>
+				</property>
+			</activation>
+			<properties>
+				<skip.dependencies>false</skip.dependencies>
+			</properties>
+		</profile>
+	</profiles>
 	<dependencies>
 		<dependency>
 			<groupId>com.ben12</groupId>
@@ -42,7 +73,29 @@
 				</executions>
 				<configuration>
 					<outputDirectory>${project.build.directory}/app/libs</outputDirectory>
+					<skip>${skip.dependencies}</skip>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>3.7.1</version>
+				<executions>
+					<execution>
+						<id>assembly</id>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<phase>package</phase>
+						<configuration>
+							<skipAssembly>${skip.assembly}</skipAssembly>
+							<finalName>RETA-${project.version}</finalName>
+							<descriptors>
+								<descriptor>assembly.xml</descriptor>
+							</descriptors>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
@@ -57,42 +110,18 @@
 						<phase>package</phase>
 						<configuration>
 							<executable>jpackage</executable>
+							<skip>${skip.jpackage}</skip>
 							<arguments>
-								<argument>--type</argument>
-								<argument>msi</argument>
 								<argument>--app-version</argument>
 								<argument>${project.version}</argument>
-								<argument>--copyright</argument>
-								<argument>Copyright © 2025 Benoît Moreau (ben.12)</argument>
-								<argument>--icon</argument>
-								<argument>reta.ico</argument>
-								<argument>--name</argument>
-								<argument>RETA</argument>
-								<argument>--description</argument>
-								<argument>Requirement Engineering Traceability Analysis</argument>
 								<argument>--dest</argument>
 								<argument>${project.build.directory}</argument>
-								<argument>--vendor</argument>
-								<argument>ben.12</argument>
-								<argument>--add-modules</argument>
-								<argument>java.base,java.logging,java.desktop,java.xml,java.scripting,java.sql,jdk.charsets,jdk.unsupported</argument>
 								<argument>--input</argument>
 								<argument>${project.build.directory}/app</argument>
 								<argument>--main-jar</argument>
 								<argument>libs/reta-core-${project.version}.jar</argument>
-								<argument>--main-class</argument>
-								<argument>com.ben12.reta.Launcher</argument>
-								<argument>--java-options</argument>
-								<argument>-Xmx256m</argument>
-								<argument>--file-associations</argument>
-								<argument>file-associations.conf</argument>
-								<argument>--win-dir-chooser</argument>
-								<argument>--win-per-user-install</argument>
-								<argument>--win-shortcut</argument>
-								<argument>--win-shortcut-prompt</argument>
-								<argument>--win-menu</argument>
-								<argument>--win-menu-group</argument>
-								<argument>RETA</argument>
+								<argument>@jpackage.cfg</argument>
+								<argument>@${jpackage-cfg}</argument>
 							</arguments>
 						</configuration>
 					</execution>
