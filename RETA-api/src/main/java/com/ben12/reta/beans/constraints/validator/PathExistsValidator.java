@@ -25,8 +25,8 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 import com.ben12.reta.beans.constraints.PathExists;
 import com.ben12.reta.beans.constraints.PathExists.KindOfPath;

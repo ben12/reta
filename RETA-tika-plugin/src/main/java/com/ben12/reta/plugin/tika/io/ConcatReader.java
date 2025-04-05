@@ -59,8 +59,8 @@ public class ConcatReader extends Reader
 		TikaConfig tikaConfig = null;
 		try
 		{
-			tikaConfig = new TikaConfig(ConcatReader.class.getClassLoader()
-					.getResourceAsStream("com/ben12/reta/plugin/tika/resources/tika-config.xml"));
+			tikaConfig = new TikaConfig(
+					ConcatReader.class.getResourceAsStream("/com/ben12/reta/plugin/tika/resources/tika-config.xml"));
 		}
 		catch (final TikaException | IOException | SAXException e)
 		{

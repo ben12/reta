@@ -24,9 +24,7 @@ import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
 
-import javax.validation.constraints.NotNull;
-
-import org.hibernate.validator.valuehandling.UnwrapValidatedValue;
+import jakarta.validation.constraints.NotNull;
 
 import com.ben12.reta.api.SourceConfiguration;
 import com.ben12.reta.beans.constraints.IsPath;
@@ -65,7 +63,6 @@ public class TikaSourceConfiguration implements SourceConfiguration
 	@NotNull
 	@IsPath
 	@PathExists
-	@UnwrapValidatedValue
 	private final StringProperty					sourcePath				= new SimpleStringProperty(this,
 			SOURCE_PATH, "");
 
@@ -74,7 +71,6 @@ public class TikaSourceConfiguration implements SourceConfiguration
 	 */
 	@NotNull
 	@Regex
-	@UnwrapValidatedValue
 	private final StringProperty					filter					= new SimpleStringProperty(this, FILTER,
 			"");
 
@@ -83,7 +79,6 @@ public class TikaSourceConfiguration implements SourceConfiguration
 	 */
 	@NotNull
 	@Regex
-	@UnwrapValidatedValue
 	private final StringProperty					reqStart				= new SimpleStringProperty(this, REQ_START,
 			"");
 
@@ -92,7 +87,6 @@ public class TikaSourceConfiguration implements SourceConfiguration
 	 */
 	@NotNull
 	@Regex
-	@UnwrapValidatedValue
 	private final StringProperty					reqEnd					= new SimpleStringProperty(this, REQ_END,
 			"");
 
@@ -101,7 +95,6 @@ public class TikaSourceConfiguration implements SourceConfiguration
 	 */
 	@NotNull
 	@Regex
-	@UnwrapValidatedValue
 	private final StringProperty					reqRef					= new SimpleStringProperty(this, REQ_REF,
 			"");
 
@@ -178,6 +171,17 @@ public class TikaSourceConfiguration implements SourceConfiguration
 	public ObservableMap<String, Integer> getRefAttributesGroup()
 	{
 		return refAttributesGroup;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.ben12.reta.api.SourceConfiguration#getDescription()
+	 */
+	@Override
+	public String getDescription()
+	{
+		return String.valueOf(sourcePath.get());
 	}
 
 	/*

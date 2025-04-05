@@ -13,3 +13,10 @@ hs_err_pid*
 
 # ignore maven target files
 target/
+
+# ignore sample result
+data/analysis.xlsx
+
+# eclipse
+.project
+.settings/

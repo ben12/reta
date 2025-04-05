@@ -1,2 +1,2 @@
-@call mvn clean install dependency:copy-dependencies site site:stage
+@call mvnw clean install dependency:copy-dependencies site site:stage
 @pause

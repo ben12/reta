@@ -32,12 +32,10 @@ import java.util.stream.Collectors;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
-import javax.validation.constraints.Pattern;
-
-import org.hibernate.validator.constraints.NotEmpty;
-import org.hibernate.validator.valuehandling.UnwrapValidatedValue;
-
 import com.google.common.base.Strings;
+
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Pattern;
 
 import com.ben12.reta.api.Requirement;
 import com.ben12.reta.api.RequirementSourceManager;
@@ -59,7 +57,6 @@ public class InputRequirementSource implements RequirementSourceManager
 	/** Source document name. */
 	@NotEmpty
 	@Pattern(regexp = "[^,]*")
-	@UnwrapValidatedValue
 	private final StringProperty						name					= new SimpleStringProperty(this, NAME);
 
 	/** Source provider plugin. */

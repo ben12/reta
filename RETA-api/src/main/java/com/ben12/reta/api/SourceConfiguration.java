@@ -34,4 +34,6 @@ public interface SourceConfiguration
 
 	/** Name of requirement attribute "Version". */
 	String	ATTRIBUTE_VERSION	= "Version";
+
+	String getDescription();
 }

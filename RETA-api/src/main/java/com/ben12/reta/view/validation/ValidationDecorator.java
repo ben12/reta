@@ -58,7 +58,7 @@ public class ValidationDecorator<N extends Node> extends Region implements Prope
 
 	/** Default error image icon. */
 	private static final Image			ERROR_ICON			= new Image(
-																	ValidationDecorator.class.getResourceAsStream("/com/ben12/reta/resources/images/error.png"));
+			ValidationDecorator.class.getResourceAsStream("images/error.png"));
 
 	/** Default error node effect. */
 	private static final DropShadow		ERROR_EFFECT		= new DropShadow(5, Color.RED);
@@ -181,7 +181,7 @@ public class ValidationDecorator<N extends Node> extends Region implements Prope
 	@Override
 	protected double computeMinHeight(final double width)
 	{
-		double height;
+		final double height;
 		if (child != null)
 		{
 			height = getInsets().getTop() + child.minHeight(width) + getInsets().getBottom();
@@ -201,7 +201,7 @@ public class ValidationDecorator<N extends Node> extends Region implements Prope
 	@Override
 	protected double computeMinWidth(final double height)
 	{
-		double width;
+		final double width;
 		if (child != null)
 		{
 			width = getInsets().getLeft() + child.minWidth(height) + getInsets().getRight();
@@ -221,7 +221,7 @@ public class ValidationDecorator<N extends Node> extends Region implements Prope
 	@Override
 	protected double computeMaxHeight(final double width)
 	{
-		double height;
+		final double height;
 		if (child != null)
 		{
 			height = getInsets().getTop() + child.maxHeight(width) + getInsets().getBottom();
@@ -241,7 +241,7 @@ public class ValidationDecorator<N extends Node> extends Region implements Prope
 	@Override
 	protected double computeMaxWidth(final double height)
 	{
-		double width;
+		final double width;
 		if (child != null)
 		{
 			width = getInsets().getLeft() + child.maxWidth(height) + getInsets().getRight();
@@ -261,7 +261,7 @@ public class ValidationDecorator<N extends Node> extends Region implements Prope
 	@Override
 	protected double computePrefHeight(final double width)
 	{
-		double height;
+		final double height;
 		if (child != null)
 		{
 			height = getInsets().getTop() + child.prefHeight(width) + getInsets().getBottom();
@@ -281,7 +281,7 @@ public class ValidationDecorator<N extends Node> extends Region implements Prope
 	@Override
 	protected double computePrefWidth(final double height)
 	{
-		double width;
+		final double width;
 		if (child != null)
 		{
 			width = getInsets().getLeft() + child.prefWidth(height) + getInsets().getRight();
@@ -300,7 +300,7 @@ public class ValidationDecorator<N extends Node> extends Region implements Prope
 	private class ErrorTooltip extends Tooltip
 	{
 		/** Default font size. */
-		private final double	fsize	= getFont().getSize();
+		private final double fsize = getFont().getSize();
 
 		@Override
 		protected void show()

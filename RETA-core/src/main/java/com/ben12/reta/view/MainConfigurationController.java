@@ -35,13 +35,10 @@ import java.util.stream.Collectors;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.IntegerBinding;
-import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -157,8 +154,7 @@ public class MainConfigurationController implements Initializable
 			return null;
 		};
 
-		bufferedSources = new ObservableListBuffering<InputRequirementSource>(RETAAnalysis.class,
-				RETAAnalysis.REQUIREMENT_SOURCES, sources);
+		bufferedSources = new ObservableListBuffering<>(RETAAnalysis.class, RETAAnalysis.REQUIREMENT_SOURCES, sources);
 		bufferingManager.add((ObservableListBuffering<InputRequirementSource>) bufferedSources);
 
 		bufferedSourcesName = bufferingManager.buffering(sourcesName);
@@ -180,6 +176,7 @@ public class MainConfigurationController implements Initializable
 			sources.clear();
 			sources.addAll(RETAAnalysis.getInstance().requirementSourcesProperty());
 
+			sourcesName.clear();
 			for (final InputRequirementSource requirementSource : sources)
 			{
 				sourcesName.add(addSource(requirementSource));
@@ -214,9 +211,10 @@ public class MainConfigurationController implements Initializable
 			outputFile.getChild().textProperty().bindBidirectional(bufferedOutput);
 			outputFile.bindValidation(bufferedOutput);
 
-			delete.disableProperty().bind(sourceConfigurations.expandedPaneProperty()
-					.isNull()
-					.or(Bindings.size(sourceConfigurations.getPanes()).lessThan(2)));
+			delete.disableProperty()
+					.bind(sourceConfigurations.expandedPaneProperty()
+							.isNull()
+							.or(Bindings.size(sourceConfigurations.getPanes()).lessThan(2)));
 
 			final IntegerBinding indexOfExpendedPane = new IntegerBinding()
 			{
@@ -245,8 +243,11 @@ public class MainConfigurationController implements Initializable
 
 			upSource.disableProperty()
 					.bind(sourceConfigurations.expandedPaneProperty().isNull().or(indexOfExpendedPane.lessThan(1)));
-			downSource.disableProperty().bind(sourceConfigurations.expandedPaneProperty().isNull().or(
-					indexOfExpendedPane.greaterThan(Bindings.size(sourceConfigurations.getPanes()).subtract(2))));
+			downSource.disableProperty()
+					.bind(sourceConfigurations.expandedPaneProperty()
+							.isNull()
+							.or(indexOfExpendedPane
+									.greaterThan(Bindings.size(sourceConfigurations.getPanes()).subtract(2))));
 
 			save.disableProperty().bind(Bindings.not(bufferingManager.validProperty()));
 			cancel.disableProperty().bind(Bindings.not(bufferingManager.bufferingProperty()));
@@ -299,8 +300,7 @@ public class MainConfigurationController implements Initializable
 	@FXML
 	protected void newSource(final ActionEvent event) throws NoSuchMethodException, IOException
 	{
-		final List<SourceProviderPlugin> plugins = new ArrayList<SourceProviderPlugin>(
-				RETAAnalysis.getInstance().getPluginList());
+		final List<SourceProviderPlugin> plugins = new ArrayList<>(RETAAnalysis.getInstance().getPluginList());
 		final List<Pair<SourceProviderPlugin, String>> pluginChoices = plugins.stream()
 				.map((p) -> new Pair<>(p, p.getSourceName()))
 				.collect(Collectors.toList());
@@ -464,10 +464,10 @@ public class MainConfigurationController implements Initializable
 	@FXML
 	protected void cancel(final ActionEvent event)
 	{
-		final List<TitledPane> toDisconnected = new ArrayList<TitledPane>(sourceConfigurations.getPanes());
+		final List<TitledPane> toDisconnected = new ArrayList<>(sourceConfigurations.getPanes());
 		toDisconnected.removeAll(panes);
 
-		final List<TitledPane> toReconnect = new ArrayList<TitledPane>(panes);
+		final List<TitledPane> toReconnect = new ArrayList<>(panes);
 		toReconnect.removeAll(sourceConfigurations.getPanes());
 
 		// reconnect before revert (reverts disconnected properties)
@@ -503,39 +503,45 @@ public class MainConfigurationController implements Initializable
 	@FXML
 	protected void run(final ActionEvent event)
 	{
-		final StringProperty stepMessage = new SimpleStringProperty("");
-		final DoubleProperty progress = new SimpleDoubleProperty(0);
-		final DoubleProperty readProgress = new SimpleDoubleProperty(0);
+		final var task = new Task<Void>()
+		{
+			@Override
+			protected Void call() throws Exception
+			{
+				try
+				{
+					updateProgress(0.00, 1.0);
+					updateMessage(labels.getString("progress.reading"));
 
-		MessageDialog.showProgressBar(root.getScene().getWindow(), labels.getString("progress.title"), stepMessage,
-				progress);
+					RETAAnalysis.getInstance().parse(p -> updateProgress(p * 0.60, 1.0));
+					updateProgress(0.60, 1.0);
+					updateMessage(labels.getString("progress.analysing"));
 
-		new Thread(() -> {
-			try
-			{
-				stepMessage.set(labels.getString("progress.reading"));
-				progress.bind(readProgress.multiply(0.70));
-				RETAAnalysis.getInstance().parse(readProgress);
-				progress.unbind();
-				progress.set(0.70);
-				stepMessage.set(labels.getString("progress.analysing"));
-				RETAAnalysis.getInstance().analyse();
-				progress.set(0.80);
-				stepMessage.set(labels.getString("progress.writing"));
-				RETAAnalysis.getInstance().writeExcel();
-				stepMessage.set(labels.getString("progress.complete"));
+					RETAAnalysis.getInstance().analyse();
+					updateProgress(0.70, 1.0);
+					updateMessage(labels.getString("progress.writing"));
+
+					RETAAnalysis.getInstance().writeExcel();
+					updateProgress(1.0, 1.0);
+					updateMessage(labels.getString("progress.complete"));
+				}
+				catch (final Exception e)
+				{
+					Logger.getLogger(getClass().getName()).log(Level.SEVERE, "Analysis error", e);
+					updateMessage(labels.getString("progress.error") + e.getLocalizedMessage());
+				}
+				finally
+				{
+					updateProgress(1.0, 1.0);
+				}
+
+				return null;
 			}
-			catch (final Exception e)
-			{
-				Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", e);
-				stepMessage.set(labels.getString("progress.error") + e.getLocalizedMessage());
-			}
-			finally
-			{
-				progress.unbind();
-				progress.set(1.0);
-			}
-		}).start();
+		};
+
+		MessageDialog.showProgressBar(root.getScene().getWindow(), labels.getString("progress.title"), task);
+
+		new Thread(task).start();
 	}
 
 	/**

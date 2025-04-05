@@ -22,11 +22,12 @@ package com.ben12.reta.beans.constraints.validator;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import com.google.common.base.Strings;
+
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 import com.ben12.reta.beans.constraints.IsPath;
-import com.google.common.base.Strings;
 
 /**
  * {@link IsPath} validator.
