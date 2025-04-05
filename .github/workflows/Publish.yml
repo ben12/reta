@@ -36,7 +36,9 @@ jobs:
           distribution: 'temurin'
           java-version: ${{ matrix.java-version }}
       - name: Build Packages
-        run: ./mvnw -B clean package -DskipTests=true -Dskip.jpackage=false -Djpackage-cfg=${{ matrix.jpackage-cfg }} -Djpackage.type=${{ matrix.type }}
+        run: ./mvnw -B clean package "-DskipTests=true" "-Dskip.jpackage=false" "-Djpackage-cfg=${{ matrix.jpackage-cfg }}" "-Djpackage.type=${{ matrix.type }}"
+      - name: Check output
+        run: ls ./RETA-packaging/target
       - name: Add generated binaries to artifact
         uses: actions/upload-artifact@v4
         with:
