@@ -122,7 +122,7 @@ public interface BeanPropertyValidation<T> extends PropertyValidation
 		final Class<Object> beanType = (Class<Object>) getBeanType();
 		final String propertyName = getPropertyName();
 
-		Set<ConstraintViolation<Object>> violations;
+		final Set<ConstraintViolation<Object>> violations;
 		if (beanType != null && !Strings.isNullOrEmpty(propertyName))
 		{
 			violations = DEFAULT_VALIDATOR.validateValue(beanType, propertyName, this);

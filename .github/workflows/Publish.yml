@@ -85,7 +85,5 @@ jobs:
       - name: Upload to GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ls
-          gh release upload ${{ github.event.release.tag_name }} $(ls reta-*.msi reta*.deb reta*.rpm reta-*.zip 2>/dev/null)
+        run: gh release upload ${{ github.event.release.tag_name }} $(ls reta-*.msi reta*.deb reta*.rpm reta-*.zip 2>/dev/null)
     

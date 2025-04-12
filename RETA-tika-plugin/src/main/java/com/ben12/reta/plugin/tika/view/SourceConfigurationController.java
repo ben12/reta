@@ -210,9 +210,7 @@ public class SourceConfigurationController
 				cdf) -> new ReadOnlyStringWrapper(cdf.getValue().getKey());
 
 		final Callback<CellDataFeatures<MapTableView<String, Integer>.Entry, Integer>, ObservableValue<Integer>> cvpValue = (
-				cdf) -> {
-			return cdf.getValue().valueProperty();
-		};
+				cdf) -> cdf.getValue().valueProperty();
 
 		attributeMap = new ObservableMapBuffering<>(TikaSourceConfiguration.class,
 				TikaSourceConfiguration.ATTRIBUTES_GROUP, newSourceConfiguration.getAttributesGroup())
