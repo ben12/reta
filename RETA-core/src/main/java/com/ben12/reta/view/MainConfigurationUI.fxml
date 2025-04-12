@@ -15,7 +15,16 @@
 			<menus>
 				<Menu text="%menu.file" mnemonicParsing="true">
 					<items>
+						<MenuItem text="%menu.file.new" accelerator="Ctrl+N" mnemonicParsing="true" onAction="#create" />
+					</items>
+					<items>
 						<MenuItem text="%menu.file.open" accelerator="Ctrl+O" mnemonicParsing="true" onAction="#open" />
+					</items>
+					<items>
+						<MenuItem text="%menu.file.save" accelerator="Ctrl+S" mnemonicParsing="true" onAction="#save" />
+					</items>
+					<items>
+						<MenuItem text="%menu.file.saveAs" accelerator="Ctrl+Alt+S" mnemonicParsing="true" onAction="#saveAs" />
 					</items>
 				</Menu>
 				<Menu text="%menu.help" mnemonicParsing="true">

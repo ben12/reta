@@ -193,6 +193,33 @@ public class BufferingManager
 	}
 
 	/**
+	 * Trigger validation of all buffers.
+	 */
+	public void validate()
+	{
+		boolean purge = false;
+		for (final WeakReference<Buffering<?>> br : buffers)
+		{
+			final Buffering<?> b = br.get();
+			if (b != null)
+			{
+				if (b instanceof PropertyBufferingValidation<?>)
+				{
+					((PropertyBufferingValidation<?>) b).validate();
+				}
+			}
+			else
+			{
+				purge = true;
+			}
+		}
+		if (purge)
+		{
+			purge();
+		}
+	}
+
+	/**
 	 * @param p
 	 *            property to buffer
 	 * @return {@link PropertyBuffering} for the property
@@ -255,7 +282,7 @@ public class BufferingManager
 	public void add(final Buffering<?> b)
 	{
 		b.setEqualsBuffering(equalsBuffering);
-		buffers.add(new WeakReference<Buffering<?>>(b));
+		buffers.add(new WeakReference<>(b));
 
 		buffering.unbind();
 		bufferingExpression = Bindings.or(b.bufferingProperty(), bufferingExpression);

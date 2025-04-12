@@ -328,12 +328,14 @@ public final class RETAAnalysis
 	/**
 	 * @param iniFile
 	 *            INI file where save configuration
+	 * @return true on success
 	 */
-	public void saveConfig(final File iniFile)
+	public boolean saveConfig(final File iniFile)
 	{
 		final Wini ini = new Wini();
 		ini.getConfig().setFileEncoding(Charset.forName("CP1252"));
 
+		boolean success = false;
 		try
 		{
 			final Section generalSection = ini.add("GENERAL");
@@ -365,12 +367,24 @@ public final class RETAAnalysis
 
 			ini.store(iniFile);
 			config = iniFile;
+
+			try
+			{
+				System.setProperty("user.dir", config.getAbsoluteFile().getParentFile().getCanonicalPath());
+			}
+			catch (final IOException e)
+			{
+				System.setProperty("user.dir", config.getAbsoluteFile().getParent());
+			}
+
+			success = true;
 		}
 		catch (final IOException e)
 		{
 			LOGGER.log(Level.SEVERE, "Invalid config file " + iniFile, e);
 			// TODO show error as dialog or dimmer panel
 		}
+		return success;
 	}
 
 	/**

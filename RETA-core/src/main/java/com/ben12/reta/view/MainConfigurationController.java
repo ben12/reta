@@ -53,8 +53,6 @@ import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.util.Callback;
 import javafx.util.Pair;
 
-import com.google.common.io.Files;
-
 import com.ben12.reta.beans.property.buffering.BufferingManager;
 import com.ben12.reta.beans.property.buffering.ObservableListBuffering;
 import com.ben12.reta.beans.property.buffering.SimpleObjectPropertyBuffering;
@@ -251,8 +249,7 @@ public class MainConfigurationController implements Initializable
 
 			save.disableProperty().bind(Bindings.not(bufferingManager.validProperty()));
 			cancel.disableProperty().bind(Bindings.not(bufferingManager.bufferingProperty()));
-			run.disableProperty()
-					.bind(bufferingManager.bufferingProperty().or(Bindings.not(bufferingManager.validProperty())));
+			run.disableProperty().bind(Bindings.not(bufferingManager.validProperty()));
 		}
 		catch (final Exception e)
 		{
@@ -407,51 +404,17 @@ public class MainConfigurationController implements Initializable
 		}
 	}
 
-	/**
-	 * Action event to save the configuration.
-	 * 
-	 * @param event
-	 *            the {@link ActionEvent}
-	 */
-	@FXML
-	protected void save(final ActionEvent event)
+	protected void commit()
 	{
 		final RETAAnalysis retaAnalysis = RETAAnalysis.getInstance();
 
-		final FileChooser fileChooser = new FileChooser();
-		fileChooser.getExtensionFilters().add(new ExtensionFilter(labels.getString("reta.file.desc"), "*.reta"));
-		fileChooser.setTitle(labels.getString("save.title"));
-		if (retaAnalysis.getConfig() != null)
+		bufferingManager.commit();
+		panes = new ArrayList<>(sourceConfigurations.getPanes());
+
+		retaAnalysis.requirementSourcesProperty().clear();
+		for (final InputRequirementSource requirementSource : bufferedSources)
 		{
-			fileChooser.setInitialDirectory(retaAnalysis.getConfig().getParentFile());
-			fileChooser.setInitialFileName(retaAnalysis.getConfig().getName());
-		}
-
-		final File file = fileChooser.showSaveDialog(root.getScene().getWindow());
-
-		if (file != null)
-		{
-			bufferingManager.commit();
-			panes = new ArrayList<>(sourceConfigurations.getPanes());
-
-			retaAnalysis.requirementSourcesProperty().clear();
-			for (final InputRequirementSource requirementSource : bufferedSources)
-			{
-				retaAnalysis.requirementSourcesProperty().add(requirementSource);
-			}
-
-			try
-			{
-				if (file.isFile())
-				{
-					Files.copy(retaAnalysis.getConfig(), new File(retaAnalysis.getConfig().getPath() + ".bak"));
-				}
-				retaAnalysis.saveConfig(file);
-			}
-			catch (final IOException e)
-			{
-				Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", e);
-			}
+			retaAnalysis.requirementSourcesProperty().add(requirementSource);
 		}
 	}
 
@@ -503,45 +466,48 @@ public class MainConfigurationController implements Initializable
 	@FXML
 	protected void run(final ActionEvent event)
 	{
-		final var task = new Task<Void>()
+		if (this.save(event) && bufferingManager.isValid())
 		{
-			@Override
-			protected Void call() throws Exception
+			final var task = new Task<Void>()
 			{
-				try
+				@Override
+				protected Void call() throws Exception
 				{
-					updateProgress(0.00, 1.0);
-					updateMessage(labels.getString("progress.reading"));
+					try
+					{
+						updateProgress(0.00, 1.0);
+						updateMessage(labels.getString("progress.reading"));
 
-					RETAAnalysis.getInstance().parse(p -> updateProgress(p * 0.60, 1.0));
-					updateProgress(0.60, 1.0);
-					updateMessage(labels.getString("progress.analysing"));
+						RETAAnalysis.getInstance().parse(p -> updateProgress(p * 0.60, 1.0));
+						updateProgress(0.60, 1.0);
+						updateMessage(labels.getString("progress.analysing"));
 
-					RETAAnalysis.getInstance().analyse();
-					updateProgress(0.70, 1.0);
-					updateMessage(labels.getString("progress.writing"));
+						RETAAnalysis.getInstance().analyse();
+						updateProgress(0.70, 1.0);
+						updateMessage(labels.getString("progress.writing"));
 
-					RETAAnalysis.getInstance().writeExcel();
-					updateProgress(1.0, 1.0);
-					updateMessage(labels.getString("progress.complete"));
+						RETAAnalysis.getInstance().writeExcel();
+						updateProgress(1.0, 1.0);
+						updateMessage(labels.getString("progress.complete"));
+					}
+					catch (final Exception e)
+					{
+						Logger.getLogger(getClass().getName()).log(Level.SEVERE, "Analysis error", e);
+						updateMessage(labels.getString("progress.error") + e.getLocalizedMessage());
+					}
+					finally
+					{
+						updateProgress(1.0, 1.0);
+					}
+
+					return null;
 				}
-				catch (final Exception e)
-				{
-					Logger.getLogger(getClass().getName()).log(Level.SEVERE, "Analysis error", e);
-					updateMessage(labels.getString("progress.error") + e.getLocalizedMessage());
-				}
-				finally
-				{
-					updateProgress(1.0, 1.0);
-				}
+			};
 
-				return null;
-			}
-		};
+			MessageDialog.showProgressBar(root.getScene().getWindow(), labels.getString("progress.title"), task);
 
-		MessageDialog.showProgressBar(root.getScene().getWindow(), labels.getString("progress.title"), task);
-
-		new Thread(task).start();
+			new Thread(task).start();
+		}
 	}
 
 	/**
@@ -553,7 +519,7 @@ public class MainConfigurationController implements Initializable
 	@FXML
 	protected void selectOutputFile(final ActionEvent event)
 	{
-		final Path currentFile = Paths.get(bufferedOutput.get());
+		final Path currentFile = bufferedOutput.get() == null ? null : Paths.get(bufferedOutput.get());
 		final FileChooser fileChooser = new FileChooser();
 		fileChooser.getExtensionFilters().add(new ExtensionFilter(labels.getString("excel.file.desc"), "*.xlsx"));
 		fileChooser.setTitle(labels.getString("output.title"));
@@ -568,6 +534,102 @@ public class MainConfigurationController implements Initializable
 		{
 			bufferedOutput.set(file.getPath());
 		}
+	}
+
+	/**
+	 * Action event to create a new configuration file.
+	 * 
+	 * @param event
+	 *            the {@link ActionEvent}
+	 * @return true if successfully created
+	 */
+	@FXML
+	protected boolean create(final ActionEvent event)
+	{
+		boolean saved = false;
+		final RETAAnalysis retaAnalysis = RETAAnalysis.getInstance();
+
+		final FileChooser fileChooser = new FileChooser();
+		fileChooser.getExtensionFilters().add(new ExtensionFilter(labels.getString("reta.file.desc"), "*.reta"));
+		fileChooser.setTitle(labels.getString("save.title"));
+		if (retaAnalysis.getConfig() != null)
+		{
+			fileChooser.setInitialDirectory(retaAnalysis.getConfig().getParentFile());
+			fileChooser.setInitialFileName(retaAnalysis.getConfig().getName());
+		}
+
+		final File file = fileChooser.showSaveDialog(root.getScene().getWindow());
+
+		if (file != null)
+		{
+			bufferedOutput.set(null);
+			while (bufferedSources.size() > 0)
+			{
+				removeSource(0);
+			}
+			this.commit();
+			saved = retaAnalysis.saveConfig(file);
+			bufferingManager.validate();
+		}
+		return saved;
+	}
+
+	/**
+	 * Action event to save current configuration.
+	 * 
+	 * @param event
+	 *            the {@link ActionEvent}
+	 * @return true if successfully saved
+	 */
+	@FXML
+	protected boolean save(final ActionEvent event)
+	{
+		final boolean saved;
+		final RETAAnalysis retaAnalysis = RETAAnalysis.getInstance();
+		if (retaAnalysis.getConfig() != null)
+		{
+			this.commit();
+			saved = retaAnalysis.saveConfig(retaAnalysis.getConfig());
+			bufferingManager.validate();
+		}
+		else
+		{
+			saved = this.saveAs(event);
+		}
+		return saved;
+	}
+
+	/**
+	 * Action event to save current configuration.
+	 * 
+	 * @param event
+	 *            the {@link ActionEvent}
+	 * @return true if successfully saved
+	 */
+	@FXML
+	protected boolean saveAs(final ActionEvent event)
+	{
+		boolean saved = false;
+		final RETAAnalysis retaAnalysis = RETAAnalysis.getInstance();
+
+		final FileChooser fileChooser = new FileChooser();
+		fileChooser.getExtensionFilters().add(new ExtensionFilter(labels.getString("reta.file.desc"), "*.reta"));
+		fileChooser.setTitle(labels.getString("save.title"));
+		if (retaAnalysis.getConfig() != null)
+		{
+			fileChooser.setInitialDirectory(retaAnalysis.getConfig().getParentFile());
+			fileChooser.setInitialFileName(retaAnalysis.getConfig().getName());
+		}
+
+		final File file = fileChooser.showSaveDialog(root.getScene().getWindow());
+
+		if (file != null)
+		{
+			this.commit();
+			saved = retaAnalysis.saveConfig(file);
+			bufferingManager.validate();
+		}
+		return saved;
 	}
 
 	/**
