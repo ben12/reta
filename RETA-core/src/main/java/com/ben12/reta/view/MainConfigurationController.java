@@ -20,15 +20,20 @@
 package com.ben12.reta.view;
 
 import java.awt.Desktop;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -36,9 +41,11 @@ import java.util.stream.Collectors;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.IntegerBinding;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
+import javafx.concurrent.Worker;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -48,14 +55,25 @@ import javafx.scene.control.Accordion;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
+import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.util.Callback;
 import javafx.util.Pair;
 
+import org.w3c.dom.Element;
+
+import com.google.common.base.Objects;
+
+import net.sourceforge.plantuml.FileFormat;
+import net.sourceforge.plantuml.FileFormatOption;
+import net.sourceforge.plantuml.SourceStringReader;
+
 import com.ben12.reta.beans.property.buffering.BufferingManager;
 import com.ben12.reta.beans.property.buffering.ObservableListBuffering;
 import com.ben12.reta.beans.property.buffering.SimpleObjectPropertyBuffering;
+import com.ben12.reta.model.GraphData;
+import com.ben12.reta.model.GraphData.Link;
 import com.ben12.reta.model.InputRequirementSource;
 import com.ben12.reta.plugin.SourceProviderPlugin;
 import com.ben12.reta.util.RETAAnalysis;
@@ -106,6 +124,9 @@ public class MainConfigurationController implements Initializable
 	/** Requirement source {@link TitledPane} list. */
 	private List<TitledPane>												panes				= new ArrayList<>();
 
+	/** Graph data. */
+	private GraphData														graph;
+
 	/** Root pane. */
 	@FXML
 	private Parent															root;
@@ -141,6 +162,10 @@ public class MainConfigurationController implements Initializable
 	/** Output file {@link TextField}. */
 	@FXML
 	private ValidationDecorator<TextField>									outputFile;
+
+	/** Graph result. */
+	@FXML
+	private WebView															webview;
 
 	/**
 	 * Constructor.
@@ -250,10 +275,64 @@ public class MainConfigurationController implements Initializable
 			save.disableProperty().bind(Bindings.not(bufferingManager.validProperty()));
 			cancel.disableProperty().bind(Bindings.not(bufferingManager.bufferingProperty()));
 			run.disableProperty().bind(Bindings.not(bufferingManager.validProperty()));
+
+			webview.getEngine().getLoadWorker().stateProperty().subscribe(state -> {
+				if (state == Worker.State.SUCCEEDED)
+				{
+					this.customizePLantuml();
+				}
+			});
 		}
 		catch (final Exception e)
 		{
 			Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", e);
+		}
+	}
+
+	private void customizePLantuml()
+	{
+		final var document = webview.getEngine().getDocument();
+		final var groups = document.getElementsByTagName("g");
+		for (int i = 0; i < groups.getLength(); i++)
+		{
+			final var gNode = groups.item(i);
+			if (gNode instanceof final Element g)
+			{
+				final var sourceAlias = g.getAttribute("data-entity");
+				if (sourceAlias != null)
+				{
+					final var source = graph.getSourceEntities().get(sourceAlias);
+					final var texts = g.getElementsByTagName("text");
+
+					for (int j = 1; j < texts.getLength(); j++)
+					{
+						final var node = texts.item(j);
+						if (node instanceof final Element textEl)
+						{
+							final var reqId = textEl.getTextContent();
+							final var req = source.getRequirements()
+									.stream()
+									.filter(r -> Objects.equal(r.getId(), reqId))
+									.findFirst();
+							if (req.isPresent())
+							{
+								final var title = document.createElementNS(textEl.getNamespaceURI(), "title");
+								title.setTextContent(req.get().getText());
+								textEl.appendChild(title);
+								if (req.get().getReferredBySource().isEmpty() && !source.getCoversBy().isEmpty())
+								{
+									textEl.setAttribute("style", "fill: red;");
+								}
+								else if (!req.get().getReferredBySource().isEmpty()
+										&& req.get().getReferredBySource().size() < source.getCoversBy().size())
+								{
+									textEl.setAttribute("style", "fill: coral;");
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -470,24 +549,34 @@ public class MainConfigurationController implements Initializable
 		{
 			final var task = new Task<Void>()
 			{
+				private void updateProgress(final double p)
+				{
+					updateProgress(p, 1.0);
+				}
+
 				@Override
 				protected Void call() throws Exception
 				{
 					try
 					{
-						updateProgress(0.00, 1.0);
+						updateProgress(0.00);
+
 						updateMessage(labels.getString("progress.reading"));
+						RETAAnalysis.getInstance().parse(p -> updateProgress(p * 0.50));
+						updateProgress(0.50);
 
-						RETAAnalysis.getInstance().parse(p -> updateProgress(p * 0.60, 1.0));
-						updateProgress(0.60, 1.0);
 						updateMessage(labels.getString("progress.analysing"));
+						RETAAnalysis.getInstance().analyse(p -> updateProgress(0.5 + (p * 0.10)));
+						updateProgress(0.60);
 
-						RETAAnalysis.getInstance().analyse();
-						updateProgress(0.70, 1.0);
+						updateMessage(labels.getString("progress.graph"));
+						graph = buildGraph();
+						updateProgress(0.9);
+
 						updateMessage(labels.getString("progress.writing"));
-
 						RETAAnalysis.getInstance().writeExcel();
-						updateProgress(1.0, 1.0);
+						updateProgress(1.0);
+
 						updateMessage(labels.getString("progress.complete"));
 					}
 					catch (final Exception e)
@@ -497,10 +586,25 @@ public class MainConfigurationController implements Initializable
 					}
 					finally
 					{
-						updateProgress(1.0, 1.0);
+						updateProgress(1.0);
 					}
 
 					return null;
+				}
+
+				@Override
+				protected void succeeded()
+				{
+					webview.getEngine().loadContent(graph.getHtml());
+				}
+
+				@Override
+				protected void failed()
+				{
+					if (graph != null)
+					{
+						webview.getEngine().loadContent(graph.getHtml());
+					}
 				}
 			};
 
@@ -508,6 +612,95 @@ public class MainConfigurationController implements Initializable
 
 			new Thread(task).start();
 		}
+	}
+
+	private GraphData buildGraph()
+	{
+		final Map<String, InputRequirementSource> sourceEntities = new HashMap<>();
+		final Map<String, Link> links = new HashMap<>();
+		final var graphLines = new ArrayList<String>();
+
+		graphLines.add("@startuml");
+		graphLines.add("skinparam classAttributeIconSize 0");
+
+		final var analysis = RETAAnalysis.getInstance();
+
+		final var index = new AtomicInteger(0);
+		final var allSources = analysis.requirementSourcesProperty();
+		final var isources = allSources.stream()
+				.collect(Collectors.toMap(s -> s, s -> index.getAndIncrement(), (a, b) -> a));
+
+		for (final var source : allSources)
+		{
+			final var i = isources.get(source);
+			graphLines.add("object \"**" + source.getName() + "**\" as S" + i + " {");
+			final var reqs = source.getRequirements();
+			for (final var req : reqs)
+			{
+				graphLines.add("{field} " + req.getId().replace("\\", "<U+200C>\\<U+200C>"));
+			}
+			graphLines.add("}");
+
+			sourceEntities.put("S" + i, source);
+		}
+
+		for (final var source : allSources)
+		{
+			final var i = isources.get(source);
+			final var reqs = source.getRequirements();
+			for (final var req : reqs)
+			{
+				final var reqId = req.getId().replace("\\", "<U+200C>\\<U+200C>");
+				final var refs = req.getReferences();
+				for (final var ref : refs)
+				{
+					final var refSource = ref.getSource();
+					if (refSource != null)
+					{
+						final var refSo = isources.get(refSource);
+						final var refId = ref.getId().replace("\\", "<U+200C>\\<U+200C>");
+						graphLines.add("\"S" + refSo + "::" + refId + "\" <--- \"S" + i + "::" + reqId + "\"");
+					}
+
+					final String dataSourceLine = "" + graphLines.size();
+					links.put(dataSourceLine, new Link(dataSourceLine, source, req, refSource, ref));
+				}
+			}
+		}
+
+		graphLines.add("@enduml");
+
+		final var puGraph = String.join("\n", graphLines);
+		final var reader = new SourceStringReader(puGraph);
+		final var output = new ByteArrayOutputStream();
+		try
+		{
+			reader.outputImage(output, new FileFormatOption(FileFormat.SVG));
+		}
+		catch (final IOException e)
+		{
+			LOGGER.log(Level.SEVERE, "Error during Graph generation", e);
+		}
+
+		final var svg = new String(output.toByteArray(), StandardCharsets.UTF_8);
+		final var html = """
+				    <head>
+					  <style>
+					    body {
+					      display: flex;
+					      justify-content: center;
+					      align-items: center;
+					      padding: 4px;
+					      min-width: fit-content;
+					      min-height: fit-content;
+						}
+					  </style>
+				    </head>
+				    <body>
+				""" + svg + """
+				    </body>
+				""";
+		return new GraphData(html, sourceEntities, links);
 	}
 
 	/**
@@ -715,5 +908,13 @@ public class MainConfigurationController implements Initializable
 	protected void openProject(final ActionEvent event)
 	{
 		openURL("http://github.com/ben12/reta");
+	}
+
+	/**
+	 * @return buffering status
+	 */
+	public ReadOnlyBooleanProperty bufferingProperty()
+	{
+		return ReadOnlyBooleanProperty.readOnlyBooleanProperty(bufferingManager.bufferingProperty());
 	}
 }

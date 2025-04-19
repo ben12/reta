@@ -446,9 +446,13 @@ public final class RETAAnalysis
 	/**
 	 * Analyze the parsing result.
 	 * Search requirement references in requirements.
+	 * 
+	 * @param progress
+	 *            progression in percent
 	 */
-	public void analyse()
+	public void analyse(final Consumer<Double> progress)
 	{
+		final var counter = new AtomicInteger(0);
 		requirementSources.parallelStream().forEach(source -> {
 			LOGGER.info("Start analyse " + source.getName());
 
@@ -489,6 +493,8 @@ public final class RETAAnalysis
 					coverSource.getCoversBy().put(source, coverage);
 				}
 			}
+
+			progress.accept((double) counter.incrementAndGet() / requirementSources.size());
 
 			LOGGER.info("End analyse " + source.getName());
 		});

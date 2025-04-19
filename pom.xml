@@ -13,6 +13,8 @@
 		<maven.compiler.source>21</maven.compiler.source>
 		<maven.compiler.target>21</maven.compiler.target>
 		<javafx.version>21</javafx.version>
+		<tika.version>3.1.0</tika.version>
+		<poi.version>5.4.0</poi.version>
 	</properties>
 	<contributors>
 		<contributor>
@@ -43,6 +45,11 @@
 		<dependency>
 			<groupId>org.openjfx</groupId>
 			<artifactId>javafx-fxml</artifactId>
+			<version>${javafx.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-web</artifactId>
 			<version>${javafx.version}</version>
 		</dependency>
 		<dependency>

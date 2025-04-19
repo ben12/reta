@@ -62,11 +62,14 @@ public class Main extends Application
 			loader.setResources(labels);
 			final Parent root = (Parent) loader.load();
 
+			final var title = labels.getString("title");
+			final var controller = (MainConfigurationController) loader.getController();
+			stage.titleProperty().bind(controller.bufferingProperty().map(b -> title + (b.booleanValue() ? " *" : "")));
+
 			stage.setScene(new Scene(root));
-			stage.setTitle(labels.getString("title"));
 			stage.getIcons()
 					.add(new Image(Main.class.getResourceAsStream("/com/ben12/reta/resources/images/reta.png")));
-			stage.sizeToScene();
+			stage.setMaximized(true);
 			stage.show();
 
 			final Parameters parameters = getParameters();

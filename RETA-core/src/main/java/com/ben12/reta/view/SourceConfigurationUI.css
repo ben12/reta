@@ -1,0 +1,4 @@
+.titled-pane:invalid > .title > .text {
+    -fx-fill: red;
+	-fx-effect: dropshadow(gaussian, red, 2, 0, 0, 0)
+}

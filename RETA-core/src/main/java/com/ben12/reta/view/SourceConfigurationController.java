@@ -32,9 +32,13 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanExpression;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.css.PseudoClass;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -76,23 +80,32 @@ import com.ben12.reta.view.validation.ValidationDecorator;
  */
 public class SourceConfigurationController
 {
+	/** {@link #valid} property CSS pseudo class. */
+	private static final PseudoClass				PSEUDO_CLASS_INVALID	= PseudoClass.getPseudoClass("invalid");
+
 	/** the {@link BufferingManager} instance. */
 	private BufferingManager						bufferingManager;
 
 	/** Keeps a reference on buffered properties. */
-	private final List<Buffering<?>>				bufferedProperties	= new ArrayList<>();
+	private final List<Buffering<?>>				bufferedProperties		= new ArrayList<>();
+
+	/** Validity expression for all buffered values. */
+	private BooleanExpression						validExpression			= new SimpleBooleanProperty(true);
+
+	/** Validity expression for all buffered values. */
+	private final BooleanProperty					valid					= new SimpleBooleanProperty(true);
 
 	/** Input requirement source. */
-	private InputRequirementSource					requirementSource	= null;
+	private InputRequirementSource					requirementSource		= null;
 
 	/** Input requirement source list. */
-	private ObservableList<InputRequirementSource>	sources				= null;
+	private ObservableList<InputRequirementSource>	sources					= null;
 
 	/** Input requirement source buffered name list. */
-	private ObservableList<ObjectProperty<String>>	sourcesName			= null;
+	private ObservableList<ObjectProperty<String>>	sourcesName				= null;
 
 	/** Error translation {@link ResourceBundle}. */
-	private final ResourceBundle					errors				= ResourceBundle
+	private final ResourceBundle					errors					= ResourceBundle
 			.getBundle("com/ben12/reta/constraints/" + ResourceBundleMessageInterpolator.USER_VALIDATION_MESSAGES);
 
 	/** The input requirement source {@link TitledPane}. */
@@ -137,6 +150,9 @@ public class SourceConfigurationController
 			final SimpleObjectPropertyBuffering<String> property)
 	{
 		bufferedProperties.add(property);
+		valid.unbind();
+		validExpression = validExpression.and(property.validityProperty());
+		valid.bind(validExpression);
 		input.getChild().textProperty().bindBidirectional(property);
 		input.bindValidation(property);
 	}
@@ -159,6 +175,9 @@ public class SourceConfigurationController
 			final ObservableListBuffering<T> property, final StringConverter<ObservableList<T>> converter)
 	{
 		bufferedProperties.add(property);
+		valid.unbind();
+		validExpression = validExpression.and(property.validityProperty());
+		valid.bind(validExpression);
 		input.getChild().textProperty().bindBidirectional(property, converter);
 		input.bindValidation(property);
 	}
@@ -194,7 +213,7 @@ public class SourceConfigurationController
 		sourcesName = newSourcesName;
 
 		// Input requirement source name
-		final SimpleObjectPropertyBuffering<String> nameProperty = new SimpleObjectPropertyBuffering<String>(
+		final SimpleObjectPropertyBuffering<String> nameProperty = new SimpleObjectPropertyBuffering<>(
 				requirementSource.nameProperty())
 		{
 			/*
@@ -226,6 +245,8 @@ public class SourceConfigurationController
 		};
 		bufferingManager.add(nameProperty);
 		titledPane.textProperty().bind(nameProperty);
+		valid.subscribe(b -> titledPane.pseudoClassStateChanged(PSEUDO_CLASS_INVALID, !b));
+		titledPane.pseudoClassStateChanged(PSEUDO_CLASS_INVALID, !valid.get());
 		bindTextInputControl(name, nameProperty);
 
 		nameProperty.addListener(e -> mainCallBack.call(requirementSource));
