@@ -29,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,11 +51,17 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.control.Accordion;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
@@ -75,7 +82,9 @@ import com.ben12.reta.beans.property.buffering.SimpleObjectPropertyBuffering;
 import com.ben12.reta.model.GraphData;
 import com.ben12.reta.model.GraphData.Link;
 import com.ben12.reta.model.InputRequirementSource;
+import com.ben12.reta.model.RequirementImpl;
 import com.ben12.reta.plugin.SourceProviderPlugin;
+import com.ben12.reta.util.DOMUtils;
 import com.ben12.reta.util.RETAAnalysis;
 import com.ben12.reta.view.control.MessageDialog;
 import com.ben12.reta.view.validation.ValidationDecorator;
@@ -162,6 +171,10 @@ public class MainConfigurationController implements Initializable
 	/** Output file {@link TextField}. */
 	@FXML
 	private ValidationDecorator<TextField>									outputFile;
+
+	/** TabPane result. */
+	@FXML
+	private TabPane															resultTabs;
 
 	/** Graph result. */
 	@FXML
@@ -292,44 +305,41 @@ public class MainConfigurationController implements Initializable
 	private void customizePLantuml()
 	{
 		final var document = webview.getEngine().getDocument();
-		final var groups = document.getElementsByTagName("g");
-		for (int i = 0; i < groups.getLength(); i++)
+		final var groups = DOMUtils.getElementsByTagNameAndAttribute(document, "g", "data-entity");
+		for (final var g : groups)
 		{
-			final var gNode = groups.item(i);
-			if (gNode instanceof final Element g)
-			{
-				final var sourceAlias = g.getAttribute("data-entity");
-				if (sourceAlias != null)
-				{
-					final var source = graph.getSourceEntities().get(sourceAlias);
-					final var texts = g.getElementsByTagName("text");
+			final var sourceAlias = g.getAttribute("data-entity");
+			final var source = graph.getSourceEntities().get(sourceAlias);
+			final var texts = DOMUtils.getElementsByTagName(g, "text");
 
-					for (int j = 1; j < texts.getLength(); j++)
+			if (!texts.isEmpty() && Objects.equal(source.getName(), texts.getFirst().getTextContent()))
+			{
+				final var textEl = texts.get(0);
+				final var title = document.createElementNS(textEl.getNamespaceURI(), "title");
+				title.setTextContent(source.getConfiguration().getDescription());
+				textEl.appendChild(title);
+			}
+
+			for (final Element textEl : texts.subList(1, texts.size()))
+			{
+				final var reqId = textEl.getTextContent();
+				final var req = source.getRequirements()
+						.stream()
+						.filter(r -> Objects.equal(r.getId(), reqId))
+						.findFirst();
+				if (req.isPresent())
+				{
+					final var title = document.createElementNS(textEl.getNamespaceURI(), "title");
+					title.setTextContent(req.get().getText());
+					textEl.appendChild(title);
+					if (req.get().getReferredBySource().isEmpty() && !source.getCoversBy().isEmpty())
 					{
-						final var node = texts.item(j);
-						if (node instanceof final Element textEl)
-						{
-							final var reqId = textEl.getTextContent();
-							final var req = source.getRequirements()
-									.stream()
-									.filter(r -> Objects.equal(r.getId(), reqId))
-									.findFirst();
-							if (req.isPresent())
-							{
-								final var title = document.createElementNS(textEl.getNamespaceURI(), "title");
-								title.setTextContent(req.get().getText());
-								textEl.appendChild(title);
-								if (req.get().getReferredBySource().isEmpty() && !source.getCoversBy().isEmpty())
-								{
-									textEl.setAttribute("style", "fill: red;");
-								}
-								else if (!req.get().getReferredBySource().isEmpty()
-										&& req.get().getReferredBySource().size() < source.getCoversBy().size())
-								{
-									textEl.setAttribute("style", "fill: coral;");
-								}
-							}
-						}
+						textEl.setAttribute("style", "fill: red;");
+					}
+					else if (!req.get().getReferredBySource().isEmpty()
+							&& req.get().getReferredBySource().size() < source.getCoversBy().size())
+					{
+						textEl.setAttribute("style", "fill: coral;");
 					}
 				}
 			}
@@ -596,6 +606,7 @@ public class MainConfigurationController implements Initializable
 				protected void succeeded()
 				{
 					webview.getEngine().loadContent(graph.getHtml());
+					buildTabs();
 				}
 
 				@Override
@@ -604,12 +615,16 @@ public class MainConfigurationController implements Initializable
 					if (graph != null)
 					{
 						webview.getEngine().loadContent(graph.getHtml());
+						buildTabs();
 					}
 				}
 			};
 
 			MessageDialog.showProgressBar(root.getScene().getWindow(), labels.getString("progress.title"), task);
 
+			graph = null;
+			webview.getEngine().loadContent("");
+			resultTabs.getTabs().remove(1, resultTabs.getTabs().size());
 			new Thread(task).start();
 		}
 	}
@@ -701,6 +716,124 @@ public class MainConfigurationController implements Initializable
 				    </body>
 				""";
 		return new GraphData(html, sourceEntities, links);
+	}
+
+	private void buildTabs()
+	{
+		final var analysis = RETAAnalysis.getInstance();
+		final var allSources = analysis.requirementSourcesProperty();
+		for (final var source : allSources)
+		{
+			final var tab = createSourceTab(source);
+			resultTabs.getTabs().add(tab);
+		}
+
+		final var tab = createErrorsTab(allSources);
+		resultTabs.getTabs().add(tab);
+	}
+
+	private Tab createErrorsTab(final List<InputRequirementSource> sources)
+	{
+		final var tab = new Tab(labels.getString("errors"));
+		tab.setClosable(false);
+
+		// TODO
+
+		return tab;
+	}
+
+	private Tab createSourceTab(final InputRequirementSource source)
+	{
+		final var tab = new Tab(source.getName());
+		tab.setClosable(false);
+
+		final var table = new GridPane();
+		table.getStyleClass().add("result-table");
+		table.setPadding(new Insets(8));
+
+		final var reqHeader = new Label(labels.getString("requirement"));
+		reqHeader.getStyleClass().addAll("header", "first-row", "first-col");
+		final var sourceHeader = new Label(labels.getString("source"));
+		sourceHeader.getStyleClass().addAll("header", "first-row");
+		final var refHeader = new Label(labels.getString("reference"));
+		refHeader.getStyleClass().addAll("header", "first-row", "last-col");
+
+		table.addRow(0, reqHeader, sourceHeader, refHeader);
+
+		final var requirements = source.getRequirements();
+		final var refSources = source.getCoversBy().keySet();
+		var index = 0;
+		for (final var requirement : requirements)
+		{
+			final var reqCell = new Label(requirement.getText());
+			reqCell.getStyleClass().add("first-col");
+			setReqStyle(source, requirement, reqCell);
+
+			final List<Label> sourceCells = new ArrayList<>();
+			final List<List<Label>> refCells = new ArrayList<>();
+			for (final var refSource : refSources)
+			{
+				final var sourceCell = new Label(refSource.getName());
+				sourceCells.add(sourceCell);
+				final List<Label> cells = new ArrayList<>();
+				refCells.add(cells);
+				final var refs = requirement.getReferredByRequirementFor(refSource);
+				for (final var ref : refs)
+				{
+					cells.add(new Label(ref.getText()));
+				}
+				if (refs.isEmpty())
+				{
+					cells.add(new Label());
+				}
+				cells.getLast().getStyleClass().add("last-col");
+			}
+			if (refSources.isEmpty())
+			{
+				sourceCells.add(new Label());
+				final List<Label> cells = new ArrayList<>();
+				cells.add(new Label());
+				refCells.add(cells);
+				cells.getLast().getStyleClass().add("last-col");
+			}
+
+			var row = table.getRowCount();
+			table.add(reqCell, 0, row, 1, refCells.stream().mapToInt(Collection::size).sum());
+			for (int i = 0; i < sourceCells.size(); i++)
+			{
+				final var refs = refCells.get(i);
+				table.add(sourceCells.get(i), 1, row, 1, refs.size());
+				for (int c = 0; c < refs.size(); c++, row++)
+				{
+					table.add(refs.get(c), 2, row);
+				}
+			}
+
+			index++;
+			if (index == requirements.size())
+			{
+				reqCell.getStyleClass().add("last-row");
+				sourceCells.getLast().getStyleClass().add("last-row");
+				refCells.getLast().getLast().getStyleClass().add("last-row");
+			}
+		}
+
+		tab.setContent(new ScrollPane(table));
+		return tab;
+	}
+
+	private void setReqStyle(final InputRequirementSource source, final RequirementImpl requirement,
+			final Label reqCell)
+	{
+		if (requirement.getReferredBySource().isEmpty() && !source.getCoversBy().isEmpty())
+		{
+			reqCell.getStyleClass().add("uncovered");
+		}
+		else if (!requirement.getReferredBySource().isEmpty()
+				&& requirement.getReferredBySource().size() < source.getCoversBy().size())
+		{
+			reqCell.getStyleClass().add("partial");
+		}
 	}
 
 	/**

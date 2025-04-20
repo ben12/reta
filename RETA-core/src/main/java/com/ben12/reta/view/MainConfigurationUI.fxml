@@ -10,7 +10,7 @@
 <?import com.ben12.reta.view.validation.*?>
 
 <VBox fx:id="root" xmlns:fx="http://javafx.com/fxml" fx:controller="com.ben12.reta.view.MainConfigurationController"
-	prefWidth="600" prefHeight="700">
+	prefWidth="600" prefHeight="700" stylesheets="@/com/ben12/reta/view/MainConfigurationUI.css">
 	<children>
 		<MenuBar>
 			<menus>
@@ -117,8 +117,12 @@
 							<Accordion fx:id="sourceConfigurations" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 						</children>
 					</GridPane>
-					<WebView fx:id="webview">
-					</WebView>
+					<TabPane fx:id="resultTabs">
+						<Tab text="Graphic" closable="false">
+							<WebView fx:id="webview">
+							</WebView>
+						</Tab>
+					</TabPane>
 				</SplitPane>
 			</children>
 		</GridPane>

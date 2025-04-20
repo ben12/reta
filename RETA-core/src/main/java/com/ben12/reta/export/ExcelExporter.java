@@ -1,7 +1,7 @@
 // Package : com.ben12.reta.export
 // File : ExcelExporter.java
 // 
-// Copyright (C) 2025 benmo
+// Copyright (C) 2025 Benoît Moreau (ben.12)
 //
 // This file is part of RETA (Requirement Engineering Traceability Analysis).
 //
@@ -452,7 +452,7 @@ public class ExcelExporter
 		{
 			final var rateRow = addNewRow(sheet, 1);
 			final var rateCell = addNewCell(rateRow);
-			rateCell.setCellValue(source.getName() + " is cover by " + coverBy.getKey().getName() + " at "
+			rateCell.setCellValue(source.getName() + " is covered by " + coverBy.getKey().getName() + " at "
 					+ (coverBy.getValue() * 100) + " %");
 			addColspan(sheet, rateCell, 2);
 

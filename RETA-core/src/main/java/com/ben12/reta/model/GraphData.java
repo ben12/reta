@@ -1,7 +1,7 @@
 // Package : com.ben12.reta.model
 // File : GraphData.java
 // 
-// Copyright (C) 2025 benmo
+// Copyright (C) 2025 Benoît Moreau (ben.12)
 //
 // This file is part of RETA (Requirement Engineering Traceability Analysis).
 //
@@ -22,7 +22,7 @@ package com.ben12.reta.model;
 import java.util.Map;
 
 /**
- * @author benmo
+ * @author Benoît Moreau (ben.12)
  */
 public class GraphData
 {

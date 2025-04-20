@@ -1,0 +1,53 @@
+
+.result-table .label {
+	-fx-label-padding: 4;
+	-fx-alignment: top-left;
+	-fx-max-width: 1000000;
+	-fx-max-height: 1000000;
+	-fx-border-width: 0.5;
+	-fx-border-color: black;
+}
+
+.result-table .label.first-row {
+	-fx-border-width: 1 0.5 0.5 0.5;
+}
+
+.result-table .label.first-col {
+	-fx-border-width: 0.5 0.5 0.5 1;
+}
+
+.result-table .label.last-row {
+	-fx-border-width: 0.5 0.5 1 0.5;
+}
+
+.result-table .label.last-col {
+	-fx-border-width: 0.5 1 0.5 0.5;
+}
+
+.result-table .label.first-row.first-col {
+	-fx-border-width: 1 0.5 0.5 1;
+}
+
+.result-table .label.first-row.last-col {
+	-fx-border-width: 1 1 0.5 0.5;
+}
+
+.result-table .label.last-row.first-col {
+	-fx-border-width: 0.5 0.5 1 1;
+}
+
+.result-table .label.last-row.last-col {
+	-fx-border-width: 0.5 1 1 0.5;
+}
+
+.result-table .label.uncovered {
+	-fx-text-fill: red;
+}
+
+.result-table .label.partial {
+	-fx-text-fill: coral;
+}
+
+.result-table .label.header {
+	-fx-background-color: lightgrey;
+}
