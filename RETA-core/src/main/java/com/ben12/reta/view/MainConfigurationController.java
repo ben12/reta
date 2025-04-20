@@ -732,13 +732,61 @@ public class MainConfigurationController implements Initializable
 		resultTabs.getTabs().add(tab);
 	}
 
-	private Tab createErrorsTab(final List<InputRequirementSource> sources)
+	private Tab createErrorsTab(final List<InputRequirementSource> allSources)
 	{
 		final var tab = new Tab(labels.getString("errors"));
 		tab.setClosable(false);
 
-		// TODO
+		final var table = new GridPane();
+		table.getStyleClass().add("result-table");
+		table.setPadding(new Insets(8));
 
+		final var sourceHeader = new Label(labels.getString("unknownfromsrc"));
+		sourceHeader.getStyleClass().addAll("header", "first-row", "first-col");
+		final var reqHeader = new Label(labels.getString("unknownfromreq"));
+		reqHeader.getStyleClass().addAll("header", "first-row");
+		final var refHeader = new Label(labels.getString("unknownreference"));
+		refHeader.getStyleClass().addAll("header", "first-row", "last-col");
+		table.addRow(0, sourceHeader, reqHeader, refHeader);
+
+		final var total = allSources.stream().mapToInt(s -> s.getAllUknownReferences().size()).sum();
+
+		for (final var source : allSources)
+		{
+			final var reqs = source.getRequirements();
+			final var count = source.getAllUknownReferences().size();
+			if (count > 0)
+			{
+				var row = table.getRowCount();
+				final var sourceCell = new Label(source.getName());
+				sourceCell.getStyleClass().addAll("first-col");
+				table.add(sourceCell, 0, row, 1, count);
+				for (final var req : reqs)
+				{
+					final var refs = req.getReferencesFor(null);
+					if (!refs.isEmpty())
+					{
+						final var reqCell = new Label(req.getText());
+						table.add(reqCell, 1, row, 1, refs.size());
+						for (final var ref : refs)
+						{
+							final var refCell = new Label(ref.getText());
+							refCell.getStyleClass().addAll("last-col");
+							table.add(refCell, 2, row);
+							if (row == total)
+							{
+								sourceCell.getStyleClass().addAll("last-row");
+								reqCell.getStyleClass().addAll("last-row");
+								refCell.getStyleClass().addAll("last-row");
+							}
+							row++;
+						}
+					}
+				}
+			}
+		}
+
+		tab.setContent(new ScrollPane(table));
 		return tab;
 	}
 
