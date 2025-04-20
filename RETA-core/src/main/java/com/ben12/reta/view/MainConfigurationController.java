@@ -26,8 +26,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -68,6 +66,7 @@ import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.util.Callback;
 import javafx.util.Pair;
 
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.w3c.dom.Element;
 
 import com.google.common.base.Objects;
@@ -78,7 +77,6 @@ import net.sourceforge.plantuml.SourceStringReader;
 
 import com.ben12.reta.beans.property.buffering.BufferingManager;
 import com.ben12.reta.beans.property.buffering.ObservableListBuffering;
-import com.ben12.reta.beans.property.buffering.SimpleObjectPropertyBuffering;
 import com.ben12.reta.model.GraphData;
 import com.ben12.reta.model.GraphData.Link;
 import com.ben12.reta.model.InputRequirementSource;
@@ -102,9 +100,6 @@ public class MainConfigurationController implements Initializable
 
 	/** The {@link BufferingManager} instance. */
 	private final BufferingManager											bufferingManager	= new BufferingManager();
-
-	/** Output file buffered property. */
-	private final SimpleObjectPropertyBuffering<String>						bufferedOutput;
 
 	/** Requirement source list. */
 	private final ObservableList<InputRequirementSource>					sources				= FXCollections
@@ -133,6 +128,9 @@ public class MainConfigurationController implements Initializable
 	/** Requirement source {@link TitledPane} list. */
 	private List<TitledPane>												panes				= new ArrayList<>();
 
+	/** Last export file. */
+	private File															lastExport			= null;
+
 	/** Graph data. */
 	private GraphData														graph;
 
@@ -155,6 +153,10 @@ public class MainConfigurationController implements Initializable
 	/** Run analysis button. */
 	@FXML
 	private Button															run;
+
+	/** Run analysis button. */
+	@FXML
+	private Button															export;
 
 	/** Delete selected requirement source button. */
 	@FXML
@@ -194,7 +196,6 @@ public class MainConfigurationController implements Initializable
 		bufferingManager.add((ObservableListBuffering<InputRequirementSource>) bufferedSources);
 
 		bufferedSourcesName = bufferingManager.buffering(sourcesName);
-		bufferedOutput = bufferingManager.buffering(RETAAnalysis.getInstance().outputProperty());
 	}
 
 	/**
@@ -244,9 +245,6 @@ public class MainConfigurationController implements Initializable
 
 		try
 		{
-			outputFile.getChild().textProperty().bindBidirectional(bufferedOutput);
-			outputFile.bindValidation(bufferedOutput);
-
 			delete.disableProperty()
 					.bind(sourceConfigurations.expandedPaneProperty()
 							.isNull()
@@ -288,11 +286,12 @@ public class MainConfigurationController implements Initializable
 			save.disableProperty().bind(Bindings.not(bufferingManager.validProperty()));
 			cancel.disableProperty().bind(Bindings.not(bufferingManager.bufferingProperty()));
 			run.disableProperty().bind(Bindings.not(bufferingManager.validProperty()));
+			export.setDisable(true);
 
 			webview.getEngine().getLoadWorker().stateProperty().subscribe(state -> {
 				if (state == Worker.State.SUCCEEDED)
 				{
-					this.customizePLantuml();
+					this.customizePlantuml();
 				}
 			});
 		}
@@ -302,7 +301,7 @@ public class MainConfigurationController implements Initializable
 		}
 	}
 
-	private void customizePLantuml()
+	private void customizePlantuml()
 	{
 		final var document = webview.getEngine().getDocument();
 		final var groups = DOMUtils.getElementsByTagNameAndAttribute(document, "g", "data-entity");
@@ -581,10 +580,6 @@ public class MainConfigurationController implements Initializable
 
 						updateMessage(labels.getString("progress.graph"));
 						graph = buildGraph();
-						updateProgress(0.9);
-
-						updateMessage(labels.getString("progress.writing"));
-						RETAAnalysis.getInstance().writeExcel();
 						updateProgress(1.0);
 
 						updateMessage(labels.getString("progress.complete"));
@@ -607,6 +602,7 @@ public class MainConfigurationController implements Initializable
 				{
 					webview.getEngine().loadContent(graph.getHtml());
 					buildTabs();
+					export.setDisable(false);
 				}
 
 				@Override
@@ -625,6 +621,8 @@ public class MainConfigurationController implements Initializable
 			graph = null;
 			webview.getEngine().loadContent("");
 			resultTabs.getTabs().remove(1, resultTabs.getTabs().size());
+			export.setDisable(true);
+
 			new Thread(task).start();
 		}
 	}
@@ -790,6 +788,37 @@ public class MainConfigurationController implements Initializable
 		return tab;
 	}
 
+	@FXML
+	protected void export(final ActionEvent event)
+	{
+		try
+		{
+			final FileChooser fileChooser = new FileChooser();
+			fileChooser.getExtensionFilters().add(new ExtensionFilter(labels.getString("excel.file.desc"), "*.xlsx"));
+			fileChooser.setTitle(labels.getString("output.title"));
+			if (lastExport != null)
+			{
+				fileChooser.setInitialDirectory(lastExport.getParentFile());
+				fileChooser.setInitialFileName(lastExport.getName());
+			}
+			else
+			{
+				fileChooser.setInitialDirectory(RETAAnalysis.getInstance().getConfig().getParentFile());
+			}
+
+			final File file = fileChooser.showSaveDialog(root.getScene().getWindow());
+			if (file != null)
+			{
+				RETAAnalysis.getInstance().writeExcel(file);
+				lastExport = file;
+			}
+		}
+		catch (InvalidFormatException | IOException e)
+		{
+			LOGGER.log(Level.SEVERE, "Exporting excel", e);
+		}
+	}
+
 	private Tab createSourceTab(final InputRequirementSource source)
 	{
 		final var tab = new Tab(source.getName());
@@ -885,32 +914,6 @@ public class MainConfigurationController implements Initializable
 	}
 
 	/**
-	 * Action event to select the output file.
-	 * 
-	 * @param event
-	 *            the {@link ActionEvent}
-	 */
-	@FXML
-	protected void selectOutputFile(final ActionEvent event)
-	{
-		final Path currentFile = bufferedOutput.get() == null ? null : Paths.get(bufferedOutput.get());
-		final FileChooser fileChooser = new FileChooser();
-		fileChooser.getExtensionFilters().add(new ExtensionFilter(labels.getString("excel.file.desc"), "*.xlsx"));
-		fileChooser.setTitle(labels.getString("output.title"));
-		if (currentFile != null)
-		{
-			fileChooser.setInitialDirectory(currentFile.toFile().getParentFile());
-			fileChooser.setInitialFileName(currentFile.getFileName().toString());
-		}
-		final File file = fileChooser.showSaveDialog(root.getScene().getWindow());
-
-		if (file != null)
-		{
-			bufferedOutput.set(file.getPath());
-		}
-	}
-
-	/**
 	 * Action event to create a new configuration file.
 	 * 
 	 * @param event
@@ -936,7 +939,6 @@ public class MainConfigurationController implements Initializable
 
 		if (file != null)
 		{
-			bufferedOutput.set(null);
 			while (bufferedSources.size() > 0)
 			{
 				removeSource(0);
@@ -1034,6 +1036,7 @@ public class MainConfigurationController implements Initializable
 		{
 			RETAAnalysis.getInstance().configure(file);
 			rebuild();
+			lastExport = null;
 		}
 	}
 

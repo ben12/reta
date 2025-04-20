@@ -1,5 +1,4 @@
 [GENERAL]
-output = analysis.xlsx
 inputs = DOC1,DOC2,SOURCES
 
 [DOC1]

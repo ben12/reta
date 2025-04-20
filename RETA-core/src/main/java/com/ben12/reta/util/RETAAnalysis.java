@@ -25,8 +25,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -44,8 +42,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -56,16 +52,10 @@ import org.ini4j.Wini;
 
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
-import com.google.common.io.Files;
-
-import jakarta.validation.constraints.NotEmpty;
 
 import com.ben12.reta.api.RETAParseException;
 import com.ben12.reta.api.RETAParser;
 import com.ben12.reta.api.SourceConfiguration;
-import com.ben12.reta.beans.constraints.IsPath;
-import com.ben12.reta.beans.constraints.PathExists;
-import com.ben12.reta.beans.constraints.PathExists.KindOfPath;
 import com.ben12.reta.export.ExcelExporter;
 import com.ben12.reta.model.InputRequirementSource;
 import com.ben12.reta.model.RequirementImpl;
@@ -98,13 +88,6 @@ public final class RETAAnalysis
 
 	/** Configuration file opened. */
 	private File											config				= null;
-
-	/** Output Excel file path. */
-	@NotEmpty
-	@IsPath
-	@PathExists(kind = KindOfPath.DIRECTORY, parent = true)
-	private final StringProperty							output				= new SimpleStringProperty(this,
-			OUTPUT);
 
 	// TODO maybe useful to see unknown references and mismatch versions
 	// private final Comparator<Requirement> reqCompId = (req1, req2) -> req1.getId().compareTo(req2.getId());
@@ -177,14 +160,6 @@ public final class RETAAnalysis
 	}
 
 	/**
-	 * @return the output
-	 */
-	public StringProperty outputProperty()
-	{
-		return output;
-	}
-
-	/**
 	 * @param iniFile
 	 *            RETA INI file
 	 */
@@ -208,35 +183,6 @@ public final class RETAAnalysis
 			final Wini ini = new Wini();
 			ini.getConfig().setFileEncoding(Charset.forName("CP1252"));
 			ini.load(iniFile);
-
-			final String outputFile = ini.get("GENERAL", "output");
-			if (outputFile != null)
-			{
-				final Path outPath = Paths.get(outputFile);
-				final String fileName = outPath.getFileName().toString();
-				if (!"xlsx".equals(Files.getFileExtension(fileName)))
-				{
-					LOGGER.warning("output extension changed for xlsx");
-					final Path parent = outPath.getParent();
-					if (parent == null)
-					{
-						output.set(Files.getNameWithoutExtension(fileName) + ".xlsx");
-					}
-					else
-					{
-						output.set(parent.resolve(Files.getNameWithoutExtension(fileName) + ".xlsx").toString());
-					}
-				}
-				else
-				{
-					output.set(outPath.normalize().toString());
-				}
-			}
-			else
-			{
-				output.set(Paths.get(iniFile.getParent(), Files.getNameWithoutExtension(iniFile.getName()) + ".xlsx")
-						.toString());
-			}
 
 			final Map<InputRequirementSource, List<String>> coversMap = new LinkedHashMap<>();
 
@@ -339,8 +285,6 @@ public final class RETAAnalysis
 		try
 		{
 			final Section generalSection = ini.add("GENERAL");
-
-			generalSection.add("output", output.get());
 
 			final List<String> inputs = new ArrayList<>();
 
@@ -503,21 +447,16 @@ public final class RETAAnalysis
 	/**
 	 * Write Excel file result of requirement traceability analysis.
 	 * 
+	 * @param outputFile
+	 *            output file
 	 * @throws IOException
 	 *             I/O exception
 	 * @throws InvalidFormatException
 	 *             Invalid Excel format exception
 	 */
-	public void writeExcel() throws IOException, InvalidFormatException
+	public void writeExcel(final File outputFile) throws IOException, InvalidFormatException
 	{
 		LOGGER.info("Start write excel output");
-
-		Path outputFile = Paths.get(output.get());
-		if (!outputFile.isAbsolute())
-		{
-			final Path root = config.getAbsoluteFile().getParentFile().toPath();
-			outputFile = root.resolve(outputFile);
-		}
 
 		final var exporter = new ExcelExporter();
 		final var wb = exporter.export(requirementSources);
@@ -534,9 +473,9 @@ public final class RETAAnalysis
 	 * @throws IOException
 	 *             I/O exception
 	 */
-	public void writeExcel(final Workbook workbook, final Path outputFile) throws IOException
+	public void writeExcel(final Workbook workbook, final File outputFile) throws IOException
 	{
-		try (FileOutputStream fos = new FileOutputStream(outputFile.toFile()))
+		try (FileOutputStream fos = new FileOutputStream(outputFile))
 		{
 			workbook.write(fos);
 		}
