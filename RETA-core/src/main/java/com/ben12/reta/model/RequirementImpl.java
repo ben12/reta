@@ -59,7 +59,7 @@ public class RequirementImpl implements Requirement, Comparable<RequirementImpl>
 	/** Requirement extra attributes name and value. */
 	private Map<String, String>				attributes	= null;
 
-	/** Set of requirements cover by this requirement. */
+	/** Set of requirements covered by this requirement. */
 	private Set<RequirementImpl>			references	= null;
 
 	/** Set of requirements covering this requirement. */
@@ -306,7 +306,7 @@ public class RequirementImpl implements Requirement, Comparable<RequirementImpl>
 	 */
 	public List<RequirementImpl> getReferredByRequirement()
 	{
-		return (referredBy == null ? new ArrayList<RequirementImpl>(0) : new ArrayList<RequirementImpl>(referredBy));
+		return (referredBy == null ? new ArrayList<>(0) : new ArrayList<>(referredBy));
 	}
 
 	/**
@@ -316,7 +316,7 @@ public class RequirementImpl implements Requirement, Comparable<RequirementImpl>
 	 */
 	public List<RequirementImpl> getReferredByRequirementFor(final InputRequirementSource aSource)
 	{
-		return (referredBy == null ? new ArrayList<RequirementImpl>(0)
+		return (referredBy == null ? new ArrayList<>(0)
 				: referredBy.stream().filter((r) -> r.getSource() == aSource).distinct().collect(Collectors.toList()));
 	}
 
@@ -325,9 +325,12 @@ public class RequirementImpl implements Requirement, Comparable<RequirementImpl>
 	 */
 	public List<InputRequirementSource> getReferredBySource()
 	{
-		return (referredBy == null ? new ArrayList<InputRequirementSource>(0)
-				: referredBy.stream().map(RequirementImpl::getSource).filter(Objects::nonNull).distinct().collect(
-						Collectors.toList()));
+		return (referredBy == null ? new ArrayList<>(0)
+				: referredBy.stream()
+						.map(RequirementImpl::getSource)
+						.filter(Objects::nonNull)
+						.distinct()
+						.collect(Collectors.toList()));
 	}
 
 	/*

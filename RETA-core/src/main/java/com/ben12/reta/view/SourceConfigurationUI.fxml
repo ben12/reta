@@ -11,7 +11,7 @@
 <?import com.ben12.reta.view.validation.*?>
 
 <TitledPane xmlns:fx="http://javafx.com/fxml" fx:controller="com.ben12.reta.view.SourceConfigurationController"
-	fx:id="titledPane" prefWidth="400" prefHeight="500">
+	fx:id="titledPane" prefWidth="400" prefHeight="500" stylesheets="@/com/ben12/reta/view/SourceConfigurationUI.css">
 	<content>
 		<ScrollPane fitToHeight="true" fitToWidth="true">
 			<content>

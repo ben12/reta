@@ -1,5 +1,4 @@
 [GENERAL]
-output = analysis.xlsx
 inputs = DOC1,DOC2,SOURCES
 
 [DOC1]
@@ -12,11 +11,7 @@ requirement.start.Label.index = 4
 requirement.start.Text.index = 1
 requirement.start.Id.index = 2
 requirement.end.regex = ^[ \t]*END_REQ[ \t]*$
-requirement.ref.regex = ^[ \t]*CF_REQ_RETA_(\w+_\d+)(?:_(\w+))?(?:[ \t-]+(.*))?$
-requirement.ref.Comment.index = 3
-requirement.ref.Version.index = 2
-requirement.ref.Id.index = 1
-covers = DOC2
+covers = 
 
 [DOC2]
 plugin = com.ben12.reta.plugin.tika.TikaSourceProviderPlugin

@@ -20,15 +20,19 @@
 package com.ben12.reta.view;
 
 import java.awt.Desktop;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -36,28 +40,49 @@ import java.util.stream.Collectors;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.IntegerBinding;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
+import javafx.concurrent.Worker;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.control.Accordion;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.util.Callback;
 import javafx.util.Pair;
 
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.w3c.dom.Element;
+
+import com.google.common.base.Objects;
+
+import net.sourceforge.plantuml.FileFormat;
+import net.sourceforge.plantuml.FileFormatOption;
+import net.sourceforge.plantuml.SourceStringReader;
+
 import com.ben12.reta.beans.property.buffering.BufferingManager;
 import com.ben12.reta.beans.property.buffering.ObservableListBuffering;
-import com.ben12.reta.beans.property.buffering.SimpleObjectPropertyBuffering;
+import com.ben12.reta.model.GraphData;
+import com.ben12.reta.model.GraphData.Link;
 import com.ben12.reta.model.InputRequirementSource;
+import com.ben12.reta.model.RequirementImpl;
 import com.ben12.reta.plugin.SourceProviderPlugin;
+import com.ben12.reta.util.DOMUtils;
 import com.ben12.reta.util.RETAAnalysis;
 import com.ben12.reta.view.control.MessageDialog;
 import com.ben12.reta.view.validation.ValidationDecorator;
@@ -75,9 +100,6 @@ public class MainConfigurationController implements Initializable
 
 	/** The {@link BufferingManager} instance. */
 	private final BufferingManager											bufferingManager	= new BufferingManager();
-
-	/** Output file buffered property. */
-	private final SimpleObjectPropertyBuffering<String>						bufferedOutput;
 
 	/** Requirement source list. */
 	private final ObservableList<InputRequirementSource>					sources				= FXCollections
@@ -106,6 +128,12 @@ public class MainConfigurationController implements Initializable
 	/** Requirement source {@link TitledPane} list. */
 	private List<TitledPane>												panes				= new ArrayList<>();
 
+	/** Last export file. */
+	private File															lastExport			= null;
+
+	/** Graph data. */
+	private GraphData														graph;
+
 	/** Root pane. */
 	@FXML
 	private Parent															root;
@@ -126,6 +154,10 @@ public class MainConfigurationController implements Initializable
 	@FXML
 	private Button															run;
 
+	/** Run analysis button. */
+	@FXML
+	private Button															export;
+
 	/** Delete selected requirement source button. */
 	@FXML
 	private Button															delete;
@@ -142,6 +174,14 @@ public class MainConfigurationController implements Initializable
 	@FXML
 	private ValidationDecorator<TextField>									outputFile;
 
+	/** TabPane result. */
+	@FXML
+	private TabPane															resultTabs;
+
+	/** Graph result. */
+	@FXML
+	private WebView															webview;
+
 	/**
 	 * Constructor.
 	 */
@@ -156,7 +196,6 @@ public class MainConfigurationController implements Initializable
 		bufferingManager.add((ObservableListBuffering<InputRequirementSource>) bufferedSources);
 
 		bufferedSourcesName = bufferingManager.buffering(sourcesName);
-		bufferedOutput = bufferingManager.buffering(RETAAnalysis.getInstance().outputProperty());
 	}
 
 	/**
@@ -206,9 +245,6 @@ public class MainConfigurationController implements Initializable
 
 		try
 		{
-			outputFile.getChild().textProperty().bindBidirectional(bufferedOutput);
-			outputFile.bindValidation(bufferedOutput);
-
 			delete.disableProperty()
 					.bind(sourceConfigurations.expandedPaneProperty()
 							.isNull()
@@ -250,10 +286,62 @@ public class MainConfigurationController implements Initializable
 			save.disableProperty().bind(Bindings.not(bufferingManager.validProperty()));
 			cancel.disableProperty().bind(Bindings.not(bufferingManager.bufferingProperty()));
 			run.disableProperty().bind(Bindings.not(bufferingManager.validProperty()));
+			export.setDisable(true);
+
+			webview.getEngine().getLoadWorker().stateProperty().subscribe(state -> {
+				if (state == Worker.State.SUCCEEDED)
+				{
+					this.customizePlantuml();
+				}
+			});
 		}
 		catch (final Exception e)
 		{
 			Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", e);
+		}
+	}
+
+	private void customizePlantuml()
+	{
+		final var document = webview.getEngine().getDocument();
+		final var groups = DOMUtils.getElementsByTagNameAndAttribute(document, "g", "data-entity");
+		for (final var g : groups)
+		{
+			final var sourceAlias = g.getAttribute("data-entity");
+			final var source = graph.getSourceEntities().get(sourceAlias);
+			final var texts = DOMUtils.getElementsByTagName(g, "text");
+
+			if (!texts.isEmpty() && Objects.equal(source.getName(), texts.getFirst().getTextContent()))
+			{
+				final var textEl = texts.get(0);
+				final var title = document.createElementNS(textEl.getNamespaceURI(), "title");
+				title.setTextContent(source.getConfiguration().getDescription());
+				textEl.appendChild(title);
+			}
+
+			for (final Element textEl : texts.subList(1, texts.size()))
+			{
+				final var reqId = textEl.getTextContent();
+				final var req = source.getRequirements()
+						.stream()
+						.filter(r -> Objects.equal(r.getId(), reqId))
+						.findFirst();
+				if (req.isPresent())
+				{
+					final var title = document.createElementNS(textEl.getNamespaceURI(), "title");
+					title.setTextContent(req.get().getText());
+					textEl.appendChild(title);
+					if (req.get().getReferredBySource().isEmpty() && !source.getCoversBy().isEmpty())
+					{
+						textEl.setAttribute("style", "fill: red;");
+					}
+					else if (!req.get().getReferredBySource().isEmpty()
+							&& req.get().getReferredBySource().size() < source.getCoversBy().size())
+					{
+						textEl.setAttribute("style", "fill: coral;");
+					}
+				}
+			}
 		}
 	}
 
@@ -470,24 +558,30 @@ public class MainConfigurationController implements Initializable
 		{
 			final var task = new Task<Void>()
 			{
+				private void updateProgress(final double p)
+				{
+					updateProgress(p, 1.0);
+				}
+
 				@Override
 				protected Void call() throws Exception
 				{
 					try
 					{
-						updateProgress(0.00, 1.0);
+						updateProgress(0.00);
+
 						updateMessage(labels.getString("progress.reading"));
+						RETAAnalysis.getInstance().parse(p -> updateProgress(p * 0.50));
+						updateProgress(0.50);
 
-						RETAAnalysis.getInstance().parse(p -> updateProgress(p * 0.60, 1.0));
-						updateProgress(0.60, 1.0);
 						updateMessage(labels.getString("progress.analysing"));
+						RETAAnalysis.getInstance().analyse(p -> updateProgress(0.5 + (p * 0.10)));
+						updateProgress(0.60);
 
-						RETAAnalysis.getInstance().analyse();
-						updateProgress(0.70, 1.0);
-						updateMessage(labels.getString("progress.writing"));
+						updateMessage(labels.getString("progress.graph"));
+						graph = buildGraph();
+						updateProgress(1.0);
 
-						RETAAnalysis.getInstance().writeExcel();
-						updateProgress(1.0, 1.0);
 						updateMessage(labels.getString("progress.complete"));
 					}
 					catch (final Exception e)
@@ -497,42 +591,325 @@ public class MainConfigurationController implements Initializable
 					}
 					finally
 					{
-						updateProgress(1.0, 1.0);
+						updateProgress(1.0);
 					}
 
 					return null;
+				}
+
+				@Override
+				protected void succeeded()
+				{
+					webview.getEngine().loadContent(graph.getHtml());
+					buildTabs();
+					export.setDisable(false);
+				}
+
+				@Override
+				protected void failed()
+				{
+					if (graph != null)
+					{
+						webview.getEngine().loadContent(graph.getHtml());
+						buildTabs();
+					}
 				}
 			};
 
 			MessageDialog.showProgressBar(root.getScene().getWindow(), labels.getString("progress.title"), task);
 
+			graph = null;
+			webview.getEngine().loadContent("");
+			resultTabs.getTabs().remove(1, resultTabs.getTabs().size());
+			export.setDisable(true);
+
 			new Thread(task).start();
 		}
 	}
 
-	/**
-	 * Action event to select the output file.
-	 * 
-	 * @param event
-	 *            the {@link ActionEvent}
-	 */
-	@FXML
-	protected void selectOutputFile(final ActionEvent event)
+	private GraphData buildGraph()
 	{
-		final Path currentFile = bufferedOutput.get() == null ? null : Paths.get(bufferedOutput.get());
-		final FileChooser fileChooser = new FileChooser();
-		fileChooser.getExtensionFilters().add(new ExtensionFilter(labels.getString("excel.file.desc"), "*.xlsx"));
-		fileChooser.setTitle(labels.getString("output.title"));
-		if (currentFile != null)
-		{
-			fileChooser.setInitialDirectory(currentFile.toFile().getParentFile());
-			fileChooser.setInitialFileName(currentFile.getFileName().toString());
-		}
-		final File file = fileChooser.showSaveDialog(root.getScene().getWindow());
+		final Map<String, InputRequirementSource> sourceEntities = new HashMap<>();
+		final Map<String, Link> links = new HashMap<>();
+		final var graphLines = new ArrayList<String>();
 
-		if (file != null)
+		graphLines.add("@startuml");
+		graphLines.add("skinparam classAttributeIconSize 0");
+
+		final var analysis = RETAAnalysis.getInstance();
+
+		final var index = new AtomicInteger(0);
+		final var allSources = analysis.requirementSourcesProperty();
+		final var isources = allSources.stream()
+				.collect(Collectors.toMap(s -> s, s -> index.getAndIncrement(), (a, b) -> a));
+
+		for (final var source : allSources)
 		{
-			bufferedOutput.set(file.getPath());
+			final var i = isources.get(source);
+			graphLines.add("object \"**" + source.getName() + "**\" as S" + i + " {");
+			final var reqs = source.getRequirements();
+			for (final var req : reqs)
+			{
+				graphLines.add("{field} " + req.getId().replace("\\", "<U+200C>\\<U+200C>"));
+			}
+			graphLines.add("}");
+
+			sourceEntities.put("S" + i, source);
+		}
+
+		for (final var source : allSources)
+		{
+			final var i = isources.get(source);
+			final var reqs = source.getRequirements();
+			for (final var req : reqs)
+			{
+				final var reqId = req.getId().replace("\\", "<U+200C>\\<U+200C>");
+				final var refs = req.getReferences();
+				for (final var ref : refs)
+				{
+					final var refSource = ref.getSource();
+					if (refSource != null)
+					{
+						final var refSo = isources.get(refSource);
+						final var refId = ref.getId().replace("\\", "<U+200C>\\<U+200C>");
+						graphLines.add("\"S" + refSo + "::" + refId + "\" <--- \"S" + i + "::" + reqId + "\"");
+					}
+
+					final String dataSourceLine = "" + graphLines.size();
+					links.put(dataSourceLine, new Link(dataSourceLine, source, req, refSource, ref));
+				}
+			}
+		}
+
+		graphLines.add("@enduml");
+
+		final var puGraph = String.join("\n", graphLines);
+		final var reader = new SourceStringReader(puGraph);
+		final var output = new ByteArrayOutputStream();
+		try
+		{
+			reader.outputImage(output, new FileFormatOption(FileFormat.SVG));
+		}
+		catch (final IOException e)
+		{
+			LOGGER.log(Level.SEVERE, "Error during Graph generation", e);
+		}
+
+		final var svg = new String(output.toByteArray(), StandardCharsets.UTF_8);
+		final var html = """
+				    <head>
+					  <style>
+					    body {
+					      display: flex;
+					      justify-content: center;
+					      align-items: center;
+					      padding: 4px;
+					      min-width: fit-content;
+					      min-height: fit-content;
+						}
+					  </style>
+				    </head>
+				    <body>
+				""" + svg + """
+				    </body>
+				""";
+		return new GraphData(html, sourceEntities, links);
+	}
+
+	private void buildTabs()
+	{
+		final var analysis = RETAAnalysis.getInstance();
+		final var allSources = analysis.requirementSourcesProperty();
+		for (final var source : allSources)
+		{
+			final var tab = createSourceTab(source);
+			resultTabs.getTabs().add(tab);
+		}
+
+		final var tab = createErrorsTab(allSources);
+		resultTabs.getTabs().add(tab);
+	}
+
+	private Tab createErrorsTab(final List<InputRequirementSource> allSources)
+	{
+		final var tab = new Tab(labels.getString("errors"));
+		tab.setClosable(false);
+
+		final var table = new GridPane();
+		table.getStyleClass().add("result-table");
+		table.setPadding(new Insets(8));
+
+		final var sourceHeader = new Label(labels.getString("unknownfromsrc"));
+		sourceHeader.getStyleClass().addAll("header", "first-row", "first-col");
+		final var reqHeader = new Label(labels.getString("unknownfromreq"));
+		reqHeader.getStyleClass().addAll("header", "first-row");
+		final var refHeader = new Label(labels.getString("unknownreference"));
+		refHeader.getStyleClass().addAll("header", "first-row", "last-col");
+		table.addRow(0, sourceHeader, reqHeader, refHeader);
+
+		final var total = allSources.stream().mapToInt(s -> s.getAllUknownReferences().size()).sum();
+
+		for (final var source : allSources)
+		{
+			final var reqs = source.getRequirements();
+			final var count = source.getAllUknownReferences().size();
+			if (count > 0)
+			{
+				var row = table.getRowCount();
+				final var sourceCell = new Label(source.getName());
+				sourceCell.getStyleClass().addAll("first-col");
+				table.add(sourceCell, 0, row, 1, count);
+				for (final var req : reqs)
+				{
+					final var refs = req.getReferencesFor(null);
+					if (!refs.isEmpty())
+					{
+						final var reqCell = new Label(req.getText());
+						table.add(reqCell, 1, row, 1, refs.size());
+						for (final var ref : refs)
+						{
+							final var refCell = new Label(ref.getText());
+							refCell.getStyleClass().addAll("last-col");
+							table.add(refCell, 2, row);
+							if (row == total)
+							{
+								sourceCell.getStyleClass().addAll("last-row");
+								reqCell.getStyleClass().addAll("last-row");
+								refCell.getStyleClass().addAll("last-row");
+							}
+							row++;
+						}
+					}
+				}
+			}
+		}
+
+		tab.setContent(new ScrollPane(table));
+		return tab;
+	}
+
+	@FXML
+	protected void export(final ActionEvent event)
+	{
+		try
+		{
+			final FileChooser fileChooser = new FileChooser();
+			fileChooser.getExtensionFilters().add(new ExtensionFilter(labels.getString("excel.file.desc"), "*.xlsx"));
+			fileChooser.setTitle(labels.getString("output.title"));
+			if (lastExport != null)
+			{
+				fileChooser.setInitialDirectory(lastExport.getParentFile());
+				fileChooser.setInitialFileName(lastExport.getName());
+			}
+			else
+			{
+				fileChooser.setInitialDirectory(RETAAnalysis.getInstance().getConfig().getParentFile());
+			}
+
+			final File file = fileChooser.showSaveDialog(root.getScene().getWindow());
+			if (file != null)
+			{
+				RETAAnalysis.getInstance().writeExcel(file);
+				lastExport = file;
+			}
+		}
+		catch (InvalidFormatException | IOException e)
+		{
+			LOGGER.log(Level.SEVERE, "Exporting excel", e);
+		}
+	}
+
+	private Tab createSourceTab(final InputRequirementSource source)
+	{
+		final var tab = new Tab(source.getName());
+		tab.setClosable(false);
+
+		final var table = new GridPane();
+		table.getStyleClass().add("result-table");
+		table.setPadding(new Insets(8));
+
+		final var reqHeader = new Label(labels.getString("requirement"));
+		reqHeader.getStyleClass().addAll("header", "first-row", "first-col");
+		final var sourceHeader = new Label(labels.getString("source"));
+		sourceHeader.getStyleClass().addAll("header", "first-row");
+		final var refHeader = new Label(labels.getString("reference"));
+		refHeader.getStyleClass().addAll("header", "first-row", "last-col");
+
+		table.addRow(0, reqHeader, sourceHeader, refHeader);
+
+		final var requirements = source.getRequirements();
+		final var refSources = source.getCoversBy().keySet();
+		var index = 0;
+		for (final var requirement : requirements)
+		{
+			final var reqCell = new Label(requirement.getText());
+			reqCell.getStyleClass().add("first-col");
+			setReqStyle(source, requirement, reqCell);
+
+			final List<Label> sourceCells = new ArrayList<>();
+			final List<List<Label>> refCells = new ArrayList<>();
+			for (final var refSource : refSources)
+			{
+				final var sourceCell = new Label(refSource.getName());
+				sourceCells.add(sourceCell);
+				final List<Label> cells = new ArrayList<>();
+				refCells.add(cells);
+				final var refs = requirement.getReferredByRequirementFor(refSource);
+				for (final var ref : refs)
+				{
+					cells.add(new Label(ref.getText()));
+				}
+				if (refs.isEmpty())
+				{
+					cells.add(new Label());
+				}
+				cells.getLast().getStyleClass().add("last-col");
+			}
+			if (refSources.isEmpty())
+			{
+				sourceCells.add(new Label());
+				final List<Label> cells = new ArrayList<>();
+				cells.add(new Label());
+				refCells.add(cells);
+				cells.getLast().getStyleClass().add("last-col");
+			}
+
+			var row = table.getRowCount();
+			table.add(reqCell, 0, row, 1, refCells.stream().mapToInt(Collection::size).sum());
+			for (int i = 0; i < sourceCells.size(); i++)
+			{
+				final var refs = refCells.get(i);
+				table.add(sourceCells.get(i), 1, row, 1, refs.size());
+				for (int c = 0; c < refs.size(); c++, row++)
+				{
+					table.add(refs.get(c), 2, row);
+				}
+			}
+
+			index++;
+			if (index == requirements.size())
+			{
+				reqCell.getStyleClass().add("last-row");
+				sourceCells.getLast().getStyleClass().add("last-row");
+				refCells.getLast().getLast().getStyleClass().add("last-row");
+			}
+		}
+
+		tab.setContent(new ScrollPane(table));
+		return tab;
+	}
+
+	private void setReqStyle(final InputRequirementSource source, final RequirementImpl requirement,
+			final Label reqCell)
+	{
+		if (requirement.getReferredBySource().isEmpty() && !source.getCoversBy().isEmpty())
+		{
+			reqCell.getStyleClass().add("uncovered");
+		}
+		else if (!requirement.getReferredBySource().isEmpty()
+				&& requirement.getReferredBySource().size() < source.getCoversBy().size())
+		{
+			reqCell.getStyleClass().add("partial");
 		}
 	}
 
@@ -562,7 +939,6 @@ public class MainConfigurationController implements Initializable
 
 		if (file != null)
 		{
-			bufferedOutput.set(null);
 			while (bufferedSources.size() > 0)
 			{
 				removeSource(0);
@@ -660,6 +1036,7 @@ public class MainConfigurationController implements Initializable
 		{
 			RETAAnalysis.getInstance().configure(file);
 			rebuild();
+			lastExport = null;
 		}
 	}
 
@@ -715,5 +1092,13 @@ public class MainConfigurationController implements Initializable
 	protected void openProject(final ActionEvent event)
 	{
 		openURL("http://github.com/ben12/reta");
+	}
+
+	/**
+	 * @return buffering status
+	 */
+	public ReadOnlyBooleanProperty bufferingProperty()
+	{
+		return ReadOnlyBooleanProperty.readOnlyBooleanProperty(bufferingManager.bufferingProperty());
 	}
 }

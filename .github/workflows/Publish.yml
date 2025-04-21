@@ -86,4 +86,28 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release upload ${{ github.event.release.tag_name }} $(ls reta-*.msi reta*.deb reta*.rpm reta-*.zip 2>/dev/null)
-    
+
+  publish-page:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 21
+      - name: Build Site
+        run: ./mvnw -B clean site site:stage
+      - name: Publish GitHub Pages
+        run: |
+          git config user.name ben12
+          git config user.email ben12@users.noreply.github.com
+          git clone --depth 1 --branch gh-pages https://github.com/ben12/reta.git gh-pages
+          cd gh-pages
+          rm -rf *
+          cp -r ../target/staging/* ./
+          git add --all
+          git commit -m "Update GitHub Pages"
+          git push
+
