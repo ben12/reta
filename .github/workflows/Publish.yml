@@ -101,10 +101,10 @@ jobs:
         run: ./mvnw -B clean site site:stage
       - name: Publish GitHub Pages
         run: |
-          git config user.name ben12
-          git config user.email ben12@users.noreply.github.com
           git clone --depth 1 --branch gh-pages https://github.com/ben12/reta.git gh-pages
           cd gh-pages
+          git config user.name ben12
+          git config user.email ben12@users.noreply.github.com
           rm -rf *
           cp -r ../target/staging/* ./
           git add --all
