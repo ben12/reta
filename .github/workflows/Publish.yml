@@ -107,6 +107,7 @@ jobs:
           git config user.email ben12@users.noreply.github.com
           rm -rf *
           cp -r ../target/staging/* ./
+          echo -n "reta.ben12.eu" >CNAME
           git add --all
           git commit -m "Update GitHub Pages"
           git push
