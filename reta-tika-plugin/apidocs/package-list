@@ -1,8 +1,0 @@
-com.ben12.reta.plugin.tika
-com.ben12.reta.plugin.tika.beans.constraints
-com.ben12.reta.plugin.tika.beans.constraints.validator
-com.ben12.reta.plugin.tika.io
-com.ben12.reta.plugin.tika.model
-com.ben12.reta.plugin.tika.parser
-com.ben12.reta.plugin.tika.view
-com.ben12.reta.plugin.tika.view.control
