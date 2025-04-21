@@ -33,7 +33,7 @@ public class GraphData
 	private final Map<String, Link>						links;
 
 	/**
-	 * @param pSvg
+	 * @param pHtml
 	 *            SVG source
 	 * @param pSourceEntities
 	 *            requirement source alias

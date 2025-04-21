@@ -44,8 +44,8 @@ import jakarta.validation.Validator;
  * 
  * @param <T>
  *            value type to validate
- * @see javax.validation.Validation
- * @see javax.validation.Validator
+ * @see jakarta.validation.Validation
+ * @see jakarta.validation.Validator
  * @author Benoît Moreau (ben.12)
  */
 public interface BeanPropertyValidation<T> extends PropertyValidation

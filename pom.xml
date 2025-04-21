@@ -6,7 +6,7 @@
 	<packaging>pom</packaging>
 	<version>1.1.0</version>
 	<name>Requirement Engineering Traceability Analysis</name>
-	<url>https://github.com/ben12/reta</url>
+    <url>https://reta.ben12.eu</url>
 	<description>Requirement Engineering Traceability Analysis Project</description>
 	<properties>
 		<project.build.sourceEncoding>cp1252</project.build.sourceEncoding>
@@ -110,7 +110,7 @@
 	<distributionManagement>
 		<site>
 			<id>RETA</id>
-			<url>http://ben12.github.io/reta</url>
+			<url>https://reta.ben12.eu</url>
 		</site>
 	</distributionManagement>
 	<build>
@@ -120,6 +120,11 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
 					<version>3.14.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-javadoc-plugin</artifactId>
+					<version>3.11.2</version>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -144,7 +149,7 @@
 	<licenses>
 		<license>
 			<name>GNU General Public License (GPL)</name>
-			<url>http://www.gnu.org/licenses/gpl-3.0.txt</url>
+			<url>./LICENSE</url>
 		</license>
 	</licenses>
 </project>

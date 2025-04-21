@@ -74,9 +74,6 @@ public final class RETAAnalysis
 	/** {@link #requirementSources} property name. */
 	public static final String								REQUIREMENT_SOURCES	= "requirementSources";
 
-	/** {@link #output} property name. */
-	public static final String								OUTPUT				= "output";
-
 	/** Singleton instance. */
 	private static RETAAnalysis								instance			= null;
 

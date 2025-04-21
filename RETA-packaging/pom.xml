@@ -44,6 +44,20 @@
 			</properties>
 		</profile>
 	</profiles>
+	<contributors>
+		<contributor>
+			<name>ben.12</name>
+			<url>https://github.com/ben12</url>
+			<timezone>Europe/Paris</timezone>
+		</contributor>
+	</contributors>
+	<developers>
+		<developer>
+			<name>ben.12</name>
+			<url>https://github.com/ben12</url>
+			<timezone>Europe/Paris</timezone>
+		</developer>
+	</developers>
 	<dependencies>
 		<dependency>
 			<groupId>com.ben12</groupId>
@@ -132,4 +146,19 @@
 			</plugin>
 		</plugins>
 	</build>
+	<issueManagement>
+		<system>GitHub</system>
+		<url>https://github.com/ben12/reta/issues</url>
+	</issueManagement>
+	<scm>
+		<url>https://github.com/ben12/reta/tree/master/RETA-packaging</url>
+		<connection>scm:git:git://github.com/ben12/reta.git/RETA-packaging</connection>
+		<developerConnection>scm:git:git@github.com:ben12/reta.git/RETA-packaging</developerConnection>
+	</scm>
+	<licenses>
+		<license>
+			<name>GNU General Public License (GPL)</name>
+			<url>../LICENSE</url>
+		</license>
+	</licenses>
 </project>

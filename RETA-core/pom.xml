@@ -86,9 +86,9 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.11.2</version>
 				<configuration>
 					<windowtitle>RETA CORE JavaDocs</windowtitle>
+					<header><![CDATA[ <a href="https://reta.ben12.eu">RETA ${project.version}</a> ]]></header>
 				</configuration>
 			</plugin>
 		</plugins>
@@ -105,7 +105,7 @@
 	<licenses>
 		<license>
 			<name>GNU General Public License (GPL)</name>
-			<url>http://www.gnu.org/licenses/gpl-3.0.txt</url>
+			<url>../LICENSE</url>
 		</license>
 	</licenses>
 </project>
