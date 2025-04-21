@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>com.ben12</groupId>
 		<artifactId>reta-parent</artifactId>
-		<version>1.1.0</version>
+		<version>1.2.0</version>
 	</parent>
 	<name>Requirement Engineering Traceability Analysis (packaging)</name>
 	<artifactId>reta-packaging</artifactId>

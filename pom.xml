@@ -4,7 +4,7 @@
 	<groupId>com.ben12</groupId>
 	<artifactId>reta-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>1.1.0</version>
+	<version>1.2.0</version>
 	<name>Requirement Engineering Traceability Analysis</name>
     <url>https://reta.ben12.eu</url>
 	<description>Requirement Engineering Traceability Analysis Project</description>
