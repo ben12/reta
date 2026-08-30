@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>com.ben12</groupId>
 		<artifactId>reta-parent</artifactId>
-		<version>1.2.0</version>
+		<version>1.2.1</version>
 	</parent>
 	<name>Requirement Engineering Traceability Analysis (packaging)</name>
 	<artifactId>reta-packaging</artifactId>
@@ -77,7 +77,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
-				<version>3.8.1</version>
+				<version>3.11.0</version>
 				<executions>
 					<execution>
 						<goals>
@@ -94,7 +94,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-assembly-plugin</artifactId>
-				<version>3.7.1</version>
+				<version>3.8.0</version>
 				<executions>
 					<execution>
 						<id>assembly</id>
@@ -115,7 +115,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
-				<version>3.5.0</version>
+				<version>3.6.3</version>
 				<executions>
 					<execution>
 						<id>jpackage</id>
